@@ -110,7 +110,19 @@ export default function MypagePage() {
             </>
           ) : null}
         </p>
-      ) : null}
+      ) : (
+        <p className="text-sm leading-7 text-sumi-soft">
+          いまは非公開です。運営が公開すると、作家ページがサイトに出ます。それまで
+          <Link href="/mypage/profile" className="underline decoration-line underline-offset-4">
+            プロフィール
+          </Link>
+          と
+          <Link href="/mypage/works" className="underline decoration-line underline-offset-4">
+            作品
+          </Link>
+          を整えられます。
+        </p>
+      )}
 
       {upcoming.length === 0 && past.length === 0 ? (
         <p className="mt-12 text-sm text-sumi-soft">

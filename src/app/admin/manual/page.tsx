@@ -37,7 +37,7 @@ export default function AdminManualPage() {
               <Link href="/register" className="mx-1 underline decoration-line underline-offset-4">
                 つくり手の入口
               </Link>
-              から入り、未登録なら作家登録をします。運営アカウントでも、同じ手順で作家登録できます。確認待ちはありません。
+              から入り、未登録なら作家登録をします。運営アカウントでも、同じ手順で作家登録できます。登録直後は非公開で、運営が公開するとサイトに出ます。
             </li>
             <li>
               登録後、作家はマイページでプロフィール、作品、個別の催しを直せます。運営は

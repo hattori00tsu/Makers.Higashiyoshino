@@ -23,8 +23,6 @@ export default function WorksPage() {
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const approved = user?.artistStatus === "approved";
-
   useEffect(() => {
     if (loading) return;
     if (!user) {
@@ -95,61 +93,53 @@ export default function WorksPage() {
       <h1 className="mt-3 font-serif text-3xl tracking-wide">作品</h1>
       <MypageNav />
 
-      {!approved ? (
-        <p className="text-sm leading-7 text-sumi-soft">
-          作品の投稿は、作家登録のあと開けます。
+      <div className="space-y-4 border border-line bg-kami px-4 py-5">
+        <p className="text-[12px] tracking-[0.14em] text-sumi-soft">
+          画像は長辺1600px・WebPに整えてから保存します。
         </p>
-      ) : (
-        <>
-          <div className="space-y-4 border border-line bg-kami px-4 py-5">
-            <p className="text-[12px] tracking-[0.14em] text-sumi-soft">
-              画像は長辺1600px・WebPに整えてから保存します。
-            </p>
-            <TextInput
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="作品名"
-            />
-            <label className="block">
-              <span className="text-[12px] tracking-[0.14em] text-sumi-soft">画像を追加</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="mt-2 block w-full text-sm"
-                disabled={busy}
-                onChange={(e) => onFile(e.target.files?.[0])}
-              />
-            </label>
-          </div>
+        <TextInput
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="作品名"
+        />
+        <label className="block">
+          <span className="text-[12px] tracking-[0.14em] text-sumi-soft">画像を追加</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-2 block w-full text-sm"
+            disabled={busy}
+            onChange={(e) => onFile(e.target.files?.[0])}
+          />
+        </label>
+      </div>
 
-          <ul className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3">
-            {works.map((work) => (
-              <li key={work.id}>
-                <div className="relative aspect-square overflow-hidden bg-kami">
-                  {work.src.startsWith("http") || work.src.startsWith("/") ? (
-                    <Image src={work.src} alt={work.title} fill className="object-cover" sizes="40vw" />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={work.src} alt={work.title} className="h-full w-full object-cover" />
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-sumi-soft">{work.title}</p>
-                <button
-                  type="button"
-                  className="mt-1 text-[12px] tracking-wide text-sugi"
-                  onClick={() => remove(work.id)}
-                >
-                  削除
-                </button>
-              </li>
-            ))}
-          </ul>
-          {works.length === 0 ? (
-            <p className="mt-8 text-sm text-sumi-soft">まだ作品がありません。</p>
-          ) : null}
-          {busy ? <p className="mt-4 text-sm text-sumi-soft">処理中です。</p> : null}
-        </>
-      )}
+      <ul className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3">
+        {works.map((work) => (
+          <li key={work.id}>
+            <div className="relative aspect-square overflow-hidden bg-kami">
+              {work.src.startsWith("http") || work.src.startsWith("/") ? (
+                <Image src={work.src} alt={work.title} fill className="object-cover" sizes="40vw" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={work.src} alt={work.title} className="h-full w-full object-cover" />
+              )}
+            </div>
+            <p className="mt-2 text-sm text-sumi-soft">{work.title}</p>
+            <button
+              type="button"
+              className="mt-1 text-[12px] tracking-wide text-sugi"
+              onClick={() => remove(work.id)}
+            >
+              削除
+            </button>
+          </li>
+        ))}
+      </ul>
+      {works.length === 0 ? (
+        <p className="mt-8 text-sm text-sumi-soft">まだ作品がありません。</p>
+      ) : null}
+      {busy ? <p className="mt-4 text-sm text-sumi-soft">処理中です。</p> : null}
     </div>
   );
 }

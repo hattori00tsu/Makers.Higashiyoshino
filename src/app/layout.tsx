@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Shippori_Mincho, Zen_Kaku_Gothic_New } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SessionProvider } from "@/lib/account/use-session";
 import { site } from "@/data/site";
 import "./globals.css";
 
@@ -40,9 +41,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${mincho.variable} ${gothic.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-washi font-sans text-sumi">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <SessionProvider>
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </SessionProvider>
       </body>
     </html>
   );
