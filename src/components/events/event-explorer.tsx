@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { EventItem } from "@/data/site";
 import { EventList } from "@/components/events/event-list";
 import {
@@ -34,15 +34,17 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
   const [view, setView] = useState<View>("list");
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
+  const [todayKey, setTodayKey] = useState("");
   const [selected, setSelected] = useState<string>(() => {
     const keys = eventDateKeys(events);
-    const today = tokyoTodayKey();
-    if (keys.has(today)) return today;
-    const inMonth = [...keys]
-      .filter((key) => key.startsWith(`${initial.year}-${String(initial.month + 1).padStart(2, "0")}`))
-      .sort()[0];
-    return inMonth ?? today;
+    const prefix = `${initial.year}-${String(initial.month + 1).padStart(2, "0")}`;
+    const inMonth = [...keys].filter((key) => key.startsWith(prefix)).sort()[0];
+    return inMonth ?? [...keys].sort()[0] ?? "";
   });
+
+  useEffect(() => {
+    setTodayKey(tokyoTodayKey());
+  }, []);
 
   const cells = useMemo(() => monthCells(year, month), [year, month]);
   const dated = eventsOnDate(events, selected);
@@ -147,7 +149,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
             {cells.map((cell) => {
               const dayEvents = eventsOnDate(events, cell.key);
               const isSelected = selected === cell.key;
-              const isToday = cell.key === tokyoTodayKey();
+              const isToday = Boolean(todayKey) && cell.key === todayKey;
               const showWeather =
                 dayEvents.some((event) => event.isOutdoor) && weather[cell.key];
 

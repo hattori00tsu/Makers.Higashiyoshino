@@ -77,8 +77,12 @@ export async function loadEventsLive(preview?: boolean) {
 
 export async function publishedEventsLive(preview?: boolean) {
   if (useLocalContent(preview)) return publishedEvents();
-  const items = await loadEventsLive(preview);
-  return items.filter(isPublished);
+  try {
+    const items = await fetchRemoteEvents({ publishedOnly: true });
+    return (items ?? []).filter(isPublished);
+  } catch {
+    return [];
+  }
 }
 
 export async function findEventLive(slug: string, preview?: boolean) {
@@ -276,15 +280,9 @@ export async function remainingSeatsMapLive(events: EventItem[], preview?: boole
         try {
           const taken = await fetchOccupiedSeats(item.event.slug, item.sessionStartsAt);
           result[liveSeatKey(item.event.slug, item.sessionStartsAt)] =
-            taken == null
-              ? remainingSeats(item.event.slug, item.capacity, item.sessionStartsAt)
-              : Math.max(0, item.capacity - taken);
+            taken == null ? null : Math.max(0, item.capacity - taken);
         } catch {
-          result[liveSeatKey(item.event.slug, item.sessionStartsAt)] = remainingSeats(
-            item.event.slug,
-            item.capacity,
-            item.sessionStartsAt,
-          );
+          result[liveSeatKey(item.event.slug, item.sessionStartsAt)] = null;
         }
       }),
     );

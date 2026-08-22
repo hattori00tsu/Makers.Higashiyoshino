@@ -102,10 +102,10 @@ export async function loadEventRows(
   return null;
 }
 
-export async function fetchRemoteEvents() {
+export async function fetchRemoteEvents(options?: { publishedOnly?: boolean }) {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
-  const rows = await loadEventRows(supabase);
+  const rows = await loadEventRows(supabase, options);
   return rows ? rows.map(mapEvent) : null;
 }
 

@@ -110,26 +110,24 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-xl px-5 pt-28 pb-20">
-        <p className="text-sm text-sumi-soft">読み込み中です。</p>
-      </div>
-    );
-  }
-
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="mx-auto max-w-xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
         <p className="text-[11px] tracking-[0.28em] text-tsuchi">APPLY</p>
         <h1 className="mt-3 font-serif text-3xl tracking-wide">申し込む</h1>
         <p className="mt-3 font-serif text-lg tracking-wide">{event.title}</p>
-        <p className="mt-6 text-sm leading-7 text-sumi-soft">
-          申込みには登録・ログインが必要です。入ったあと、このページで予約できます。
-        </p>
-        <div className="mt-10">
-          <LoginPanel intent="visitor" nextPath={`/events/${slug}/apply`} />
-        </div>
+        {loading ? (
+          <p className="mt-6 text-sm leading-7 text-sumi-soft">読み込み中です。</p>
+        ) : (
+          <>
+            <p className="mt-6 text-sm leading-7 text-sumi-soft">
+              申込みには登録・ログインが必要です。入ったあと、このページで予約できます。
+            </p>
+            <div className="mt-10">
+              <LoginPanel intent="visitor" nextPath={`/events/${slug}/apply`} />
+            </div>
+          </>
+        )}
         <div className="mt-10">
           <Link href={`/events/${event.slug}`} className="text-sm underline decoration-line underline-offset-4">
             催しへ戻る

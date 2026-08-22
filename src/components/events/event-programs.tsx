@@ -15,7 +15,7 @@ import {
   sessionCapacity,
   type EventItem,
 } from "@/data/site";
-import { formatSessionRange } from "@/lib/dates";
+import { formatSessionRange, isAllDayRange } from "@/lib/dates";
 
 type Props = {
   heading: string;
@@ -28,6 +28,7 @@ type Props = {
   liveSeats?: boolean;
   allowApply?: boolean;
   artistNames?: Record<string, string>;
+  hideSessions?: boolean;
 };
 
 export function EventPrograms({
@@ -41,6 +42,7 @@ export function EventPrograms({
   liveSeats = true,
   allowApply = true,
   artistNames = {},
+  hideSessions = false,
 }: Props) {
   const seats = useLiveSeats() ?? {};
 
@@ -69,6 +71,7 @@ export function EventPrograms({
             catalog={catalog}
             currentSlug={currentSlug}
             allowApply={allowApply}
+            hideSessions={hideSessions}
           />
         ))}
       </ul>
@@ -84,6 +87,7 @@ function ProgramRow({
   catalog,
   currentSlug,
   allowApply,
+  hideSessions,
 }: {
   program: EventItem;
   nested: EventItem[];
@@ -92,6 +96,7 @@ function ProgramRow({
   catalog: EventItem[];
   currentSlug?: string;
   allowApply: boolean;
+  hideSessions: boolean;
 }) {
   const people = program.artistSlugs
     .map((slug) => names[slug])
@@ -109,6 +114,9 @@ function ProgramRow({
   const parent = catalog.find((item) => item.slug === program.parentSlug);
   const hostLabel = parent && parent.slug !== currentSlug ? parent.title : "";
   const cover = eventCover(program.image);
+  const sessions = hideSessions
+    ? program.sessions.filter((session) => isAllDayRange(session.startsAt, session.endsAt))
+    : program.sessions;
 
   return (
     <li className="py-5">
@@ -145,9 +153,9 @@ function ProgramRow({
             {eventVenueLabel(eventPlaces(program, catalog).venues)}
             {eventPriceLabel(program) ? ` · ${eventPriceLabel(program)}` : ""}
           </p>
-          {program.sessions[0] ? (
+          {sessions.length > 0 ? (
             <div className="mt-1 space-y-1 text-sm text-sumi-soft">
-              {program.sessions.map((session) => {
+              {sessions.map((session) => {
                 const cap = sessionCapacity(session, program);
                 const left = seats[liveSeatKey(program.slug, session.startsAt)];
                 return (

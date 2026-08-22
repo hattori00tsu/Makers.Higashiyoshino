@@ -17,12 +17,23 @@ export function ArtistEvents({ slug, initial = [] }: Props) {
   const [catalog, setCatalog] = useState<EventItem[]>(initial);
 
   useEffect(() => {
+    setCatalog(initial);
+  }, [initial]);
+
+  useEffect(() => {
+    if (initial.length > 0) return;
+    let active = true;
     publishedEventsLive()
-      .then(setCatalog)
+      .then((items) => {
+        if (active) setCatalog(items);
+      })
       .catch(() => {
         /* keep server data */
       });
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [initial.length]);
 
   const joined = useMemo(() => eventsForArtist(slug, catalog), [slug, catalog]);
   const { upcoming, past } = useMemo(() => partitionArtistEvents(joined), [joined]);

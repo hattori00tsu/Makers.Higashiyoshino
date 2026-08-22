@@ -165,9 +165,10 @@ export function EventArticle({
               heading="催し"
               description={
                 kind === "venue"
-                  ? "この会場で開くワークショップや催しです。日程・定員・申込みは各催しをご確認ください。"
-                  : "この総合開催で開くワークショップや催しです。日程・定員・申込みは各催しをご確認ください。"
+                  ? "この会場で開くワークショップや催しです。申込みと定員は各催しからどうぞ。"
+                  : "この総合開催で開くワークショップや催しです。申込みと定員は各催しからどうぞ。"
               }
+              hideSessions={kind === "festival" || kind === "venue"}
               programs={programs}
               catalog={catalog}
               currentSlug={event.slug}
