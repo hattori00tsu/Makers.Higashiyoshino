@@ -180,11 +180,16 @@ function ReservationGroup({
             return (
               <li key={row.id} className="py-5">
                 <p className="text-[11px] tracking-[0.14em] text-tsuchi">
-                  {cancelled ? "キャンセル済み" : "予約確定"}
-                  <span className="mx-2 text-line">/</span>
                   {event ? eventPathTitle(event, events) : row.eventSlug}
                 </p>
-                <p className="mt-1 font-serif text-lg tracking-wide">{event?.title ?? row.eventSlug}</p>
+                <p className={`mt-1 font-serif tracking-wide ${cancelled ? "text-base text-sumi-soft" : "text-lg"}`}>
+                  {event?.title ?? row.eventSlug}
+                  {cancelled ? (
+                    <span className="ml-2 align-middle font-sans text-[10px] font-normal tracking-[0.08em] text-sumi-soft">
+                      取消
+                    </span>
+                  ) : null}
+                </p>
                 <p className="mt-1 text-sm text-sumi-soft">
                   {row.partySize}名 · {sessionOf(row, events)}
                 </p>
