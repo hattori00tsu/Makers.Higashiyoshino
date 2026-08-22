@@ -32,11 +32,9 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [done, setDone] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [leftBySession, setLeftBySession] = useState<Record<string, number | null>>({});
-
-  useEffect(() => {
-    if (user) setName((current) => current || user.name);
-  }, [user]);
 
   useEffect(() => {
     if (initial) {
@@ -180,9 +178,21 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
 
   async function onSubmit(formEvent: FormEvent) {
     formEvent.preventDefault();
-    if (!event || !user || full) return;
+    if (!event || !user || full || busy) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setMessage("お名前を入力してください。");
+      setConfirming(false);
+      return;
+    }
+    if (!confirming) {
+      setConfirming(true);
+      setMessage("");
+      return;
+    }
     const size = Number(partySize) || 1;
     const session = event.sessions.find((item) => item.startsAt === sessionStartsAt) ?? event.sessions[0];
+    setBusy(true);
     const remaining = await remainingSeatsLive(
       event.slug,
       sessionCapacity(session, event),
@@ -191,6 +201,8 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
     );
     if (remaining !== null && size > remaining) {
       setMessage(`残席は${remaining}名です。人数を減らしてください。`);
+      setBusy(false);
+      setConfirming(false);
       return;
     }
     try {
@@ -198,7 +210,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         {
           eventSlug: event.slug,
           sessionStartsAt,
-          name: name.trim() || user.name,
+          name: trimmedName,
           email: user.email,
           phone: "",
           partySize: size,
@@ -209,6 +221,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
       );
     } catch {
       setMessage("受け付けできませんでした。残席を確認してもう一度どうぞ。");
+      setBusy(false);
       return;
     }
     let emailed = false;
@@ -219,7 +232,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         body: JSON.stringify({
           eventTitle: event.title,
           eventSlug: event.slug,
-          name: name.trim() || user.name,
+          name: trimmedName,
           email: user.email,
           partySize: size,
           note: note.trim(),
@@ -240,6 +253,8 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         : "予約が確定しました。確認メールの設定がない場合は、この画面の表示をもって受付完了です。",
     );
     setDone(true);
+    setBusy(false);
+    setConfirming(false);
   }
 
   return (
@@ -279,7 +294,14 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         <form onSubmit={onSubmit} className="mt-10 space-y-5">
           {event.sessions.length > 1 ? (
             <Field label="日程">
-              <Select value={sessionStartsAt} onChange={(e) => setSessionStartsAt(e.target.value)} required>
+              <Select
+                value={sessionStartsAt}
+                onChange={(e) => {
+                  setSessionStartsAt(e.target.value);
+                  setConfirming(false);
+                }}
+                required
+              >
                 {event.sessions.map((session) => {
                   const cap = sessionCapacity(session, event);
                   return (
@@ -299,7 +321,15 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
             </p>
           )}
           <Field label="お名前">
-            <TextInput value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />
+            <TextInput
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setConfirming(false);
+              }}
+              required
+              autoComplete="name"
+            />
           </Field>
           <Field label="メール">
             <p className="border border-transparent py-2.5 text-sm text-sumi">{user.email}</p>
@@ -311,12 +341,21 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
               min={1}
               max={maxParty}
               value={partySize}
-              onChange={(e) => setPartySize(e.target.value)}
+              onChange={(e) => {
+                setPartySize(e.target.value);
+                setConfirming(false);
+              }}
               required
             />
           </Field>
           <Field label="連絡事項（任意）">
-            <TextArea value={note} onChange={(e) => setNote(e.target.value)} />
+            <TextArea
+              value={note}
+              onChange={(e) => {
+                setNote(e.target.value);
+                setConfirming(false);
+              }}
+            />
           </Field>
           {message ? <p className="text-sm text-sumi-soft">{message}</p> : null}
           <p className="text-xs leading-6 text-sumi-soft">
@@ -330,7 +369,26 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
             </Link>
             から申請できます。
           </p>
-          <PrimaryButton type="submit">申し込む</PrimaryButton>
+          {confirming ? (
+            <div className="space-y-4 border border-line bg-kami px-4 py-4">
+              <p className="text-sm leading-7 text-sumi-soft">確定しますか？</p>
+              <div className="flex items-center gap-5">
+                <PrimaryButton type="submit" disabled={busy}>
+                  {busy ? "申し込んでいます" : "確定する"}
+                </PrimaryButton>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="text-[13px] tracking-[0.14em] text-sumi-soft"
+                  onClick={() => setConfirming(false)}
+                >
+                  もどる
+                </button>
+              </div>
+            </div>
+          ) : (
+            <PrimaryButton type="submit">申し込む</PrimaryButton>
+          )}
         </form>
       )}
 
