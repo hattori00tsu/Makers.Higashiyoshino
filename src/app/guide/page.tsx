@@ -1,12 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SpotList } from "@/components/guide/spot-list";
+import { loadPublicSpots } from "@/lib/content/public-spots";
+
+export const revalidate = 120;
 
 export const metadata: Metadata = {
   title: "案内",
 };
 
-export default function GuidePage() {
+export default async function GuidePage() {
+  const spots = await loadPublicSpots();
   return (
     <div className="mx-auto max-w-3xl px-5 pt-24 pb-20 md:px-8 md:pt-28 md:pb-28">
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">VISIT</p>
@@ -39,7 +43,7 @@ export default function GuidePage() {
 
       <section className="mt-14">
         <h2 className="font-serif text-xl tracking-wide">周辺</h2>
-        <SpotList />
+        <SpotList items={spots} />
       </section>
     </div>
   );

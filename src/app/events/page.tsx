@@ -4,6 +4,8 @@ import { publicEventLists } from "@/lib/calendar";
 import { loadPublicEvents } from "@/lib/content/public-events";
 import { getVillageForecast } from "@/lib/weather";
 
+export const revalidate = 120;
+
 export const metadata: Metadata = {
   title: "催し",
 };

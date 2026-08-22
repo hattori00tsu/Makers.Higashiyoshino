@@ -14,6 +14,7 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+export const revalidate = 120;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {

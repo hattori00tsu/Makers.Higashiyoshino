@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ArtistsBrowser } from "@/components/artists/artists-browser";
 import { loadPublicArtists } from "@/lib/content/public-artists";
 
+export const revalidate = 120;
+
 export const metadata: Metadata = {
   title: "作家",
 };

@@ -63,21 +63,6 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">委託と外部サービス</h2>
-          <p className="mt-4">
-            法令に基づく場合を除き、本人の同意なく第三者へ提供しません。サイトの運用のため、次の事業者に処理を委託することがあります。
-          </p>
-          <ul className="mt-4 list-disc space-y-2 pl-5">
-            <li>Supabase（認証、データの保管、画像の保存）</li>
-            <li>Resend（確認メールや運営からの連絡）</li>
-            <li>Google（Google アカウントでログインする場合）</li>
-          </ul>
-          <p className="mt-4">
-            地図は OpenFreeMap（OpenStreetMap）のタイルを表示します。タイル取得時に、通信に必要な情報が地図の提供元へ送られる場合があります。屋外催しの天気は
-            Open-Meteo から、東吉野村役場付近の予報だけを取得します。個人を特定する情報は送りません。
-          </p>
-        </section>
 
         <section>
           <h2 className="font-serif text-xl tracking-wide text-sumi">Cookie</h2>
