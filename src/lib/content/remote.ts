@@ -3,6 +3,7 @@ import { normalizeEvent } from "@/data/site";
 import type { NewsItem } from "@/lib/content/catalog";
 import type { Application, ApplicationStatus } from "@/lib/content/applications";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { getAuthIdentity } from "@/lib/supabase/identity";
 
 export type EventRow = {
   id: string;
@@ -166,7 +167,7 @@ export async function upsertRemoteEvent(next: EventItem, previousSlug?: string) 
     updated_at: new Date().toISOString(),
   };
 
-  const { data: auth } = await supabase.auth.getUser();
+  const auth = await getAuthIdentity(supabase);
   let eventId = existing?.id as string | undefined;
   const payloads = [
     payload,
@@ -191,7 +192,7 @@ export async function upsertRemoteEvent(next: EventItem, previousSlug?: string) 
     for (const row of payloads) {
       const { data, error } = await supabase
         .from("events")
-        .insert({ ...row, created_by: auth.user?.id ?? null })
+        .insert({ ...row, created_by: auth?.id ?? null })
         .select("id")
         .single();
       if (!error && data) {
@@ -335,8 +336,8 @@ function mapApplication(row: Record<string, unknown>): Application {
 export async function fetchMyRemoteApplications() {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
+  const auth = await getAuthIdentity(supabase);
+  const userId = auth?.id;
   if (!userId) return [];
   const { data, error } = await supabase
     .from("event_applications")

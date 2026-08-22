@@ -1,10 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
+import { hasSupabaseAuthCookie } from "@/lib/supabase/auth-cookie";
+import { getAuthIdentity } from "@/lib/supabase/identity";
 
 export async function updateSupabaseSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   if (!isSupabaseConfigured()) return { response, userId: null as string | null };
+  if (!hasSupabaseAuthCookie(request.cookies.getAll())) {
+    return { response, userId: null as string | null };
+  }
 
   const supabase = createServerClient(supabaseUrl(), supabaseAnonKey(), {
     cookies: {
@@ -22,9 +27,7 @@ export async function updateSupabaseSession(request: NextRequest) {
   });
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getAuthIdentity(supabase);
     return { response, userId: user?.id ?? null };
   } catch {
     return { response, userId: null as string | null };

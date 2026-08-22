@@ -1,42 +1,20 @@
+import { cache } from "react";
+import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { PREVIEW_COOKIE, previewSession, type ArtistStatus, type SessionUser, type UserRole } from "@/lib/account/types";
-import { cookies } from "next/headers";
+import { hasSupabaseAuthCookie } from "@/lib/supabase/auth-cookie";
+import { getAuthIdentity } from "@/lib/supabase/identity";
+import { sessionFromParts, type SessionSnapshot } from "@/lib/account/session-user";
+import { PREVIEW_COOKIE, previewSession, type SessionUser } from "@/lib/account/types";
 
-type SessionSnapshot = {
-  role?: string | null;
-  display_name?: string | null;
-  is_admin?: boolean | null;
-  artist_status?: string | null;
-  artist_slug?: string | null;
-  artist_name?: string | null;
-};
-
-function sessionFromParts(
-  user: { id: string; email?: string | null },
-  snapshot: SessionSnapshot,
-): SessionUser {
-  const role: UserRole =
-    snapshot.is_admin === true || snapshot.role === "admin" ? "admin" : ((snapshot.role as UserRole) ?? "visitor");
-  return {
-    id: user.id,
-    email: user.email ?? "",
-    name: snapshot.artist_name || snapshot.display_name || user.email || "ユーザー",
-    role,
-    artistStatus: snapshot.artist_status ? (snapshot.artist_status as ArtistStatus) : "none",
-    artistSlug: snapshot.artist_slug ? String(snapshot.artist_slug) : undefined,
-    source: "supabase",
-  };
-}
-
-export async function getServerSession(): Promise<SessionUser | null> {
+async function readServerSession(): Promise<SessionUser | null> {
+  const jar = await cookies();
   if (isSupabaseConfigured()) {
     try {
+      if (!hasSupabaseAuthCookie(jar.getAll())) return null;
       const supabase = await createServerSupabase();
       if (!supabase) return null;
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getAuthIdentity(supabase);
       if (!user) return null;
 
       const { data: snapshot, error } = await supabase.rpc("session_snapshot");
@@ -63,7 +41,8 @@ export async function getServerSession(): Promise<SessionUser | null> {
     }
   }
 
-  const jar = await cookies();
   const preview = jar.get(PREVIEW_COOKIE)?.value;
   return preview ? previewSession(preview) : null;
 }
+
+export const getServerSession = cache(readServerSession);

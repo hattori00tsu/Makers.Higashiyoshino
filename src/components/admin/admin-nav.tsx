@@ -22,7 +22,7 @@ export function AdminNav() {
       {items.map((item) => {
         const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
         return (
-          <Link key={item.href} href={item.href} className={active ? "text-sumi" : "text-sumi-soft"}>
+          <Link key={item.href} href={item.href} prefetch={false} className={active ? "text-sumi" : "text-sumi-soft"}>
             {item.label}
           </Link>
         );

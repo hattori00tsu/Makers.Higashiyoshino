@@ -4,10 +4,7 @@ import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supaba
 let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
 export function createBrowserSupabase() {
-  if (!isSupabaseConfigured()) return null;
-  if (typeof window === "undefined") {
-    return createBrowserClient(supabaseUrl(), supabaseAnonKey());
-  }
+  if (!isSupabaseConfigured() || typeof window === "undefined") return null;
   if (!browserClient) {
     browserClient = createBrowserClient(supabaseUrl(), supabaseAnonKey());
   }

@@ -12,6 +12,10 @@ import {
 } from "react";
 import type { SessionUser } from "@/lib/account/types";
 import { ensureLocalSeed, getLocalAccount } from "@/lib/account/local";
+import { sessionFromParts, type SessionSnapshot } from "@/lib/account/session-user";
+import { createBrowserSupabase } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getAuthIdentity } from "@/lib/supabase/identity";
 
 type SessionState = {
   user: SessionUser | null;
@@ -20,6 +24,25 @@ type SessionState = {
 };
 
 const SessionContext = createContext<SessionState | null>(null);
+
+async function loadPreviewSession(): Promise<SessionUser | null> {
+  const response = await fetch("/api/me");
+  const text = await response.text();
+  if (!text) return null;
+  return (JSON.parse(text) as { session: SessionUser | null }).session ?? null;
+}
+
+async function loadSupabaseSession(): Promise<SessionUser | null> {
+  const supabase = createBrowserSupabase();
+  if (!supabase) return null;
+  const identity = await getAuthIdentity(supabase);
+  if (!identity) return null;
+  const { data: snapshot, error } = await supabase.rpc("session_snapshot");
+  if (!error && snapshot && typeof snapshot === "object") {
+    return sessionFromParts(identity, snapshot as SessionSnapshot);
+  }
+  return sessionFromParts(identity, {});
+}
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -30,11 +53,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     async function load() {
       let session: SessionUser | null = null;
       try {
-        const response = await fetch("/api/me");
-        const text = await response.text();
-        if (text) {
-          session = (JSON.parse(text) as { session: SessionUser | null }).session ?? null;
-        }
+        session = isSupabaseConfigured() ? await loadSupabaseSession() : await loadPreviewSession();
       } catch {
         session = null;
       }

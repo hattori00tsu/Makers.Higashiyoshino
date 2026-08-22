@@ -17,14 +17,14 @@ export function AuthMenu({ light = false }: Props) {
 
   if (user) {
     return (
-      <Link href="/mypage" className={`text-[12px] tracking-[0.16em] ${tone}`}>
+      <Link href="/mypage" prefetch={false} className={`text-[12px] tracking-[0.16em] ${tone}`}>
         ページ
       </Link>
     );
   }
 
   return (
-    <Link href="/login" className={`text-[12px] tracking-[0.16em] ${tone}`}>
+    <Link href="/login" prefetch={false} className={`text-[12px] tracking-[0.16em] ${tone}`}>
       ログイン
     </Link>
   );
