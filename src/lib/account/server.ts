@@ -32,7 +32,7 @@ export async function getServerSession(): Promise<SessionUser | null> {
         email: user.email ?? "",
         name: artist?.name || profile?.display_name || user.email || "ユーザー",
         role,
-        artistStatus: artist?.status === "rejected" ? "rejected" : artist ? "approved" : "none",
+        artistStatus: artist ? (artist.status as SessionUser["artistStatus"]) : "none",
         artistSlug: artist?.slug ? String(artist.slug) : undefined,
         source: "supabase",
       };

@@ -70,10 +70,7 @@ function write(store: Store) {
 
 function withNormalizedArtist(account: LocalAccount): LocalAccount {
   const artist = account.artist ? normalizeArtistDraft(account.artist) : null;
-  const artistStatus =
-    account.user.artistStatus === "pending" || artist?.status === "pending"
-      ? "approved"
-      : account.user.artistStatus;
+  const artistStatus = artist?.status ?? account.user.artistStatus;
   return {
     ...account,
     user: {
@@ -82,13 +79,11 @@ function withNormalizedArtist(account: LocalAccount): LocalAccount {
       role:
         account.user.role === "admin"
           ? "admin"
-          : artistStatus === "approved"
+          : artist
             ? "artist"
             : account.user.role,
     },
-    artist: artist
-      ? { ...artist, status: artist.status === "pending" ? "approved" : artist.status }
-      : null,
+    artist,
   };
 }
 
@@ -112,7 +107,7 @@ export function submitLocalApplication(id: string, draft: ArtistDraft) {
   if (!account) return null;
   const registered: ArtistDraft = {
     ...draft,
-    status: "approved",
+    status: "rejected",
     studioMapUrl: draft.studioMapUrl || draft.studioName,
     slug: draft.slug.trim() || `artist-${Date.now().toString(36)}`,
   };
@@ -121,7 +116,7 @@ export function submitLocalApplication(id: string, draft: ArtistDraft) {
     user: {
       ...account.user,
       role: account.user.role === "admin" ? "admin" : "artist",
-      artistStatus: "approved",
+      artistStatus: "rejected",
       name: draft.name,
     },
     artist: registered,
@@ -150,14 +145,17 @@ export function setLocalArtistStatus(id: string, status: "approved" | "rejected"
 export function saveLocalDraft(id: string, draft: ArtistDraft) {
   const account = getLocalAccount(id);
   if (!account) return null;
-  const artistStatus = draft.status === "rejected" ? "rejected" : draft.status === "approved" ? "approved" : account.user.artistStatus;
+  const artistStatus =
+    draft.status === "rejected" || draft.status === "approved" || draft.status === "pending"
+      ? draft.status
+      : account.user.artistStatus;
   const next: LocalAccount = {
     ...account,
     user: {
       ...account.user,
       name: draft.name,
       artistStatus,
-      role: account.user.role === "admin" ? "admin" : artistStatus === "approved" ? "artist" : "visitor",
+      role: account.user.role === "admin" ? "admin" : "artist",
     },
     artist: draft,
   };

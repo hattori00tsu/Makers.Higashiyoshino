@@ -23,7 +23,7 @@ export default function RegisterPage() {
       setReady(true);
       return;
     }
-    if (user.artistStatus === "approved") {
+    if (user.artistStatus !== "none") {
       router.replace("/mypage");
       return;
     }
@@ -62,7 +62,7 @@ export default function RegisterPage() {
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">APPLY</p>
       <h1 className="mt-3 font-serif text-3xl tracking-wide">作家登録</h1>
       <p className="mt-4 text-sm leading-7 text-sumi-soft">
-        登録すると、マイページでプロフィールと作品を公開できます。Google
+        登録すると、マイページでプロフィールと作品を整えられます。公開は運営が行います。Google
         またはメールのアカウントと紐づきます。取り扱いは
         <Link href="/privacy" className="mx-1 underline decoration-line underline-offset-4">
           プライバシーポリシー

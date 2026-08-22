@@ -18,7 +18,7 @@ export function pathAfterLogin(user: SessionUser | null, requested?: string) {
     return next === "/admin/login" ? "/admin" : next;
   }
   if (isRegisterPath(next)) {
-    return user.artistStatus === "approved" ? "/mypage" : "/register";
+    return user.artistStatus !== "none" ? "/mypage" : "/register";
   }
   return next;
 }
