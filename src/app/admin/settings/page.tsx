@@ -3,13 +3,20 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { useAdmin } from "@/components/admin/use-admin";
-import { Field, PrimaryButton, Select, TextInput } from "@/components/account/fields";
+import { Field, PrimaryButton, Select, TextArea, TextInput } from "@/components/account/fields";
 import {
   defaultMailSettings,
   loadMailSettings,
   saveMailSettings,
   type MailSettings,
 } from "@/lib/mail/settings";
+import {
+  defaultMailTemplates,
+  MAIL_TEMPLATE_GROUPS,
+  MAIL_TEMPLATE_META,
+  type MailCopy,
+  type MailTemplateKey,
+} from "@/lib/mail/templates";
 import {
   defaultHomeDisplay,
   homeEventLimit,
@@ -28,6 +35,65 @@ function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
   const copy = items.slice();
   [copy[index], copy[next]] = [copy[next], copy[index]];
   return copy;
+}
+
+function MailCopyEditor({
+  copy,
+  onChange,
+  onReset,
+}: {
+  copy: MailSettings["copy"];
+  onChange: (key: MailTemplateKey, patch: Partial<MailCopy>) => void;
+  onReset: (key: MailTemplateKey) => void;
+}) {
+  return (
+    <section className="space-y-10">
+      <div>
+        <h2 className="font-serif text-xl tracking-wide">メールの文面</h2>
+        <p className="mt-4 text-sm leading-7 text-sumi-soft">
+          空になった差し込みは、その行が消えます。保存すると、次の送信から使います。
+        </p>
+      </div>
+      {MAIL_TEMPLATE_GROUPS.map((group) => (
+        <div key={group.title} className="space-y-8">
+          <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">{group.title}</h3>
+          {group.keys.map((key) => {
+            const meta = MAIL_TEMPLATE_META[key];
+            const item = copy[key];
+            return (
+              <div key={key} className="space-y-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="text-sm text-sumi">{meta.label}</p>
+                  <button
+                    type="button"
+                    className="text-[13px] tracking-[0.14em] text-sumi-soft"
+                    onClick={() => onReset(key)}
+                  >
+                    初期文面に戻す
+                  </button>
+                </div>
+                <Field label="件名">
+                  <TextInput
+                    value={item.subject}
+                    onChange={(e) => onChange(key, { subject: e.target.value })}
+                  />
+                </Field>
+                <Field label="本文">
+                  <TextArea
+                    rows={9}
+                    className="min-h-40"
+                    value={item.text}
+                    onChange={(e) => onChange(key, { text: e.target.value })}
+                  />
+                </Field>
+                <p className="text-xs leading-6 text-sumi-soft">{meta.placeholders}</p>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </section>
+  );
 }
 
 function RadioRow<T extends string>({
@@ -369,9 +435,11 @@ export default function AdminSettingsPage() {
           <h2 className="font-serif text-xl tracking-wide">運営からのメール</h2>
           <p className="text-sm leading-7 text-sumi-soft">
             申込みの受付は Resend で送ります。<code className="text-sumi">RESEND_API_KEY</code> と{" "}
-            <code className="text-sumi">RESEND_FROM</code> が無いときは保存だけします。
+            <code className="text-sumi">RESEND_FROM</code> が無いときは保存だけします。文面は下で直せます。差し込みは{" "}
+            <code className="text-sumi">{"{{eventTitle}}"}</code> のように書きます。ログイン用のメールは
+            Authentication の Email Templates です。
           </p>
-          <Field label="運営の受信メール">
+          <Field label="作家申請の通知先">
             <TextInput
               type="email"
               value={draft.notifyEmail}
@@ -398,6 +466,22 @@ export default function AdminSettingsPage() {
             <span>催しの申込みがあったとき、参加作家へ通知メールを送る</span>
           </label>
         </section>
+
+        <MailCopyEditor
+          copy={draft.copy}
+          onChange={(key, patch) =>
+            setDraft((current) => ({
+              ...current,
+              copy: { ...current.copy, [key]: { ...current.copy[key], ...patch } },
+            }))
+          }
+          onReset={(key) =>
+            setDraft((current) => ({
+              ...current,
+              copy: { ...current.copy, [key]: defaultMailTemplates()[key] },
+            }))
+          }
+        />
 
         <PrimaryButton type="submit">保存する</PrimaryButton>
         {message ? <p className="text-sm text-sumi-soft">{message}</p> : null}

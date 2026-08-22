@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { sendResendMail } from "@/lib/mail/resend";
+import { artistRecipientsForEvent } from "@/lib/mail/artists";
 import { loadMailFlagsServer } from "@/lib/mail/flags-server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { sendResendMail } from "@/lib/mail/resend";
+import { renderMail, reservationMailVars } from "@/lib/mail/templates";
 
 type Body = {
   eventTitle?: string;
@@ -24,45 +25,32 @@ export async function POST(request: Request) {
   }
 
   const flags = await loadMailFlagsServer();
-  const session = body.sessionLabel ? `日程：${body.sessionLabel}` : "";
-  const party = body.partySize ? `人数：${body.partySize}名` : "";
-  const phone = body.phone?.trim() ? `電話：${body.phone.trim()}` : "";
-  const note = body.note?.trim() ? `連絡事項：${body.note.trim()}` : "";
-  const origin = new URL(request.url).origin;
+  const vars = reservationMailVars({
+    eventTitle,
+    visitorName: name,
+    visitorEmail: email,
+    phone: body.phone,
+    partySize: body.partySize,
+    note: body.note,
+    sessionLabel: body.sessionLabel,
+    origin: new URL(request.url).origin,
+  });
 
   let emailed = false;
   if (flags.mailApplications) {
-    emailed = await sendResendMail({
-      to: email,
-      subject: `【東吉野】${eventTitle}の予約が確定しました`,
-      text: `${name} さま\n\n${eventTitle}の予約が確定しました。\n${session}\n${party}\n\n当日まで、このメールを控えておいてください。\n東吉野村アーティストコミュニティ\n`,
-    });
+    emailed = await sendResendMail({ to: email, ...renderMail(flags.copy, "reservationConfirmed", vars) });
   }
 
   if (flags.mailArtistApplications) {
-    const supabase = await createServerSupabase();
-    const artists =
-      supabase && body.eventSlug
-        ? ((
-            await supabase.rpc("artist_emails_for_event", { p_slug: body.eventSlug })
-          ).data as { email?: string; name?: string }[] | null)
-        : [];
-    for (const artist of artists ?? []) {
-      if (!artist.email) continue;
+    for (const artist of await artistRecipientsForEvent(body.eventSlug)) {
       await sendResendMail({
         to: artist.email,
-        subject: `【東吉野】${eventTitle}に申込みがありました`,
-        text: `${artist.name || "作家"} さま\n\n${eventTitle}に参加の申込みがありました。\n\nお名前：${name}\nメール：${email}\n${phone}\n${session}\n${party}\n${note}\n\n予約者の一覧：\n${origin}/mypage/applications\n`,
+        ...renderMail(flags.copy, "reservationArtist", {
+          ...vars,
+          artistName: artist.name?.trim() || "作家",
+        }),
       });
     }
-  }
-
-  if (flags.notifyEmail) {
-    await sendResendMail({
-      to: flags.notifyEmail,
-      subject: `【東吉野】${eventTitle}に申込みがありました`,
-      text: `${eventTitle}に申込みがありました。\n\nお名前：${name}\nメール：${email}\n${phone}\n${session}\n${party}\n${note}\n`,
-    });
   }
 
   return NextResponse.json({ emailed });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { sendResendMail } from "@/lib/mail/resend";
 import { loadMailFlagsServer } from "@/lib/mail/flags-server";
+import { sendResendMail } from "@/lib/mail/resend";
+import { artistMailVars, renderMail } from "@/lib/mail/templates";
 
 type Body = {
   name?: string;
@@ -17,11 +18,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ emailed: false });
   }
 
-  const origin = new URL(request.url).origin;
   const emailed = await sendResendMail({
     to: flags.notifyEmail,
-    subject: `【東吉野】作家の申請が届きました（${name}）`,
-    text: `${name} さんから作家登録の申請が届きました。\n${origin}/admin\n`,
+    ...renderMail(flags.copy, "artistPending", artistMailVars(name, new URL(request.url).origin)),
   });
 
   return NextResponse.json({ emailed });

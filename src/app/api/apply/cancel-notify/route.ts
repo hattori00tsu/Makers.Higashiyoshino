@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { sendResendMail } from "@/lib/mail/resend";
-import { loadMailFlagsServer } from "@/lib/mail/flags-server";
-import { createServerSupabase } from "@/lib/supabase/server";
 import { getServerSession } from "@/lib/account/server";
+import { artistRecipientsForEvent } from "@/lib/mail/artists";
+import { loadMailFlagsServer } from "@/lib/mail/flags-server";
+import { sendResendMail } from "@/lib/mail/resend";
+import { renderMail, reservationMailVars } from "@/lib/mail/templates";
 
 type Body = {
   eventTitle?: string;
@@ -27,43 +28,30 @@ export async function POST(request: Request) {
   }
 
   const flags = await loadMailFlagsServer();
-  const session = body.sessionLabel ? `日程：${body.sessionLabel}` : "";
-  const party = body.partySize ? `人数：${body.partySize}名` : "";
-  const origin = new URL(request.url).origin;
+  const vars = reservationMailVars({
+    eventTitle,
+    visitorName: name,
+    visitorEmail: email,
+    partySize: body.partySize,
+    sessionLabel: body.sessionLabel,
+    origin: new URL(request.url).origin,
+  });
 
   let emailed = false;
   if (flags.mailApplications) {
-    emailed = await sendResendMail({
-      to: email,
-      subject: `【東吉野】${eventTitle}のキャンセルを受け付けました`,
-      text: `${name} さま\n\n${eventTitle}のキャンセルを受け付けました。\n${session}\n${party}\n\n東吉野村アーティストコミュニティ\n`,
-    });
+    emailed = await sendResendMail({ to: email, ...renderMail(flags.copy, "cancelConfirmed", vars) });
   }
 
   if (flags.mailArtistApplications) {
-    const supabase = await createServerSupabase();
-    const artists =
-      supabase && body.eventSlug
-        ? ((
-            await supabase.rpc("artist_emails_for_event", { p_slug: body.eventSlug })
-          ).data as { email?: string; name?: string }[] | null)
-        : [];
-    for (const artist of artists ?? []) {
-      if (!artist.email) continue;
+    for (const artist of await artistRecipientsForEvent(body.eventSlug)) {
       await sendResendMail({
         to: artist.email,
-        subject: `【東吉野】${eventTitle}にキャンセルがありました`,
-        text: `${artist.name || "作家"} さま\n\n${eventTitle}の予約がキャンセルされました。\n\nお名前：${name}\nメール：${email}\n${session}\n${party}\n\n予約者の一覧：\n${origin}/mypage/applications\n`,
+        ...renderMail(flags.copy, "cancelArtist", {
+          ...vars,
+          artistName: artist.name?.trim() || "作家",
+        }),
       });
     }
-  }
-
-  if (flags.notifyEmail) {
-    await sendResendMail({
-      to: flags.notifyEmail,
-      subject: `【東吉野】${eventTitle}にキャンセルがありました`,
-      text: `${eventTitle}の予約がキャンセルされました。\n\nお名前：${name}\nメール：${email}\n${session}\n${party}\n`,
-    });
   }
 
   return NextResponse.json({ emailed });
