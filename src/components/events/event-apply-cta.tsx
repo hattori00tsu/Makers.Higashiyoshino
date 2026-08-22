@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { remainingSeatsLive } from "@/lib/content/live";
+import { useLiveSeats } from "@/components/events/live-seats";
+import { liveSeatKey } from "@/lib/content/live";
 import { isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
-import { formatSessionRange } from "@/lib/dates";
 
 export const applyButtonClass =
   "inline-flex items-center justify-center border border-sumi bg-sumi px-5 py-2.5 text-[13px] tracking-[0.16em] text-kami transition-opacity hover:opacity-90";
@@ -18,17 +17,7 @@ export function ApplyButton({ href, children = "申し込む" }: { href: string;
 }
 
 export function EventApplyCta({ event }: { event: EventItem }) {
-  const [leftBySession, setLeftBySession] = useState<Record<string, number | null>>({});
-
-  useEffect(() => {
-    if (!isPublished(event) || !needsReservation(event)) return;
-    Promise.all(
-      event.sessions.map(async (session) => {
-        const cap = sessionCapacity(session, event);
-        return [session.startsAt, await remainingSeatsLive(event.slug, cap, false, session.startsAt)] as const;
-      }),
-    ).then((entries) => setLeftBySession(Object.fromEntries(entries)));
-  }, [event]);
+  const seats = useLiveSeats() ?? {};
 
   if ((event.status ?? "published") === "cancelled") {
     return (
@@ -46,7 +35,7 @@ export function EventApplyCta({ event }: { event: EventItem }) {
     dated.every((session) => {
       const cap = sessionCapacity(session, event);
       if (cap == null) return false;
-      return leftBySession[session.startsAt] === 0;
+      return seats[liveSeatKey(event.slug, session.startsAt)] === 0;
     });
 
   return (

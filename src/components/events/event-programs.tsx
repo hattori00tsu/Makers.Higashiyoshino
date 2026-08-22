@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 import { ApplyButton } from "@/components/events/event-apply-cta";
 import { CoverImage } from "@/components/media/cover-image";
-import { linkableArtistsLive, remainingSeatsLive } from "@/lib/content/live";
+import { useLiveSeats } from "@/components/events/live-seats";
+import { liveSeatKey } from "@/lib/content/live";
 import {
   eventCategoryLabel,
   eventCover,
@@ -27,6 +27,7 @@ type Props = {
   emptyMessage?: string;
   liveSeats?: boolean;
   allowApply?: boolean;
+  artistNames?: Record<string, string>;
 };
 
 export function EventPrograms({
@@ -39,36 +40,11 @@ export function EventPrograms({
   emptyMessage,
   liveSeats = true,
   allowApply = true,
+  artistNames = {},
 }: Props) {
-  const listed = useMemo(() => {
-    const extra = Object.values(nestedByParent).flat();
-    const map = new Map<string, EventItem>();
-    for (const item of [...programs, ...extra]) map.set(item.slug, item);
-    return [...map.values()];
-  }, [programs, nestedByParent]);
-  const [seats, setSeats] = useState<Record<string, number | null>>({});
-  const [names, setNames] = useState<Record<string, string>>({});
+  const seats = useLiveSeats() ?? {};
 
-  useEffect(() => {
-    if (!liveSeats) return;
-    Promise.all(
-      listed.flatMap((program) =>
-        program.sessions.map(async (session) => {
-          const cap = sessionCapacity(session, program);
-          const left = await remainingSeatsLive(program.slug, cap, false, session.startsAt);
-          return [`${program.slug}:${session.startsAt}`, left] as const;
-        }),
-      ),
-    ).then((entries) => setSeats(Object.fromEntries(entries)));
-  }, [listed, liveSeats]);
-
-  useEffect(() => {
-    linkableArtistsLive().then((artists) => {
-      setNames(Object.fromEntries(artists.map((artist) => [artist.slug, artist.name])));
-    });
-  }, []);
-
-  if (listed.length === 0) {
+  if (programs.length === 0) {
     if (!emptyMessage) return null;
     return (
       <section className="mt-12">
@@ -88,8 +64,8 @@ export function EventPrograms({
             key={program.slug}
             program={program}
             nested={nestedByParent[program.slug] ?? []}
-            seats={seats}
-            names={names}
+            seats={liveSeats ? seats : {}}
+            names={artistNames}
             catalog={catalog}
             currentSlug={currentSlug}
             allowApply={allowApply}
@@ -128,7 +104,7 @@ function ProgramRow({
     program.sessions.every((session) => {
       const cap = sessionCapacity(session, program);
       if (cap == null) return false;
-      return seats[`${program.slug}:${session.startsAt}`] === 0;
+      return seats[liveSeatKey(program.slug, session.startsAt)] === 0;
     });
   const parent = catalog.find((item) => item.slug === program.parentSlug);
   const hostLabel = parent && parent.slug !== currentSlug ? parent.title : "";
@@ -173,7 +149,7 @@ function ProgramRow({
             <div className="mt-1 space-y-1 text-sm text-sumi-soft">
               {program.sessions.map((session) => {
                 const cap = sessionCapacity(session, program);
-                const left = seats[`${program.slug}:${session.startsAt}`];
+                const left = seats[liveSeatKey(program.slug, session.startsAt)];
                 return (
                   <p key={session.startsAt}>
                     {formatSessionRange(session.startsAt, session.endsAt)}

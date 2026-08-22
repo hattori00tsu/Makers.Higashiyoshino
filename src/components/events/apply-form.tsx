@@ -7,8 +7,10 @@ import { LoginPanel } from "@/components/auth/login-panel";
 import {
   addApplicationLive,
   findEventLive,
+  liveSeatKey,
   publishedEventsLive,
   remainingSeatsLive,
+  remainingSeatsMapLive,
 } from "@/lib/content/live";
 import { eventLineage, eventPriceLabel, isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
 import { formatSessionRange } from "@/lib/dates";
@@ -30,16 +32,25 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [done, setDone] = useState(false);
-  const [left, setLeft] = useState<number | null>(null);
+  const [leftBySession, setLeftBySession] = useState<Record<string, number | null>>({});
 
   useEffect(() => {
     if (user) setName((current) => current || user.name);
   }, [user]);
 
   useEffect(() => {
+    if (initial) {
+      setEvent(initial);
+      setLineage(initialLineage);
+      if (initial.sessions[0]) {
+        setSessionStartsAt((current) => current || initial.sessions[0].startsAt);
+      }
+      return;
+    }
+
     async function load() {
-      const next = (await findEventLive(slug)) ?? initial;
-      setEvent(next);
+      const next = await findEventLive(slug);
+      setEvent(next ?? null);
       if (next) {
         const all = await publishedEventsLive();
         setLineage(eventLineage(next, all));
@@ -51,16 +62,18 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
       }
     }
     load();
-  }, [slug, initial]);
+  }, [slug, initial, initialLineage]);
 
   useEffect(() => {
-    if (!event || !sessionStartsAt) {
-      setLeft(null);
+    if (!event) {
+      setLeftBySession({});
       return;
     }
-    const session = event.sessions.find((item) => item.startsAt === sessionStartsAt) ?? event.sessions[0];
-    remainingSeatsLive(event.slug, sessionCapacity(session, event), false, sessionStartsAt).then(setLeft);
-  }, [event, sessionStartsAt]);
+    remainingSeatsMapLive([event]).then(setLeftBySession);
+  }, [event]);
+
+  const left =
+    event && sessionStartsAt ? (leftBySession[liveSeatKey(event.slug, sessionStartsAt)] ?? null) : null;
 
   const maxParty = useMemo(() => {
     if (left == null) return 8;

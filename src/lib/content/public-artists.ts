@@ -97,6 +97,34 @@ export const loadPublicArtists = unstable_cache(fetchPublicArtists, ["public-art
   tags: ["public-artists"],
 });
 
+export type PublicArtistName = { name: string; genre: string };
+
+async function fetchPublicArtistNames(): Promise<Record<string, PublicArtistName>> {
+  if (!isSupabaseConfigured()) return {};
+  try {
+    const supabase = createPublicSupabase();
+    if (!supabase) return {};
+    const { data, error } = await supabase.from("artists").select("slug, name, genre").eq("status", "approved");
+    if (error || !data) return {};
+    return Object.fromEntries(
+      data
+        .filter((row) => row.slug)
+        .map((row) => [
+          String(row.slug),
+          { name: String(row.name ?? ""), genre: String(row.genre ?? "") },
+        ]),
+    );
+  } catch (error) {
+    unstable_rethrow(error);
+    return {};
+  }
+}
+
+export const loadPublicArtistNames = unstable_cache(fetchPublicArtistNames, ["public-artist-names"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: ["public-artists"],
+});
+
 export async function loadPublicArtist(slug: string): Promise<Artist | undefined> {
   const items = await loadPublicArtists();
   return items.find((artist) => artist.slug === slug);

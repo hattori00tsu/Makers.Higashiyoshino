@@ -15,6 +15,22 @@ type Props = {
   denied?: boolean;
 };
 
+let googleProvider: Promise<boolean | null> | null = null;
+
+function googleProviderEnabled() {
+  if (!googleProvider) {
+    googleProvider = fetch(`${supabaseUrl()}/auth/v1/settings`, {
+      headers: { apikey: supabaseAnonKey(), Authorization: `Bearer ${supabaseAnonKey()}` },
+    })
+      .then(async (settings) => {
+        const payload = (await settings.json()) as { external?: { google?: boolean } };
+        return Boolean(payload.external?.google);
+      })
+      .catch(() => null);
+  }
+  return googleProvider;
+}
+
 function authMessage(message: string) {
   if (/rate limit/i.test(message) || /too many/i.test(message)) {
     return "少し待ってから、もう一度送ってください。";
@@ -67,19 +83,12 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
       setError("Supabase の環境変数が未設定です。");
       return;
     }
-    try {
-      const settings = await fetch(`${supabaseUrl()}/auth/v1/settings`, {
-        headers: { apikey: supabaseAnonKey(), Authorization: `Bearer ${supabaseAnonKey()}` },
-      });
-      const payload = (await settings.json()) as { external?: { google?: boolean } };
-      if (!payload.external?.google) {
-        setError(
-          "Supabase の Authentication → Providers → Google がまだオフです。スイッチをオンにし、Client ID と Secret を入れて保存してください。Google Cloud にキーを入れただけでは有効になりません。",
-        );
-        return;
-      }
-    } catch {
-      /* continue and let OAuth report the error */
+    const googleOn = await googleProviderEnabled();
+    if (googleOn === false) {
+      setError(
+        "Supabase の Authentication → Providers → Google がまだオフです。スイッチをオンにし、Client ID と Secret を入れて保存してください。Google Cloud にキーを入れただけでは有効になりません。",
+      );
+      return;
     }
     const origin = window.location.origin;
     const { error: authError } = await supabase.auth.signInWithOAuth({

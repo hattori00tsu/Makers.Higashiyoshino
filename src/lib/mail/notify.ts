@@ -19,3 +19,19 @@ export async function notifyOps(input: {
     /* 登録そのものは止めない */
   }
 }
+
+export async function notifyArtistDecision(input: {
+  name: string;
+  artistId: string;
+  status: "approved" | "rejected";
+}) {
+  try {
+    await fetch("/api/mail/artist-decision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  } catch {
+    /* 公開切替そのものは止めない */
+  }
+}

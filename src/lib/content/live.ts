@@ -1,4 +1,13 @@
-import { events as seedEvents, eventsManagedByArtist, isPublished, spots as seedSpots, type EventItem, type SpotItem } from "@/data/site";
+import {
+  events as seedEvents,
+  eventsManagedByArtist,
+  isPublished,
+  needsReservation,
+  sessionCapacity,
+  spots as seedSpots,
+  type EventItem,
+  type SpotItem,
+} from "@/data/site";
 import {
   addApplication,
   applicationsForUser,
@@ -27,6 +36,7 @@ import {
   deleteRemoteEvent,
   fetchLinkableRemoteArtists,
   fetchOccupiedSeats,
+  fetchOccupiedSeatsBySlugs,
   fetchMyRemoteApplications,
   fetchRemoteApplications,
   fetchRemoteEvent,
@@ -186,6 +196,26 @@ export async function loadApplicationsForArtistLive(artistSlug: string, preview?
   };
 }
 
+export function liveSeatKey(slug: string, sessionStartsAt: string) {
+  return `${slug}:${sessionStartsAt}`;
+}
+
+function sameInstant(left: string, right: string) {
+  const a = Date.parse(left);
+  const b = Date.parse(right);
+  if (Number.isFinite(a) && Number.isFinite(b)) return a === b;
+  return left === right;
+}
+
+export function eventsNeedingLiveSeats(events: EventItem[]) {
+  const map = new Map<string, EventItem>();
+  for (const event of events) {
+    if (!needsReservation(event)) continue;
+    map.set(event.slug, event);
+  }
+  return [...map.values()];
+}
+
 export async function remainingSeatsLive(
   slug: string,
   capacity: number | null,
@@ -200,6 +230,65 @@ export async function remainingSeatsLive(
     return Math.max(0, capacity - taken);
   } catch {
     return remainingSeats(slug, capacity, sessionStartsAt);
+  }
+}
+
+export async function remainingSeatsMapLive(events: EventItem[], preview?: boolean) {
+  const result: Record<string, number | null> = {};
+  const targets = eventsNeedingLiveSeats(events);
+  const keys: { event: EventItem; sessionStartsAt: string; capacity: number }[] = [];
+
+  for (const event of targets) {
+    for (const session of event.sessions) {
+      const cap = sessionCapacity(session, event);
+      if (!cap || !session.startsAt) continue;
+      keys.push({ event, sessionStartsAt: session.startsAt, capacity: cap });
+    }
+  }
+
+  if (keys.length === 0) return result;
+
+  if (useLocalContent(preview)) {
+    for (const item of keys) {
+      result[liveSeatKey(item.event.slug, item.sessionStartsAt)] = remainingSeats(
+        item.event.slug,
+        item.capacity,
+        item.sessionStartsAt,
+      );
+    }
+    return result;
+  }
+
+  try {
+    const rows = await fetchOccupiedSeatsBySlugs([...new Set(keys.map((item) => item.event.slug))]);
+    for (const item of keys) {
+      const taken =
+        rows.find(
+          (row) =>
+            row.event_slug === item.event.slug && sameInstant(row.session_starts_at, item.sessionStartsAt),
+        )?.taken ?? 0;
+      result[liveSeatKey(item.event.slug, item.sessionStartsAt)] = Math.max(0, item.capacity - taken);
+    }
+    return result;
+  } catch {
+    await Promise.all(
+      keys.map(async (item) => {
+        try {
+          const taken = await fetchOccupiedSeats(item.event.slug, item.sessionStartsAt);
+          result[liveSeatKey(item.event.slug, item.sessionStartsAt)] =
+            taken == null
+              ? remainingSeats(item.event.slug, item.capacity, item.sessionStartsAt)
+              : Math.max(0, item.capacity - taken);
+        } catch {
+          result[liveSeatKey(item.event.slug, item.sessionStartsAt)] = remainingSeats(
+            item.event.slug,
+            item.capacity,
+            item.sessionStartsAt,
+          );
+        }
+      }),
+    );
+    return result;
   }
 }
 

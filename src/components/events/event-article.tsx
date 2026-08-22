@@ -8,6 +8,7 @@ import { EventPrograms } from "@/components/events/event-programs";
 import { EventScheduleCalendar } from "@/components/events/event-schedule-calendar";
 import { EventGallery } from "@/components/events/event-gallery";
 import { EventSeriesNote } from "@/components/events/event-series-note";
+import { LiveSeatsProvider } from "@/components/events/live-seats";
 import {
   eventCategoryLabel,
   eventCover,
@@ -20,6 +21,7 @@ import {
   type EventItem,
 } from "@/data/site";
 import { eventPhase } from "@/lib/calendar";
+import type { PublicArtistName } from "@/lib/content/public-artists";
 import { formatSessionRange } from "@/lib/dates";
 import type { DailyWeather } from "@/lib/weather";
 
@@ -31,6 +33,7 @@ type Props = {
   nestedByParent?: Record<string, EventItem[]>;
   lineage?: EventItem[];
   seriesPeers?: EventItem[];
+  artistNames?: Record<string, PublicArtistName>;
 };
 
 export function EventArticle({
@@ -41,12 +44,24 @@ export function EventArticle({
   nestedByParent = {},
   lineage = [],
   seriesPeers = [],
+  artistNames = {},
 }: Props) {
   const catalog = [...lineage, event, ...venues, ...programs];
   const kind = inferEventKind(event, catalog);
   const places = eventPlaces(event, catalog);
   const cover = eventCover(event.image);
   const archived = eventPhase(event) === "archive";
+  const nested = Object.values(nestedByParent).flat();
+  const seatEvents = [event, ...venues, ...programs, ...nested];
+  const nameBySlug = Object.fromEntries(
+    Object.entries(artistNames).map(([slug, artist]) => [slug, artist.name]),
+  );
+  const people = event.artistSlugs
+    .map((slug) => {
+      const artist = artistNames[slug];
+      return artist ? { slug, name: artist.name, genre: artist.genre } : null;
+    })
+    .filter((item): item is { slug: string; name: string; genre: string } => Boolean(item));
 
   return (
     <article className="pb-20 md:pb-28">
@@ -119,52 +134,56 @@ export function EventArticle({
           ) : null}
         </dl>
 
-        {archived || (programs.length > 0 && !needsReservation(event)) ? null : (
-          <EventApplyCta event={event} />
-        )}
+        <LiveSeatsProvider events={seatEvents} enabled={!archived}>
+          {archived || (programs.length > 0 && !needsReservation(event)) ? null : (
+            <EventApplyCta event={event} />
+          )}
 
-        {archived ? null : (
-          <div className="mt-6">
-            <WeatherNote outdoor={event.isOutdoor} weather={weather} />
-          </div>
-        )}
+          {archived ? null : (
+            <div className="mt-6">
+              <WeatherNote outdoor={event.isOutdoor} weather={weather} />
+            </div>
+          )}
 
-        <p className="mt-8 text-[15px] leading-8 text-sumi-soft">{event.description}</p>
+          <p className="mt-8 text-[15px] leading-8 text-sumi-soft">{event.description}</p>
 
-        <EventPrograms
-          heading="会場"
-          description="会場ごとの案内です。各会場のページから、そこで開く催しを見られます。"
-          programs={venues}
-          nestedByParent={nestedByParent}
-          catalog={catalog}
-          liveSeats={!archived}
-          allowApply={!archived}
-        />
-        {kind === "festival" || kind === "venue" ? (
-          <EventScheduleCalendar programs={programs} catalog={catalog} currentSlug={event.slug} />
-        ) : null}
-        {kind === "festival" || kind === "venue" || programs.length > 0 ? (
           <EventPrograms
-            heading="催し"
-            description={
-              kind === "venue"
-                ? "この会場で開くワークショップや催しです。日程・定員・申込みは各催しをご確認ください。"
-                : "この総合開催で開くワークショップや催しです。日程・定員・申込みは各催しをご確認ください。"
-            }
-            programs={programs}
+            heading="会場"
+            description="会場ごとの案内です。各会場のページから、そこで開く催しを見られます。"
+            programs={venues}
+            nestedByParent={nestedByParent}
             catalog={catalog}
-            currentSlug={event.slug}
-            emptyMessage={
-              kind === "festival" || kind === "venue"
-                ? archived
-                  ? "この開催の個別の催しはありません。"
-                  : "いま掲載中の個別の催しはありません。"
-                : undefined
-            }
             liveSeats={!archived}
             allowApply={!archived}
+            artistNames={nameBySlug}
           />
-        ) : null}
+          {kind === "festival" || kind === "venue" ? (
+            <EventScheduleCalendar programs={programs} catalog={catalog} currentSlug={event.slug} />
+          ) : null}
+          {kind === "festival" || kind === "venue" || programs.length > 0 ? (
+            <EventPrograms
+              heading="催し"
+              description={
+                kind === "venue"
+                  ? "この会場で開くワークショップや催しです。日程・定員・申込みは各催しをご確認ください。"
+                  : "この総合開催で開くワークショップや催しです。日程・定員・申込みは各催しをご確認ください。"
+              }
+              programs={programs}
+              catalog={catalog}
+              currentSlug={event.slug}
+              emptyMessage={
+                kind === "festival" || kind === "venue"
+                  ? archived
+                    ? "この開催の個別の催しはありません。"
+                    : "いま掲載中の個別の催しはありません。"
+                  : undefined
+              }
+              liveSeats={!archived}
+              allowApply={!archived}
+              artistNames={nameBySlug}
+            />
+          ) : null}
+        </LiveSeatsProvider>
 
         <section className="mt-12">
           <h2 className="font-serif text-xl tracking-wide">会場とアクセス</h2>
@@ -175,7 +194,7 @@ export function EventArticle({
           <EventAccessSection archived={archived} venues={places.venues} parkings={places.parkings} />
         </section>
 
-        <EventPeople slugs={event.artistSlugs} />
+        <EventPeople people={people} />
 
         <EventGallery event={event} />
 
