@@ -22,6 +22,12 @@ function authMessage(message: string) {
   if (/signups not allowed/i.test(message)) {
     return "いまは新規のメール登録が閉じられています。";
   }
+  if (/magic link email/i.test(message) || /sending confirmation email/i.test(message)) {
+    return "ログイン用メールを送れませんでした。Supabase の Authentication → SMTP に Resend が入っているか、Resend のドメイン認証と送信元アドレスを確認してください。";
+  }
+  if (/redirect/i.test(message) && /not (allowed|whitelisted)|invalid/i.test(message)) {
+    return "このサイトのアドレスが Redirect URLs に入っていません。Authentication → URL Configuration に、いま開いているサイトの /auth/callback を追加してください。";
+  }
   return message;
 }
 

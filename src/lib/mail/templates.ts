@@ -27,6 +27,7 @@ export type ReservationMailVars = {
   phone?: string;
   partySize?: number;
   note?: string;
+  reason?: string;
   sessionLabel?: string;
   origin: string;
   eventSlug?: string;
@@ -63,7 +64,7 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
   },
   cancelArtist: {
     label: "参加作家への通知",
-    placeholders: "{{artistName}} {{eventTitle}} {{visitorName}} {{visitorEmail}} {{session}} {{party}} {{listUrl}}",
+    placeholders: "{{artistName}} {{eventTitle}} {{visitorName}} {{visitorEmail}} {{session}} {{party}} {{reason}} {{listUrl}}",
   },
   artistApproved: {
     label: "承認したとき",
@@ -100,7 +101,7 @@ export function defaultMailTemplates(): MailTemplates {
     },
     cancelArtist: {
       subject: `${prefix}{{eventTitle}}にキャンセルがありました`,
-      text: `{{artistName}} さま\n\n{{eventTitle}}の予約がキャンセルされました。\n\nお名前：{{visitorName}}\nメール：{{visitorEmail}}\n{{session}}\n{{party}}\n\n予約者の一覧：\n{{listUrl}}\n`,
+      text: `{{artistName}} さま\n\n{{eventTitle}}の予約がキャンセルされました。\n\nお名前：{{visitorName}}\nメール：{{visitorEmail}}\n{{session}}\n{{party}}\n{{reason}}\n\n予約者の一覧：\n{{listUrl}}\n`,
     },
     artistApproved: {
       subject: `${prefix}作家登録を承認しました`,
@@ -141,6 +142,9 @@ export function mergeMailTemplates(raw?: unknown): MailTemplates {
       subject: item.subject?.trim() ? item.subject : defaults[key].subject,
       text: item.text?.trim() ? item.text : defaults[key].text,
     };
+    if (key === "cancelArtist" && !next[key].text.includes("{{reason}}")) {
+      next[key] = { ...next[key], text: `${next[key].text.trimEnd()}\n{{reason}}\n` };
+    }
   }
   return next;
 }
@@ -173,6 +177,7 @@ export function reservationMailVars(input: ReservationMailVars): Record<string, 
     party: input.partySize ? `人数：${input.partySize}名` : "",
     phone: input.phone?.trim() ? `電話：${input.phone.trim()}` : "",
     note: input.note?.trim() ? `連絡事項：${input.note.trim()}` : "",
+    reason: input.reason?.trim() ? `キャンセル理由：${input.reason.trim()}` : "",
     listUrl: `${input.origin}/mypage/applications`,
     mypageUrl: `${input.origin}/mypage`,
     registerUrl: `${input.origin}/register`,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { PrimaryButton } from "@/components/account/fields";
+import { Field, PrimaryButton, TextArea } from "@/components/account/fields";
 import { cancelApplicationLive, loadEventsLive, loadMyApplicationsLive } from "@/lib/content/live";
 import type { Application } from "@/lib/content/applications";
 import { eventPathTitle, type EventItem } from "@/data/site";
@@ -31,6 +31,7 @@ export function VisitorReservations({ user }: { user: SessionUser }) {
   const [rows, setRows] = useState<Application[] | null>(null);
   const [message, setMessage] = useState("");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const localOnly = user.source === "preview";
 
@@ -75,8 +76,19 @@ export function VisitorReservations({ user }: { user: SessionUser }) {
     [rows, events],
   );
 
+  function askCancel(id: string | null) {
+    setConfirmingId(id);
+    setReason("");
+    setMessage("");
+  }
+
   async function requestCancel(row: Application) {
     if (busy) return;
+    const reasonText = reason.trim();
+    if (!reasonText) {
+      setMessage("キャンセルの理由を書いてください。");
+      return;
+    }
     setBusy(true);
     setMessage("");
     const event = events.find((item) => item.slug === row.eventSlug);
@@ -92,10 +104,12 @@ export function VisitorReservations({ user }: { user: SessionUser }) {
           email: row.email,
           partySize: row.partySize,
           sessionLabel: sessionOf(row, events),
+          reason: reasonText,
         }),
       });
       await refresh();
       setConfirmingId(null);
+      setReason("");
       setMessage("キャンセルを受け付けました。");
     } catch {
       setMessage("キャンセルできませんでした。開催が近い、またはすでに始まっている可能性があります。");
@@ -117,8 +131,10 @@ export function VisitorReservations({ user }: { user: SessionUser }) {
         rows={upcoming}
         events={events}
         confirmingId={confirmingId}
+        reason={reason}
         busy={busy}
-        onAskCancel={setConfirmingId}
+        onAskCancel={askCancel}
+        onReasonChange={setReason}
         onConfirmCancel={requestCancel}
       />
       <ReservationGroup heading="過去の参加" empty="過去の参加はまだありません。" rows={past} events={events} />
@@ -132,8 +148,10 @@ function ReservationGroup({
   rows,
   events,
   confirmingId,
+  reason,
   busy,
   onAskCancel,
+  onReasonChange,
   onConfirmCancel,
 }: {
   heading: string;
@@ -141,8 +159,10 @@ function ReservationGroup({
   rows: Application[];
   events: EventItem[];
   confirmingId?: string | null;
+  reason?: string;
   busy?: boolean;
   onAskCancel?: (id: string | null) => void;
+  onReasonChange?: (value: string) => void;
   onConfirmCancel?: (row: Application) => void;
 }) {
   return (
@@ -179,11 +199,20 @@ function ReservationGroup({
                   ) : null}
                 </div>
                 {confirming ? (
-                  <div className="mt-4 border border-line bg-kami px-4 py-4">
+                  <div className="mt-4 space-y-4 border border-line bg-kami px-4 py-4">
                     <p className="text-sm leading-7 text-sumi-soft">
-                      この予約をキャンセルします。席は空きます。よろしいですか。
+                      この予約をキャンセルします。席は空きます。理由は参加作家へ届きます。
                     </p>
-                    <div className="mt-4 flex items-center gap-5">
+                    <Field label="キャンセルの理由">
+                      <TextArea
+                        value={reason ?? ""}
+                        onChange={(e) => onReasonChange?.(e.target.value)}
+                        required
+                        rows={4}
+                        className="min-h-24"
+                      />
+                    </Field>
+                    <div className="flex items-center gap-5">
                       <PrimaryButton type="button" disabled={busy} onClick={() => onConfirmCancel?.(row)}>
                         確定
                       </PrimaryButton>
