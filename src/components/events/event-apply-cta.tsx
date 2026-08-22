@@ -21,6 +21,7 @@ export function EventApplyCta({ event }: { event: EventItem }) {
   const [leftBySession, setLeftBySession] = useState<Record<string, number | null>>({});
 
   useEffect(() => {
+    if (!isPublished(event) || !needsReservation(event)) return;
     Promise.all(
       event.sessions.map(async (session) => {
         const cap = sessionCapacity(session, event);

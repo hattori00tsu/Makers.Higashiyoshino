@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CoverImage } from "@/components/media/cover-image";
-import { EventPlacesMap } from "@/components/events/event-places-map";
+import { EventAccessSection } from "@/components/events/event-access-section";
 import { WeatherNote } from "@/components/events/weather-note";
 import { EventApplyCta } from "@/components/events/event-apply-cta";
 import { EventPeople } from "@/components/events/event-people";
@@ -19,6 +19,7 @@ import {
   sessionCapacity,
   type EventItem,
 } from "@/data/site";
+import { eventPhase } from "@/lib/calendar";
 import { formatSessionRange } from "@/lib/dates";
 import type { DailyWeather } from "@/lib/weather";
 
@@ -45,6 +46,7 @@ export function EventArticle({
   const kind = inferEventKind(event, catalog);
   const places = eventPlaces(event, catalog);
   const cover = eventCover(event.image);
+  const archived = eventPhase(event) === "archive";
 
   return (
     <article className="pb-20 md:pb-28">
@@ -117,11 +119,15 @@ export function EventArticle({
           ) : null}
         </dl>
 
-        {programs.length > 0 && !needsReservation(event) ? null : <EventApplyCta event={event} />}
+        {archived || (programs.length > 0 && !needsReservation(event)) ? null : (
+          <EventApplyCta event={event} />
+        )}
 
-        <div className="mt-6">
-          <WeatherNote outdoor={event.isOutdoor} weather={weather} />
-        </div>
+        {archived ? null : (
+          <div className="mt-6">
+            <WeatherNote outdoor={event.isOutdoor} weather={weather} />
+          </div>
+        )}
 
         <p className="mt-8 text-[15px] leading-8 text-sumi-soft">{event.description}</p>
 
@@ -131,6 +137,8 @@ export function EventArticle({
           programs={venues}
           nestedByParent={nestedByParent}
           catalog={catalog}
+          liveSeats={!archived}
+          allowApply={!archived}
         />
         {kind === "festival" || kind === "venue" ? (
           <EventScheduleCalendar programs={programs} catalog={catalog} currentSlug={event.slug} />
@@ -147,8 +155,14 @@ export function EventArticle({
             catalog={catalog}
             currentSlug={event.slug}
             emptyMessage={
-              kind === "festival" || kind === "venue" ? "いま掲載中の個別の催しはありません。" : undefined
+              kind === "festival" || kind === "venue"
+                ? archived
+                  ? "この開催の個別の催しはありません。"
+                  : "いま掲載中の個別の催しはありません。"
+                : undefined
             }
+            liveSeats={!archived}
+            allowApply={!archived}
           />
         ) : null}
 
@@ -158,8 +172,7 @@ export function EventArticle({
             <p className="mt-3 text-sm leading-7 text-sumi-soft">{places.access}</p>
           ) : null}
 
-          <EventPlacesMap venues={places.venues} parkings={places.parkings} />
-
+          <EventAccessSection archived={archived} venues={places.venues} parkings={places.parkings} />
         </section>
 
         <EventPeople slugs={event.artistSlugs} />

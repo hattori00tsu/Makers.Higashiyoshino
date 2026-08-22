@@ -1,44 +1,15 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { SectionHeading } from "@/components/section-heading";
 import { CoverImage } from "@/components/media/cover-image";
-import {
-  eventCategoryLabel,
-  eventCover,
-  isPublished,
-  type EventItem,
-} from "@/data/site";
-import { publishedEvents } from "@/lib/content/catalog";
-import { arrangeHomeEvents, loadHomeDisplay } from "@/lib/content/home-display";
-import { useLocalContent } from "@/lib/content/live";
-import { fetchRemoteEvents } from "@/lib/content/remote";
+import { eventCategoryLabel, eventCover, isPublished } from "@/data/site";
+import { arrangeHomeEvents } from "@/lib/content/home-display";
+import { loadPublicEvents } from "@/lib/content/public-events";
+import { loadPublicHomeDisplay } from "@/lib/content/public-home-display";
 import { formatMonthDaySpan } from "@/lib/dates";
 
-async function loadLiveHighlights() {
-  let all: EventItem[] = [];
-  if (useLocalContent()) {
-    all = publishedEvents();
-  } else {
-    try {
-      const remote = await fetchRemoteEvents();
-      all = (remote ?? []).filter(isPublished);
-    } catch {
-      all = [];
-    }
-  }
-
-  const display = await loadHomeDisplay(useLocalContent());
-  return arrangeHomeEvents(all, display);
-}
-
-export function EventHighlights() {
-  const [items, setItems] = useState<EventItem[] | null>(null);
-
-  useEffect(() => {
-    loadLiveHighlights().then(setItems);
-  }, []);
+export async function EventHighlights() {
+  const [all, display] = await Promise.all([loadPublicEvents(), loadPublicHomeDisplay()]);
+  const items = arrangeHomeEvents(all.filter(isPublished), display);
 
   return (
     <section className="border-y border-line bg-kami/60 py-20 md:py-28">
@@ -58,11 +29,7 @@ export function EventHighlights() {
         />
       </div>
 
-      {items === null ? (
-        <p className="mx-auto mt-10 max-w-6xl px-5 text-sm text-sumi-soft md:mt-12 md:px-8">
-          読み込み中です。
-        </p>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <p className="mx-auto mt-10 max-w-6xl px-5 text-sm leading-7 text-sumi-soft md:mt-12 md:px-8">
           いま公開中の催しはありません。
           <Link href="/events" className="ml-2 underline decoration-line underline-offset-4">
@@ -104,7 +71,7 @@ export function EventHighlights() {
         </div>
       )}
 
-      {items && items.length > 0 ? (
+      {items.length > 0 ? (
         <div className="mt-8 px-5 md:hidden">
           <Link href="/events" className="text-[13px] tracking-[0.16em] text-sugi">
             一覧を見る

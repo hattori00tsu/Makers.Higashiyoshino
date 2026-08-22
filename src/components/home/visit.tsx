@@ -5,7 +5,7 @@ export function VisitCta() {
   return (
     <section className="relative min-h-[520px] overflow-hidden md:min-h-[560px]">
       <Image
-        src="/images/4.png"
+        src="/images/4.jpg"
         alt="森の道"
         fill
         sizes="100vw"

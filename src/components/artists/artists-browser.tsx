@@ -7,7 +7,7 @@ import { shuffleItems } from "@/lib/content/home-display";
 import type { Artist } from "@/data/site";
 
 export function ArtistsBrowser({ artists }: { artists: Artist[] }) {
-  const [items, setItems] = useState<Artist[]>([]);
+  const [items, setItems] = useState(artists);
 
   useEffect(() => {
     setItems(shuffleItems(artists));
@@ -19,10 +19,6 @@ export function ArtistsBrowser({ artists }: { artists: Artist[] }) {
         いま公開中の作家はいません。
       </p>
     );
-  }
-
-  if (items.length === 0) {
-    return <p className="mt-12 max-w-xl text-sm leading-7 text-sumi-soft">読み込み中です。</p>;
   }
 
   return (

@@ -1,9 +1,11 @@
+import { unstable_cache } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { normalizeSpot, type SpotItem } from "@/data/site";
+import { PUBLIC_REVALIDATE_SECONDS } from "@/lib/content/public-cache";
 import { createPublicSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-export async function loadPublicSpots(): Promise<SpotItem[]> {
+async function fetchPublicSpots(): Promise<SpotItem[]> {
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = createPublicSupabase();
@@ -16,3 +18,8 @@ export async function loadPublicSpots(): Promise<SpotItem[]> {
     return [];
   }
 }
+
+export const loadPublicSpots = unstable_cache(fetchPublicSpots, ["public-spots"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: ["public-spots"],
+});

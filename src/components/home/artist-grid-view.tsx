@@ -14,7 +14,7 @@ export function ArtistGridView({
   artists: Artist[];
   shuffleOnLoad?: boolean;
 }) {
-  const [items, setItems] = useState(shuffleOnLoad ? [] : artists);
+  const [items, setItems] = useState(artists);
 
   useEffect(() => {
     setItems(shuffleOnLoad ? shuffleItems(artists) : artists);
@@ -45,8 +45,6 @@ export function ArtistGridView({
             一覧を見る
           </Link>
         </p>
-      ) : items.length === 0 ? (
-        <p className="mt-10 max-w-xl text-sm leading-7 text-sumi-soft md:mt-12">読み込み中です。</p>
       ) : (
         <ul className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-8 md:gap-y-14">
           {items.map((artist) => (

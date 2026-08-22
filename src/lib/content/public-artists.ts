@@ -1,6 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { village, type Artist } from "@/data/site";
 import { normalizeArtistDraft, serializeArtistLinks } from "@/lib/account/types";
+import { PUBLIC_REVALIDATE_SECONDS } from "@/lib/content/public-cache";
 import { createPublicSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -63,7 +65,7 @@ function publicArtistFromRow(row: Record<string, unknown>, works: WorkRow[]): Ar
   };
 }
 
-export async function loadPublicArtists(): Promise<Artist[]> {
+async function fetchPublicArtists(): Promise<Artist[]> {
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = createPublicSupabase();
@@ -89,6 +91,11 @@ export async function loadPublicArtists(): Promise<Artist[]> {
     return [];
   }
 }
+
+export const loadPublicArtists = unstable_cache(fetchPublicArtists, ["public-artists"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: ["public-artists"],
+});
 
 export async function loadPublicArtist(slug: string): Promise<Artist | undefined> {
   const items = await loadPublicArtists();

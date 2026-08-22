@@ -1,11 +1,13 @@
+import { unstable_cache } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { childEventsOf, eventLineage, getEvent, programsUnder, venueChildren, type EventItem } from "@/data/site";
 import { eventsInSeries } from "@/lib/calendar";
+import { PUBLIC_REVALIDATE_SECONDS } from "@/lib/content/public-cache";
 import { loadEventRows, mapEvent } from "@/lib/content/remote";
 import { createPublicSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-export async function loadPublicEvents(): Promise<EventItem[]> {
+async function fetchPublicEvents(): Promise<EventItem[]> {
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = createPublicSupabase();
@@ -17,6 +19,11 @@ export async function loadPublicEvents(): Promise<EventItem[]> {
     return [];
   }
 }
+
+export const loadPublicEvents = unstable_cache(fetchPublicEvents, ["public-events"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: ["public-events"],
+});
 
 export async function loadPublicEvent(slug: string) {
   const all = await loadPublicEvents();

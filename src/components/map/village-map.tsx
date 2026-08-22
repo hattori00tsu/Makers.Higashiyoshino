@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PlaceMap, PlaceMapLegend, type PlaceMarker } from "@/components/map/place-map";
-import { loadSpotsLive } from "@/lib/content/live";
 import {
   findMapPlace,
   mapPlaces,
@@ -22,13 +22,15 @@ type Props = {
 const filters: { id: "all" | PlaceKind; label: string }[] = [];
 
 export function VillageMap({ focus, artists = [], spots: initialSpots = [] }: Props) {
-  const [spots, setSpots] = useState<SpotItem[]>(initialSpots);
+  const searchParams = useSearchParams();
+  const spots = initialSpots;
   const [kind, setKind] = useState<"all" | PlaceKind>("all");
-  const [activeId, setActiveId] = useState(focus ?? "");
+  const urlFocus = focus ?? searchParams.get("focus") ?? "";
+  const [activeId, setActiveId] = useState(urlFocus);
 
   useEffect(() => {
-    loadSpotsLive().then(setSpots);
-  }, []);
+    setActiveId(urlFocus);
+  }, [urlFocus]);
 
   const places = useMemo(() => mapPlaces(artists, spots), [artists, spots]);
   const visible = useMemo(

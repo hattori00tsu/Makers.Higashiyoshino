@@ -82,9 +82,9 @@ export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: P
                 type="button"
                 onClick={() => selectDay(cell.key)}
                 disabled={!hasEvents}
-                className={`flex min-h-[11rem] flex-col items-stretch text-left disabled:cursor-default md:min-h-[20rem] ${
-                  isSelected && hasEvents ? "bg-kami" : ""
-                } ${hasEvents ? "hover:bg-kami/70" : ""}`}
+                className={`flex flex-col items-stretch text-left disabled:cursor-default ${
+                  hasEvents ? "min-h-[8rem] md:min-h-[12rem] hover:bg-kami/70" : "min-h-[4.5rem] md:min-h-[5.5rem]"
+                } ${isSelected && hasEvents ? "bg-kami" : ""}`}
                 aria-label={
                   hasEvents
                     ? `${cell.day}日、催し${daySlots.length}件`
@@ -133,7 +133,11 @@ export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: P
 
 function PeriodCell({ label, slots }: { label: string; slots: TimedSlot[] }) {
   return (
-    <div className="flex min-h-[4.25rem] flex-1 flex-col border-b border-line px-0.5 py-1 md:min-h-[8rem] md:px-1.5 md:py-1.5">
+    <div
+      className={`flex flex-1 flex-col border-b border-line px-0.5 py-1 md:px-1.5 md:py-1.5 ${
+        slots.length > 0 ? "min-h-[4.25rem] md:min-h-[6rem]" : "min-h-0 md:min-h-[2.5rem]"
+      }`}
+    >
       <p className="text-[8px] tracking-[0.16em] text-sumi-soft md:text-[10px]">{label}</p>
       {slots.length > 0 ? (
         <ul className="mt-0.5 min-w-0 space-y-0.5 md:mt-1 md:space-y-1">

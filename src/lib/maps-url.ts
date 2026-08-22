@@ -56,18 +56,24 @@ export async function expandMapsUrl(url: string): Promise<string> {
   const value = url.trim();
   if (!value || !isShortMapsUrl(value)) return value;
 
-  const res = await fetch(value, {
-    redirect: "follow",
-    headers: { "User-Agent": "Mozilla/5.0" },
-    next: { revalidate: 86400 },
-  });
-  let resolved = res.url && isGoogleMapsUrl(res.url) ? res.url : value;
-  if (isShortMapsUrl(resolved) || !coordsFromMapsUrl(resolved)) {
-    const html = await res.text();
-    const found = html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'<>\\\s]+/i);
-    if (found?.[0]) resolved = found[0].replace(/&amp;/g, "&");
+  try {
+    const res = await fetch(value, {
+      redirect: "follow",
+      headers: { "User-Agent": "Mozilla/5.0" },
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(4000),
+    });
+    const resolved = res.url && isGoogleMapsUrl(res.url) ? res.url : value;
+    if (coordsFromMapsUrl(resolved)) return resolved;
+    if (isShortMapsUrl(resolved) || !coordsFromMapsUrl(resolved)) {
+      const html = await res.text();
+      const found = html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'<>\\\s]+/i);
+      if (found?.[0]) return found[0].replace(/&amp;/g, "&");
+    }
+    return resolved;
+  } catch {
+    return value;
   }
-  return resolved;
 }
 
 export async function resolveMapsCoords(url: string): Promise<MapCoords | null> {

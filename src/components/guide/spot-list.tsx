@@ -1,16 +1,7 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { spots as seedSpots, type SpotItem } from "@/data/site";
-import { loadSpotsLive } from "@/lib/content/live";
+import type { SpotItem } from "@/data/site";
 
-export function SpotList() {
-  const [items, setItems] = useState<SpotItem[]>(seedSpots);
-  useEffect(() => {
-    loadSpotsLive().then(setItems);
-  }, []);
-
+export function SpotList({ items }: { items: SpotItem[] }) {
   if (items.length === 0) {
     return <p className="mt-5 text-sm leading-7 text-sumi-soft">いま案内できる周辺スポットはありません。</p>;
   }
