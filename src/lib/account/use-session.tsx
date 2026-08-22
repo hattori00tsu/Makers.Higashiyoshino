@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -21,6 +22,7 @@ type SessionState = {
   user: SessionUser | null;
   loading: boolean;
   setUser: Dispatch<SetStateAction<SessionUser | null>>;
+  signOut: () => Promise<void>;
 };
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -44,36 +46,68 @@ async function loadSupabaseSession(): Promise<SessionUser | null> {
   return sessionFromParts(identity, {});
 }
 
+function withLocalPreview(session: SessionUser | null) {
+  if (session?.source !== "preview") return session;
+  ensureLocalSeed();
+  return getLocalAccount(session.id)?.user ?? session;
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    async function load() {
-      let session: SessionUser | null = null;
+
+    async function apply(session: SessionUser | null) {
+      if (!active) return;
+      setUser(withLocalPreview(session));
+      setLoading(false);
+    }
+
+    async function refresh() {
       try {
-        session = isSupabaseConfigured() ? await loadSupabaseSession() : await loadPreviewSession();
+        const session = isSupabaseConfigured() ? await loadSupabaseSession() : await loadPreviewSession();
+        await apply(session);
       } catch {
-        session = null;
-      }
-      if (session?.source === "preview") {
-        ensureLocalSeed();
-        const local = getLocalAccount(session.id);
-        if (local) session = local.user;
-      }
-      if (active) {
-        setUser(session);
-        setLoading(false);
+        await apply(null);
       }
     }
-    load();
+
+    void refresh();
+
+    const supabase = createBrowserSupabase();
+    const { data } = supabase?.auth.onAuthStateChange((event: string) => {
+      if (event === "SIGNED_OUT") {
+        void apply(null);
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        void refresh();
+      }
+    }) ?? { data: { subscription: { unsubscribe() {} } } };
+
     return () => {
       active = false;
+      data.subscription.unsubscribe();
     };
   }, []);
 
-  const value = useMemo(() => ({ user, loading, setUser }), [user, loading]);
+  const signOut = useCallback(async () => {
+    const supabase = createBrowserSupabase();
+    if (supabase) {
+      const { error } = await supabase.auth.signOut();
+      if (error) await supabase.auth.signOut({ scope: "local" });
+    }
+    try {
+      await fetch("/api/auth/signout", { method: "POST" });
+    } catch {
+      // 画面上のログイン状態は消す
+    }
+    setUser(null);
+  }, []);
+
+  const value = useMemo(() => ({ user, loading, setUser, signOut }), [user, loading, signOut]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

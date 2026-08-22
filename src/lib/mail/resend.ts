@@ -1,4 +1,8 @@
-export async function sendResendMail(input: { to: string; subject: string; text: string }) {
+export function isResendConfigured() {
+  return Boolean(process.env.RESEND_API_KEY?.trim() && process.env.RESEND_FROM?.trim());
+}
+
+export async function sendResendMail(input: { to: string; subject: string; text: string; html?: string }) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM;
   if (!key || !from || !input.to.trim()) return false;
@@ -14,6 +18,7 @@ export async function sendResendMail(input: { to: string; subject: string; text:
       to: [input.to.trim()],
       subject: input.subject,
       text: input.text,
+      ...(input.html ? { html: input.html } : {}),
     }),
   });
   return response.ok;

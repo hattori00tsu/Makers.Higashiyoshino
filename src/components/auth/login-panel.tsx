@@ -32,11 +32,19 @@ function googleProviderEnabled() {
 }
 
 function authMessage(message: string) {
-  if (/rate limit/i.test(message) || /too many/i.test(message)) {
+  if (
+    /rate limit/i.test(message) ||
+    /too many/i.test(message) ||
+    /security purposes/i.test(message) ||
+    /only request this/i.test(message)
+  ) {
     return "少し待ってから、もう一度送ってください。";
   }
   if (/signups not allowed/i.test(message)) {
     return "いまは新規のメール登録が閉じられています。";
+  }
+  if (message === "mail") {
+    return "ログイン用メールを送れませんでした。RESEND_API_KEY と RESEND_FROM、Resend のドメイン認証を確認してください。";
   }
   if (/magic link email/i.test(message) || /sending confirmation email/i.test(message)) {
     return "ログイン用メールを送れませんでした。Supabase の Authentication → SMTP に Resend が入っているか、Resend のドメイン認証と送信元アドレスを確認してください。";
@@ -49,7 +57,7 @@ function authMessage(message: string) {
 
 export function LoginPanel({ nextPath, intent, denied = false }: Props) {
   const router = useRouter();
-  const { user, loading } = useSession();
+  const { user, loading, signOut } = useSession();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [email, setEmail] = useState("");
@@ -126,19 +134,38 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
       return;
     }
     setBusy(true);
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
-      },
-    });
-    setBusy(false);
-    if (authError) {
-      setError(authMessage(authError.message));
-      return;
+    const trimmed = email.trim();
+    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+    try {
+      const response = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed, nextPath }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { fallback?: boolean; error?: string };
+      if (response.ok && !payload.fallback) {
+        setNotice("ログイン用のリンクを送りました。メールのリンクを開くと入れます。パスワードはありません。");
+        return;
+      }
+      if (!response.ok) {
+        setError(authMessage(payload.error || "ログイン用メールを送れませんでした。"));
+        return;
+      }
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo,
+        },
+      });
+      if (authError) {
+        setError(authMessage(authError.message));
+        return;
+      }
+      setNotice("ログイン用のリンクを送りました。メールのリンクを開くと入れます。パスワードはありません。");
+    } finally {
+      setBusy(false);
     }
-    setNotice("ログイン用のリンクを送りました。メールのリンクを開くと入れます。パスワードはありません。");
   }
 
   const blocked = denied || Boolean(user && admin && user.role !== "admin");
@@ -198,7 +225,7 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
                 type="button"
                 className="underline decoration-line underline-offset-4"
                 onClick={async () => {
-                  await fetch("/api/auth/signout", { method: "POST" });
+                  await signOut();
                   window.location.assign("/admin/login");
                 }}
               >
