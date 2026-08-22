@@ -10,6 +10,8 @@ export const MAIL_TEMPLATE_KEYS = [
   "reservationArtist",
   "cancelConfirmed",
   "cancelArtist",
+  "artistApproved",
+  "artistRejected",
   "artistPending",
   "eventPending",
 ] as const;
@@ -42,7 +44,7 @@ export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] 
   },
   {
     title: "作家登録",
-    keys: ["artistPending", "eventPending"],
+    keys: ["artistApproved", "artistRejected", "artistPending", "eventPending"],
   },
 ];
 
@@ -63,6 +65,14 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
   cancelArtist: {
     label: "参加作家への通知",
     placeholders: "{{artistName}} {{eventTitle}} {{visitorName}} {{visitorEmail}} {{session}} {{party}} {{reason}} {{listUrl}}",
+  },
+  artistApproved: {
+    label: "承認したとき",
+    placeholders: "{{visitorName}} {{mypageUrl}} {{siteName}} {{siteShortName}}",
+  },
+  artistRejected: {
+    label: "見送ったとき",
+    placeholders: "{{visitorName}} {{registerUrl}} {{siteShortName}}",
   },
   artistPending: {
     label: "作家が登録したとき（運営）",
@@ -92,6 +102,14 @@ export function defaultMailTemplates(): MailTemplates {
     cancelArtist: {
       subject: `${prefix}{{eventTitle}}にキャンセルがありました`,
       text: `{{artistName}} さま\n\n{{eventTitle}}の予約がキャンセルされました。\n\nお名前：{{visitorName}}\nメール：{{visitorEmail}}\n{{session}}\n{{party}}\n{{reason}}\n\n予約者の一覧：\n{{listUrl}}\n`,
+    },
+    artistApproved: {
+      subject: `${prefix}作家登録を承認しました`,
+      text: `{{visitorName}} さま\n\n{{siteName}}の作家登録を承認しました。マイページからプロフィールと作品を整えられます。\n{{mypageUrl}}\n`,
+    },
+    artistRejected: {
+      subject: `${prefix}作家登録の申請について`,
+      text: `{{visitorName}} さま\n\n今回の申請は見送らせていただきました。内容を直して、再度お申し込みください。\n{{registerUrl}}\n`,
     },
     artistPending: {
       subject: `${prefix}作家が登録しました（{{visitorName}}）`,

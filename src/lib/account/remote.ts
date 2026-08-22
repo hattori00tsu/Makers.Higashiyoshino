@@ -51,7 +51,7 @@ export async function fetchRemoteArtist(userId: string) {
     artist: rowToDraft(data),
     artistId: data.id as string,
     works:
-      works?.map((work) => ({
+      works?.map((work: Record<string, unknown>) => ({
         id: work.id as string,
         src: work.image_path as string,
         title: (work.title as string) ?? "",
@@ -137,7 +137,7 @@ export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]>
   if (!supabase) return [];
   const { data, error } = await supabase.from("artists").select("*").order("name");
   if (error) throw error;
-  return (data ?? []).map((row) => rowToAdminArtist(row as Record<string, unknown>));
+  return (data ?? []).map((row: Record<string, unknown>) => rowToAdminArtist(row));
 }
 
 export async function fetchRemoteArtistForAdmin(slugOrId: string): Promise<AdminArtistRecord | null> {

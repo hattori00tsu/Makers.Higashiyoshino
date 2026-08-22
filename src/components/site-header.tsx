@@ -63,14 +63,13 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <AuthMenu light={light} />
         </nav>
 
-        <div className="flex items-center gap-4 md:hidden">
+        <div className="flex items-center gap-4">
           <AuthMenu light={light} />
           <button
             type="button"
-            className="relative h-10 w-10"
+            className="relative h-10 w-10 md:hidden"
             aria-label={open ? "メニューを閉じる" : "メニューを開く"}
             onClick={() => setOpen((value) => !value)}
           >

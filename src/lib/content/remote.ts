@@ -239,18 +239,18 @@ export async function deleteRemoteEvent(slug: string) {
   if (error) throw error;
 }
 
-export async function fetchRemoteNews() {
+export async function fetchRemoteNews(): Promise<NewsItem[] | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
   const { data, error } = await supabase.from("news").select("*").order("published_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row) => ({
+  return (data ?? []).map((row: Record<string, unknown>) => ({
     slug: String(row.slug),
     title: String(row.title),
     body: String(row.body),
     publishedAt: String(row.published_at),
     status: row.status === "published" ? "published" : "draft",
-  })) satisfies NewsItem[];
+  }));
 }
 
 export async function saveRemoteNews(items: NewsItem[]) {
@@ -279,12 +279,12 @@ export async function saveRemoteNews(items: NewsItem[]) {
   }
 }
 
-export async function fetchRemoteSpots() {
+export async function fetchRemoteSpots(): Promise<SpotItem[] | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
   const { data, error } = await supabase.from("spots").select("*");
   if (error) throw error;
-  return (data ?? []).map((row) => normalizeSpot(row));
+  return (data ?? []).map((row: Record<string, unknown>) => normalizeSpot(row));
 }
 
 export async function saveRemoteSpots(items: SpotItem[]) {
@@ -305,7 +305,7 @@ export async function saveRemoteSpots(items: SpotItem[]) {
   if (error) throw error;
 }
 
-export async function fetchRemoteApplications() {
+export async function fetchRemoteApplications(): Promise<Application[] | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
   const { data, error } = await supabase
@@ -313,7 +313,7 @@ export async function fetchRemoteApplications() {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(mapApplication);
+  return (data ?? []).map((row: Record<string, unknown>) => mapApplication(row));
 }
 
 function mapApplication(row: Record<string, unknown>): Application {
@@ -385,19 +385,79 @@ export async function fetchOccupiedSeats(slug: string, sessionStartsAt?: string)
   return Number(data ?? 0);
 }
 
-export async function fetchLinkableRemoteArtists() {
+export type OccupiedSeatRow = {
+  event_slug: string;
+  session_starts_at: string;
+  taken: number;
+};
+
+const occupiedBySlugsInflight = new Map<string, Promise<OccupiedSeatRow[]>>();
+
+export async function fetchOccupiedSeatsBySlugs(slugs: string[]) {
+  const unique = [...new Set(slugs.filter(Boolean))].sort();
+  if (unique.length === 0) return [] as OccupiedSeatRow[];
+  const key = unique.join("\0");
+  const pending = occupiedBySlugsInflight.get(key);
+  if (pending) return pending;
+
   const supabase = createBrowserSupabase();
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("artists")
-    .select("slug, name, genre")
-    .eq("status", "approved");
-  if (error) throw error;
-  return (data ?? [])
-    .filter((row) => row.slug)
-    .map((row) => ({
-      slug: String(row.slug),
-      name: String(row.name),
-      genre: String(row.genre ?? ""),
+
+  const promise = (async () => {
+    const { data, error } = await supabase.rpc("occupied_seats_by_sessions", {
+      p_slugs: unique,
+    });
+    if (error) throw error;
+    return ((data ?? []) as OccupiedSeatRow[]).map((row) => ({
+      event_slug: String(row.event_slug),
+      session_starts_at: String(row.session_starts_at),
+      taken: Number(row.taken ?? 0),
     }));
+  })();
+
+  occupiedBySlugsInflight.set(key, promise);
+  try {
+    return await promise;
+  } finally {
+    setTimeout(() => occupiedBySlugsInflight.delete(key), 1500);
+  }
+}
+
+type LinkableArtist = { slug: string; name: string; genre: string };
+
+let linkableArtistsCache: { at: number; data: LinkableArtist[] } | null = null;
+let linkableArtistsInflight: Promise<LinkableArtist[]> | null = null;
+
+export async function fetchLinkableRemoteArtists() {
+  const now = Date.now();
+  if (linkableArtistsCache && now - linkableArtistsCache.at < 30_000) {
+    return linkableArtistsCache.data;
+  }
+  if (linkableArtistsInflight) return linkableArtistsInflight;
+
+  const supabase = createBrowserSupabase();
+  if (!supabase) return [];
+
+  linkableArtistsInflight = (async () => {
+    const { data, error } = await supabase
+      .from("artists")
+      .select("slug, name, genre")
+      .eq("status", "approved");
+    if (error) throw error;
+    const artists = (data ?? [])
+      .filter((row: Record<string, unknown>) => row.slug)
+      .map((row: Record<string, unknown>) => ({
+        slug: String(row.slug),
+        name: String(row.name),
+        genre: String(row.genre ?? ""),
+      }));
+    linkableArtistsCache = { at: Date.now(), data: artists };
+    return artists;
+  })();
+
+  try {
+    return await linkableArtistsInflight;
+  } finally {
+    linkableArtistsInflight = null;
+  }
 }
