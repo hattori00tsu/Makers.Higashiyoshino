@@ -12,6 +12,7 @@ type Body = {
   email?: string;
   partySize?: number;
   sessionLabel?: string;
+  reason?: string;
 };
 
 export async function POST(request: Request) {
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
     visitorEmail: email,
     partySize: body.partySize,
     sessionLabel: body.sessionLabel,
+    reason: body.reason,
     origin: new URL(request.url).origin,
   });
 

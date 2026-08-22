@@ -38,7 +38,10 @@ export default function RegisterPage() {
         <p className="text-[11px] tracking-[0.28em] text-tsuchi">ARTIST</p>
         <h1 className="mt-3 font-serif text-3xl tracking-wide">つくり手として入る</h1>
         <p className="mt-4 text-sm leading-7 text-sumi-soft">
-          村に工房を構えている方の入口です。Google、またはメールに届くリンクで入ったあと、作家登録ができます。パスワードはありません。
+          Google、またはメールに届くリンクで入ったあと、作家登録ができます。パスワードはありません。
+        </p>
+        <p className="mt-4 text-sm leading-7 text-sumi-soft">
+          登録したメールは、通知メールに使用されます。イベント開催時に参加者とのやり取りにも使われます。
         </p>
         <div className="mt-10">
           <LoginPanel intent="artist" nextPath="/register" />
