@@ -1,1 +1,0 @@
-export const PUBLIC_REVALIDATE_SECONDS = 120;
