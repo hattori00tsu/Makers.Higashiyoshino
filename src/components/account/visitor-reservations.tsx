@@ -165,31 +165,27 @@ function ReservationGroup({
   onReasonChange?: (value: string) => void;
   onConfirmCancel?: (row: Application) => void;
 }) {
+  const active = rows.filter((row) => row.status !== "cancelled");
+  const cancelled = rows.filter((row) => row.status === "cancelled");
+
   return (
     <section>
       <h2 className="font-serif text-xl tracking-wide">{heading}</h2>
-      {rows.length === 0 ? (
+      {active.length === 0 && cancelled.length === 0 ? (
         <p className="mt-4 text-sm text-sumi-soft">{empty}</p>
-      ) : (
+      ) : null}
+      {active.length ? (
         <ul className="mt-5 divide-y divide-line border-y border-line">
-          {rows.map((row) => {
+          {active.map((row) => {
             const event = events.find((item) => item.slug === row.eventSlug);
-            const cancelled = row.status === "cancelled";
-            const canCancel = Boolean(onConfirmCancel) && !cancelled;
             const confirming = confirmingId === row.id;
+            const canCancel = Boolean(onConfirmCancel);
             return (
               <li key={row.id} className="py-5">
                 <p className="text-[11px] tracking-[0.14em] text-tsuchi">
                   {event ? eventPathTitle(event, events) : row.eventSlug}
                 </p>
-                <p className={`mt-1 font-serif tracking-wide ${cancelled ? "text-base text-sumi-soft" : "text-lg"}`}>
-                  {event?.title ?? row.eventSlug}
-                  {cancelled ? (
-                    <span className="ml-2 align-middle font-sans text-[10px] font-normal tracking-[0.08em] text-sumi-soft">
-                      取消
-                    </span>
-                  ) : null}
-                </p>
+                <p className="mt-1 font-serif text-lg tracking-wide">{event?.title ?? row.eventSlug}</p>
                 <p className="mt-1 text-sm text-sumi-soft">
                   {row.partySize}名 · {sessionOf(row, events)}
                 </p>
@@ -236,7 +232,28 @@ function ReservationGroup({
             );
           })}
         </ul>
-      )}
+      ) : null}
+      {cancelled.length ? (
+        <div className={active.length ? "mt-6" : "mt-4"}>
+          <p className="text-[11px] tracking-[0.14em] text-sumi-soft">キャンセル</p>
+          <ul className="mt-2 space-y-1.5">
+            {cancelled.map((row) => {
+              const event = events.find((item) => item.slug === row.eventSlug);
+              return (
+                <li key={row.id} className="flex flex-wrap items-baseline gap-x-3 text-[12px] leading-6 text-sumi-soft">
+                  <span>{event?.title ?? row.eventSlug}</span>
+                  <span>
+                    {row.partySize}名 · {sessionOf(row, events)}
+                  </span>
+                  <Link href={`/events/${row.eventSlug}`} className="underline decoration-line underline-offset-4">
+                    催し
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }
