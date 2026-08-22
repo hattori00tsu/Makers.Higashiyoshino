@@ -6,7 +6,7 @@ import { useSession } from "@/lib/account/use-session";
 
 export function useAdmin(options?: { skip?: boolean }) {
   const router = useRouter();
-  const { user, loading } = useSession();
+  const { user, loading, signOut } = useSession();
   const skip = options?.skip ?? false;
 
   useEffect(() => {
@@ -18,5 +18,5 @@ export function useAdmin(options?: { skip?: boolean }) {
     if (user.role !== "admin") router.replace("/admin/login?denied=1");
   }, [user, loading, router, skip]);
 
-  return { user, loading, ready: Boolean(user && user.role === "admin") };
+  return { user, loading, signOut, ready: Boolean(user && user.role === "admin") };
 }

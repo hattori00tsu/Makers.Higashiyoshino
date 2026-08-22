@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { PrimaryButton } from "@/components/account/fields";
@@ -9,8 +8,7 @@ import { useAdmin } from "@/components/admin/use-admin";
 import { loadApplicationsLive, loadArtistsForAdmin, loadEventsLive } from "@/lib/content/live";
 
 export default function AdminPage() {
-  const router = useRouter();
-  const { user, ready } = useAdmin();
+  const { user, ready, signOut } = useAdmin();
   const [counts, setCounts] = useState({ events: 0, artists: 0, applications: 0 });
 
   useEffect(() => {
@@ -40,10 +38,9 @@ export default function AdminPage() {
     );
   }
 
-  async function signOut() {
-    await fetch("/api/auth/signout", { method: "POST" });
-    router.push("/");
-    router.refresh();
+  async function onSignOut() {
+    await signOut();
+    window.location.assign("/");
   }
 
   return (
@@ -77,7 +74,7 @@ export default function AdminPage() {
         </Link>
       </p>
       <div className="mt-10">
-        <PrimaryButton type="button" onClick={signOut}>
+        <PrimaryButton type="button" onClick={onSignOut}>
           ログアウト
         </PrimaryButton>
       </div>

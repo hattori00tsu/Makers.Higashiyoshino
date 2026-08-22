@@ -436,10 +436,10 @@ export default function AdminSettingsPage() {
         <section className="space-y-5">
           <h2 className="font-serif text-xl tracking-wide">運営からのメール</h2>
           <p className="text-sm leading-7 text-sumi-soft">
-            申込みの受付は Resend で送ります。<code className="text-sumi">RESEND_API_KEY</code> と{" "}
-            <code className="text-sumi">RESEND_FROM</code> が無いときは保存だけします。文面は下で直せます。差し込みは{" "}
-            <code className="text-sumi">{"{{eventTitle}}"}</code> のように書きます。ログイン用のメールは
-            Authentication の Email Templates です。
+            申込みの受付とログイン用のリンクは Resend で送ります。<code className="text-sumi">RESEND_API_KEY</code> と{" "}
+            <code className="text-sumi">RESEND_FROM</code> が無いときは保存だけします。ログインメールを下の文面で送るには、サーバーに{" "}
+            <code className="text-sumi">SUPABASE_SERVICE_ROLE_KEY</code> も入れてください。無いときは Authentication の Email
+            Templates が使われます。差し込みは <code className="text-sumi">{"{{eventTitle}}"}</code> のように書きます。
           </p>
           <Field label="運営の通知先">
             <TextInput

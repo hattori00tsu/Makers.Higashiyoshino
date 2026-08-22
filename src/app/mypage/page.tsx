@@ -18,7 +18,7 @@ import type { EventItem } from "@/data/site";
 
 export default function MypagePage() {
   const router = useRouter();
-  const { user, loading } = useSession();
+  const { user, loading, signOut } = useSession();
   const [draft, setDraft] = useState<ArtistDraft | null>(null);
   const [joined, setJoined] = useState<EventItem[]>([]);
   const [catalog, setCatalog] = useState<EventItem[]>([]);
@@ -47,10 +47,9 @@ export default function MypagePage() {
     load();
   }, [user, loading, router]);
 
-  async function signOut() {
-    await fetch("/api/auth/signout", { method: "POST" });
-    router.push("/");
-    router.refresh();
+  async function onSignOut() {
+    await signOut();
+    window.location.assign("/");
   }
 
   if (!user) {
@@ -72,7 +71,7 @@ export default function MypagePage() {
         </p>
         <VisitorReservations user={user} />
         <div className="mt-14">
-          <PrimaryButton type="button" onClick={signOut}>
+          <PrimaryButton type="button" onClick={onSignOut}>
             ログアウト
           </PrimaryButton>
         </div>
@@ -136,7 +135,7 @@ export default function MypagePage() {
       )}
 
       <div className="mt-14">
-        <PrimaryButton type="button" onClick={signOut}>
+        <PrimaryButton type="button" onClick={onSignOut}>
           ログアウト
         </PrimaryButton>
       </div>

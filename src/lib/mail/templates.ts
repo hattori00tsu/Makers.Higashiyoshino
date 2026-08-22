@@ -6,6 +6,7 @@ export type MailCopy = {
 };
 
 export const MAIL_TEMPLATE_KEYS = [
+  "signInLink",
   "reservationConfirmed",
   "reservationArtist",
   "cancelConfirmed",
@@ -35,6 +36,10 @@ export type ReservationMailVars = {
 
 export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] = [
   {
+    title: "ログイン",
+    keys: ["signInLink"],
+  },
+  {
     title: "予約",
     keys: ["reservationConfirmed", "reservationArtist"],
   },
@@ -49,6 +54,10 @@ export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] 
 ];
 
 export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeholders: string }> = {
+  signInLink: {
+    label: "メールで入るとき",
+    placeholders: "{{signInUrl}} {{email}} {{siteName}} {{siteShortName}}",
+  },
   reservationConfirmed: {
     label: "来訪者への確定",
     placeholders: "{{visitorName}} {{eventTitle}} {{session}} {{party}} {{siteName}} {{siteShortName}}",
@@ -87,6 +96,10 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
 export function defaultMailTemplates(): MailTemplates {
   const prefix = `【{{siteShortName}}】`;
   return {
+    signInLink: {
+      subject: `${prefix}ログイン用のリンク`,
+      text: `ログイン用のリンクをお送りします。下のリンクを開くと、このサイトに入れます。パスワードはありません。\n\n{{signInUrl}}\n\nこのリンクは短い時間で無効になり、一度しか使えません。覚えのない場合は、このメールを無視してください。\n{{siteName}}\n`,
+    },
     reservationConfirmed: {
       subject: `${prefix}{{eventTitle}}の予約が確定しました`,
       text: `{{visitorName}} さま\n\n{{eventTitle}}の予約が確定しました。\n{{session}}\n{{party}}\n\n当日まで、このメールを控えておいてください。\n{{siteName}}\n`,
@@ -144,6 +157,9 @@ export function mergeMailTemplates(raw?: unknown): MailTemplates {
     };
     if (key === "cancelArtist" && !next[key].text.includes("{{reason}}")) {
       next[key] = { ...next[key], text: `${next[key].text.trimEnd()}\n{{reason}}\n` };
+    }
+    if (key === "signInLink" && !next[key].text.includes("{{signInUrl}}")) {
+      next[key] = { ...next[key], text: `${next[key].text.trimEnd()}\n\n{{signInUrl}}\n` };
     }
   }
   return next;
@@ -203,4 +219,13 @@ export function artistMailVars(
     origin,
     eventSlug: extra?.eventSlug,
   });
+}
+
+export function signInMailVars(input: { email: string; signInUrl: string }): Record<string, string> {
+  return {
+    email: input.email,
+    signInUrl: input.signInUrl,
+    siteName: site.name,
+    siteShortName: site.shortName,
+  };
 }
