@@ -5,13 +5,13 @@ import {
   homeDisplayCatalogId,
   parseHomeDisplay,
 } from "@/lib/content/home-display";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createPublicSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ArtistGridView } from "@/components/home/artist-grid-view";
 
 async function loadHomeDisplayServer() {
   if (!isSupabaseConfigured()) return defaultHomeDisplay();
-  const supabase = await createServerSupabase();
+  const supabase = createPublicSupabase();
   if (!supabase) return defaultHomeDisplay();
   const { data, error } = await supabase
     .from("event_catalogs")

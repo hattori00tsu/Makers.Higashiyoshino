@@ -29,6 +29,11 @@ export function weatherLabel(code: number) {
   return "雷雨";
 }
 
+function finiteNumber(value: unknown) {
+  const next = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(next) ? next : null;
+}
+
 export async function getVillageForecast(): Promise<Record<string, DailyWeather>> {
   const params = new URLSearchParams({
     latitude: String(village.lat),
@@ -50,13 +55,16 @@ export async function getVillageForecast(): Promise<Record<string, DailyWeather>
 
     const result: Record<string, DailyWeather> = {};
     daily.time.forEach((date, index) => {
-      const code = daily.weather_code[index];
+      const code = finiteNumber(daily.weather_code[index]);
+      const tempMax = finiteNumber(daily.temperature_2m_max[index]);
+      const tempMin = finiteNumber(daily.temperature_2m_min[index]);
+      if (code == null || tempMax == null || tempMin == null) return;
       result[date] = {
         date,
         code,
         label: weatherLabel(code),
-        tempMax: Math.round(daily.temperature_2m_max[index]),
-        tempMin: Math.round(daily.temperature_2m_min[index]),
+        tempMax: Math.round(tempMax),
+        tempMin: Math.round(tempMin),
       };
     });
     return result;

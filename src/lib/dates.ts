@@ -105,7 +105,9 @@ export function parseDateKey(key: string) {
 }
 
 export function formatMonthTitle(year: number, monthIndex: number) {
-  return monthTitleFmt.format(new Date(Date.UTC(year, monthIndex, 1)));
+  const date = new Date(Date.UTC(year, monthIndex, 1));
+  if (Number.isNaN(date.getTime())) return "";
+  return monthTitleFmt.format(date);
 }
 
 export function shiftMonth(year: number, monthIndex: number, delta: number) {

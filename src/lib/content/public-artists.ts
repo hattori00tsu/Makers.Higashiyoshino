@@ -1,6 +1,7 @@
+import { unstable_rethrow } from "next/navigation";
 import { village, type Artist } from "@/data/site";
 import { normalizeArtistDraft, serializeArtistLinks } from "@/lib/account/types";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createPublicSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 type WorkRow = {
@@ -52,8 +53,8 @@ function publicArtistFromRow(row: Record<string, unknown>, works: WorkRow[]): Ar
       visit: draft.studioVisit,
     },
     works: works.map((work) => ({
-      src: work.image_path,
-      title: work.title ?? "",
+      src: String(work.image_path ?? ""),
+      title: String(work.title ?? ""),
     })),
     instagram: draft.instagram || undefined,
     instagramPermalink: draft.instagramPermalink || undefined,
@@ -65,7 +66,7 @@ function publicArtistFromRow(row: Record<string, unknown>, works: WorkRow[]): Ar
 export async function loadPublicArtists(): Promise<Artist[]> {
   if (!isSupabaseConfigured()) return [];
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createPublicSupabase();
     if (!supabase) return [];
     const { data, error } = await supabase.from("artists").select("*").eq("status", "approved");
     if (error || !data) return [];
@@ -83,7 +84,8 @@ export async function loadPublicArtists(): Promise<Artist[]> {
     return data
       .filter((row) => row.slug)
       .map((row) => publicArtistFromRow(row, byArtist.get(String(row.id)) ?? []));
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return [];
   }
 }

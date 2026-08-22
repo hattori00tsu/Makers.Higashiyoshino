@@ -26,6 +26,12 @@ export function EventsBrowser({
   const [programs, setPrograms] = useState(initialPrograms);
 
   useEffect(() => {
+    setOngoing(shuffleItems(initialOngoing));
+    setUpcoming(shuffleItems(initialUpcoming));
+    setPrograms(initialPrograms);
+  }, [initialOngoing, initialUpcoming, initialPrograms]);
+
+  useEffect(() => {
     publishedEventsLive().then((all) => {
       if (all.length === 0) return;
       const lists = publicEventLists(all);

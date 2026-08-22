@@ -4,7 +4,7 @@ export type MapCoords = {
 };
 
 export function isGoogleMapsUrl(url: string) {
-  return /(google\.[^/]+\/maps|maps\.google\.|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(url);
+  return /(google\.[^/]+\/maps|maps\.google\.|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(String(url ?? ""));
 }
 
 export function isShortMapsUrl(url: string) {
@@ -21,7 +21,7 @@ function pair(lat: string | number, lng: string | number): MapCoords | null {
 
 /** Google マップ URL から緯度経度を取る。場所名だけの検索や cid は対象外。 */
 export function coordsFromMapsUrl(url: string): MapCoords | null {
-  const value = url.trim();
+  const value = String(url ?? "").trim();
   if (!value) return null;
 
   const pin = value.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
