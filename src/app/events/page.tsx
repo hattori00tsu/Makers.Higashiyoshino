@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { EventsBrowser } from "@/components/events/events-browser";
 import { publicEventLists } from "@/lib/calendar";
-import { shuffleItems } from "@/lib/content/home-display";
 import { loadPublicEvents } from "@/lib/content/public-events";
 import { getVillageForecast } from "@/lib/weather";
 
@@ -11,7 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default async function EventsPage() {
-  await connection();
   const [all, weather] = await Promise.all([loadPublicEvents(), getVillageForecast()]);
   const lists = publicEventLists(all);
 
@@ -22,8 +19,8 @@ export default async function EventsPage() {
 
       <div className="mt-10 md:mt-12">
         <EventsBrowser
-          initialOngoing={shuffleItems(lists.ongoing)}
-          initialUpcoming={shuffleItems(lists.upcoming)}
+          initialOngoing={lists.ongoing}
+          initialUpcoming={lists.upcoming}
           initialPrograms={all}
           weather={weather}
         />

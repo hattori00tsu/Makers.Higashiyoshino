@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function hasStudio(artist: Artist) {
   return Boolean(
-    artist.studio.address.trim() ||
-      artist.studio.visit.trim() ||
-      (artist.studio.query.trim() && isGoogleMapsUrl(artist.studio.query)),
+    (artist.studio?.address ?? "").trim() ||
+      (artist.studio?.visit ?? "").trim() ||
+      ((artist.studio?.query ?? "").trim() && isGoogleMapsUrl(artist.studio?.query ?? "")),
   );
 }
 
