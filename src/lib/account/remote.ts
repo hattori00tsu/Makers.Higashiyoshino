@@ -109,9 +109,11 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
     facebook: draft.facebook,
     x_url: null,
     shop: extra.length ? JSON.stringify(extra) : null,
-    status: "approved" as const,
   };
-  const { error } = await supabase.from("artists").upsert(payload, { onConflict: "profile_id" });
+  const existing = await supabase.from("artists").select("id").eq("profile_id", userId).maybeSingle();
+  const { error } = existing.data
+    ? await supabase.from("artists").update(payload).eq("profile_id", userId)
+    : await supabase.from("artists").insert({ ...payload, status: "rejected" as const });
   if (!error) return;
   throw new Error(formatRemoteError(error));
 }

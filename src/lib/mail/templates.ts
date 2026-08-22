@@ -10,9 +10,8 @@ export const MAIL_TEMPLATE_KEYS = [
   "reservationArtist",
   "cancelConfirmed",
   "cancelArtist",
-  "artistApproved",
-  "artistRejected",
   "artistPending",
+  "eventPending",
 ] as const;
 
 export type MailTemplateKey = (typeof MAIL_TEMPLATE_KEYS)[number];
@@ -26,8 +25,10 @@ export type ReservationMailVars = {
   phone?: string;
   partySize?: number;
   note?: string;
+  reason?: string;
   sessionLabel?: string;
   origin: string;
+  eventSlug?: string;
 };
 
 export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] = [
@@ -41,7 +42,7 @@ export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] 
   },
   {
     title: "作家登録",
-    keys: ["artistApproved", "artistRejected", "artistPending"],
+    keys: ["artistPending", "eventPending"],
   },
 ];
 
@@ -61,19 +62,15 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
   },
   cancelArtist: {
     label: "参加作家への通知",
-    placeholders: "{{artistName}} {{eventTitle}} {{visitorName}} {{visitorEmail}} {{session}} {{party}} {{listUrl}}",
-  },
-  artistApproved: {
-    label: "承認したとき",
-    placeholders: "{{visitorName}} {{mypageUrl}} {{siteName}} {{siteShortName}}",
-  },
-  artistRejected: {
-    label: "見送ったとき",
-    placeholders: "{{visitorName}} {{registerUrl}} {{siteShortName}}",
+    placeholders: "{{artistName}} {{eventTitle}} {{visitorName}} {{visitorEmail}} {{session}} {{party}} {{reason}} {{listUrl}}",
   },
   artistPending: {
-    label: "申請が届いたとき（運営）",
-    placeholders: "{{visitorName}} {{adminUrl}} {{siteShortName}}",
+    label: "作家が登録したとき（運営）",
+    placeholders: "{{visitorName}} {{artistsUrl}} {{siteShortName}}",
+  },
+  eventPending: {
+    label: "作家が催しを作ったとき（運営）",
+    placeholders: "{{visitorName}} {{eventTitle}} {{eventAdminUrl}} {{siteShortName}}",
   },
 };
 
@@ -94,19 +91,15 @@ export function defaultMailTemplates(): MailTemplates {
     },
     cancelArtist: {
       subject: `${prefix}{{eventTitle}}にキャンセルがありました`,
-      text: `{{artistName}} さま\n\n{{eventTitle}}の予約がキャンセルされました。\n\nお名前：{{visitorName}}\nメール：{{visitorEmail}}\n{{session}}\n{{party}}\n\n予約者の一覧：\n{{listUrl}}\n`,
-    },
-    artistApproved: {
-      subject: `${prefix}作家登録を承認しました`,
-      text: `{{visitorName}} さま\n\n{{siteName}}の作家登録を承認しました。マイページからプロフィールと作品を整えられます。\n{{mypageUrl}}\n`,
-    },
-    artistRejected: {
-      subject: `${prefix}作家登録の申請について`,
-      text: `{{visitorName}} さま\n\n今回の申請は見送らせていただきました。内容を直して、再度お申し込みください。\n{{registerUrl}}\n`,
+      text: `{{artistName}} さま\n\n{{eventTitle}}の予約がキャンセルされました。\n\nお名前：{{visitorName}}\nメール：{{visitorEmail}}\n{{session}}\n{{party}}\n{{reason}}\n\n予約者の一覧：\n{{listUrl}}\n`,
     },
     artistPending: {
-      subject: `${prefix}作家の申請が届きました（{{visitorName}}）`,
-      text: `{{visitorName}} さんから作家登録の申請が届きました。\n{{adminUrl}}\n`,
+      subject: `${prefix}作家が登録しました（{{visitorName}}）`,
+      text: `{{visitorName}} さんから作家登録がありました。いまは非公開です。公開は作家の一覧から行えます。\n{{artistsUrl}}\n`,
+    },
+    eventPending: {
+      subject: `${prefix}催しの登録がありました（{{eventTitle}}）`,
+      text: `{{visitorName}} さんが個別の催しを登録しました。公開待ちです。\n\n催し：{{eventTitle}}\n{{eventAdminUrl}}\n`,
     },
   };
 }
@@ -131,6 +124,9 @@ export function mergeMailTemplates(raw?: unknown): MailTemplates {
       subject: item.subject?.trim() ? item.subject : defaults[key].subject,
       text: item.text?.trim() ? item.text : defaults[key].text,
     };
+    if (key === "cancelArtist" && !next[key].text.includes("{{reason}}")) {
+      next[key] = { ...next[key], text: `${next[key].text.trimEnd()}\n{{reason}}\n` };
+    }
   }
   return next;
 }
@@ -163,20 +159,30 @@ export function reservationMailVars(input: ReservationMailVars): Record<string, 
     party: input.partySize ? `人数：${input.partySize}名` : "",
     phone: input.phone?.trim() ? `電話：${input.phone.trim()}` : "",
     note: input.note?.trim() ? `連絡事項：${input.note.trim()}` : "",
+    reason: input.reason?.trim() ? `キャンセル理由：${input.reason.trim()}` : "",
     listUrl: `${input.origin}/mypage/applications`,
     mypageUrl: `${input.origin}/mypage`,
     registerUrl: `${input.origin}/register`,
     adminUrl: `${input.origin}/admin`,
+    artistsUrl: `${input.origin}/admin/artists`,
+    eventAdminUrl: input.eventSlug
+      ? `${input.origin}/admin/events/${input.eventSlug}`
+      : `${input.origin}/admin/events`,
     siteName: site.name,
     siteShortName: site.shortName,
   };
 }
 
-export function artistMailVars(name: string, origin: string): Record<string, string> {
+export function artistMailVars(
+  name: string,
+  origin: string,
+  extra?: { eventTitle?: string; eventSlug?: string },
+): Record<string, string> {
   return reservationMailVars({
-    eventTitle: "",
+    eventTitle: extra?.eventTitle ?? "",
     visitorName: name,
     visitorEmail: "",
     origin,
+    eventSlug: extra?.eventSlug,
   });
 }

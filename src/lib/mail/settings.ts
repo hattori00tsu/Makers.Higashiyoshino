@@ -5,7 +5,6 @@ import { defaultMailTemplates, mergeMailTemplates, type MailTemplates } from "@/
 export type MailSettings = {
   notifyEmail: string;
   mailApplications: boolean;
-  mailArtistDecision: boolean;
   mailAdminPending: boolean;
   mailArtistApplications: boolean;
   copy: MailTemplates;
@@ -14,7 +13,6 @@ export type MailSettings = {
 export const defaultMailSettings = (): MailSettings => ({
   notifyEmail: "",
   mailApplications: true,
-  mailArtistDecision: true,
   mailAdminPending: true,
   mailArtistApplications: true,
   copy: defaultMailTemplates(),
@@ -47,7 +45,6 @@ export function mapMailSettings(row: Record<string, unknown> | null): MailSettin
   return {
     notifyEmail: String(row.notify_email ?? row.notifyEmail ?? ""),
     mailApplications: row.mail_applications !== false && row.mailApplications !== false,
-    mailArtistDecision: row.mail_artist_decision !== false && row.mailArtistDecision !== false,
     mailAdminPending: row.mail_admin_pending !== false && row.mailAdminPending !== false,
     mailArtistApplications: row.mail_artist_applications !== false && row.mailArtistApplications !== false,
     copy: mergeMailTemplates(row.mail_copy ?? row.copy),
@@ -78,7 +75,6 @@ export async function saveMailSettings(settings: MailSettings, preview?: boolean
       id: 1,
       notify_email: settings.notifyEmail.trim() || null,
       mail_applications: settings.mailApplications,
-      mail_artist_decision: settings.mailArtistDecision,
       mail_admin_pending: settings.mailAdminPending,
       mail_artist_applications: settings.mailArtistApplications,
       mail_copy: settings.copy,
