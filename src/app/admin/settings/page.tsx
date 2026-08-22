@@ -476,6 +476,15 @@ export default function AdminSettingsPage() {
             />
             <span>催しの申込みがあったとき、参加作家へ通知メールを送る</span>
           </label>
+          <label className="flex items-start gap-3 text-sm leading-7 text-sumi-soft">
+            <input
+              type="checkbox"
+              className="mt-1.5"
+              checked={draft.mailArtistDecision}
+              onChange={(e) => setDraft({ ...draft, mailArtistDecision: e.target.checked })}
+            />
+            <span>作家を公開または非公開にしたとき、本人へメールを送る</span>
+          </label>
         </section>
 
         <MailCopyEditor

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { EventArticle } from "@/components/events/event-article";
 import { eventPhase } from "@/lib/calendar";
+import { loadPublicArtistNames } from "@/lib/content/public-artists";
 import { eventViewModel, loadPublicEvent, loadPublicEvents } from "@/lib/content/public-events";
 import { tokyoDateKey } from "@/lib/dates";
 import { getVillageForecast } from "@/lib/weather";
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventDetailPage({ params }: Props) {
   const { slug } = await params;
-  const all = await loadPublicEvents();
+  const [all, artistNames] = await Promise.all([loadPublicEvents(), loadPublicArtistNames()]);
   const event = all.find((item) => item.slug === slug) ?? null;
   if (!event) notFound();
 
@@ -45,6 +46,7 @@ export default async function EventDetailPage({ params }: Props) {
       nestedByParent={nestedByParent}
       lineage={lineage}
       seriesPeers={seriesPeers}
+      artistNames={artistNames}
     />
   );
 }

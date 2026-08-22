@@ -11,6 +11,7 @@ import {
   saveArtistForAdmin,
   type AdminArtistRecord,
 } from "@/lib/content/live";
+import { notifyArtistDecision } from "@/lib/mail/notify";
 
 export default function AdminArtistEditPage() {
   const { ready, user } = useAdmin();
@@ -57,8 +58,20 @@ export default function AdminArtistEditPage() {
         showSlug
         showStatus
         onSave={async (next) => {
+          const previous = artist.draft.status;
           await saveArtistForAdmin(artist, next, localOnly);
           setArtist({ ...artist, draft: next });
+          if (
+            !localOnly &&
+            previous !== next.status &&
+            (next.status === "approved" || next.status === "rejected")
+          ) {
+            await notifyArtistDecision({
+              name: next.name,
+              artistId: artist.id,
+              status: next.status,
+            });
+          }
           const nextPath = `/admin/artists/${next.slug || artist.id}`;
           if (nextPath !== `/admin/artists/${params.slug}`) {
             router.replace(nextPath);

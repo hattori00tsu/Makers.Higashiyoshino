@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "@/lib/account/server";
 import { loadMailFlagsServer } from "@/lib/mail/flags-server";
 import { sendResendMail } from "@/lib/mail/resend";
 import { artistMailVars, renderMail } from "@/lib/mail/templates";
@@ -11,6 +12,11 @@ type Body = {
 };
 
 export async function POST(request: Request) {
+  const user = await getServerSession();
+  if (!user || user.role !== "admin") {
+    return NextResponse.json({ emailed: false }, { status: 401 });
+  }
+
   const body = (await request.json()) as Body;
   const name = body.name?.trim();
   const artistId = body.artistId?.trim();
@@ -33,9 +39,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ emailed: false });
   }
 
-  const vars = artistMailVars(name, new URL(request.url).origin);
-  const key = status === "approved" ? "artistApproved" : "artistRejected";
-  const emailed = await sendResendMail({ to: String(email), ...renderMail(flags.copy, key, vars) });
+  const emailed = await sendResendMail({
+    to: String(email),
+    ...renderMail(
+      flags.copy,
+      status === "approved" ? "artistApproved" : "artistRejected",
+      artistMailVars(name, new URL(request.url).origin),
+    ),
+  });
 
   return NextResponse.json({ emailed });
 }
