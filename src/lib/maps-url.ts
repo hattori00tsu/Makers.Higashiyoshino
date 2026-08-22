@@ -4,7 +4,7 @@ export type MapCoords = {
 };
 
 export function isGoogleMapsUrl(url: string) {
-  return /(google\.[^/]+\/maps|maps\.google\.|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(url);
+  return /(google\.[^/]+\/maps|maps\.google\.|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(String(url ?? ""));
 }
 
 export function isShortMapsUrl(url: string) {
@@ -21,7 +21,7 @@ function pair(lat: string | number, lng: string | number): MapCoords | null {
 
 /** Google マップ URL から緯度経度を取る。場所名だけの検索や cid は対象外。 */
 export function coordsFromMapsUrl(url: string): MapCoords | null {
-  const value = url.trim();
+  const value = String(url ?? "").trim();
   if (!value) return null;
 
   const pin = value.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
@@ -56,18 +56,24 @@ export async function expandMapsUrl(url: string): Promise<string> {
   const value = url.trim();
   if (!value || !isShortMapsUrl(value)) return value;
 
-  const res = await fetch(value, {
-    redirect: "follow",
-    headers: { "User-Agent": "Mozilla/5.0" },
-    next: { revalidate: 86400 },
-  });
-  let resolved = res.url && isGoogleMapsUrl(res.url) ? res.url : value;
-  if (isShortMapsUrl(resolved) || !coordsFromMapsUrl(resolved)) {
-    const html = await res.text();
-    const found = html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'<>\\\s]+/i);
-    if (found?.[0]) resolved = found[0].replace(/&amp;/g, "&");
+  try {
+    const res = await fetch(value, {
+      redirect: "follow",
+      headers: { "User-Agent": "Mozilla/5.0" },
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(4000),
+    });
+    const resolved = res.url && isGoogleMapsUrl(res.url) ? res.url : value;
+    if (coordsFromMapsUrl(resolved)) return resolved;
+    if (isShortMapsUrl(resolved) || !coordsFromMapsUrl(resolved)) {
+      const html = await res.text();
+      const found = html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'<>\\\s]+/i);
+      if (found?.[0]) return found[0].replace(/&amp;/g, "&");
+    }
+    return resolved;
+  } catch {
+    return value;
   }
-  return resolved;
 }
 
 export async function resolveMapsCoords(url: string): Promise<MapCoords | null> {

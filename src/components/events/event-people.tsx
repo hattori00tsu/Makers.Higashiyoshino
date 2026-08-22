@@ -8,17 +8,20 @@ type Person = { slug: string; name: string; genre: string };
 
 export function EventPeople({ slugs }: { slugs: string[] }) {
   const [people, setPeople] = useState<Person[]>([]);
+  const slugsKey = slugs.join(",");
 
   useEffect(() => {
+    if (!slugsKey) return;
+    const wanted = slugsKey.split(",").filter(Boolean);
     linkableArtistsLive().then((artists) => {
       const map = new Map(artists.map((artist) => [artist.slug, artist]));
       setPeople(
-        slugs
+        wanted
           .map((slug) => map.get(slug) ?? null)
           .filter((item): item is Person => Boolean(item)),
       );
     });
-  }, [slugs]);
+  }, [slugsKey]);
 
   if (people.length === 0) return null;
 

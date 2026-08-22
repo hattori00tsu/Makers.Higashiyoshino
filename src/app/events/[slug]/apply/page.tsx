@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ApplyForm } from "@/components/events/apply-form";
-import { events } from "@/data/site";
 import { eventViewModel, loadPublicEvent, loadPublicEvents } from "@/lib/content/public-events";
 
 type Props = {
@@ -9,8 +8,9 @@ type Props = {
 
 export const dynamicParams = true;
 
-export function generateStaticParams() {
-  return events.map((event) => ({ slug: event.slug }));
+export async function generateStaticParams() {
+  const items = await loadPublicEvents();
+  return items.map((event) => ({ slug: event.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

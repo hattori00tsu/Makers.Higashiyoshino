@@ -1,17 +1,21 @@
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { EventDetailClient } from "@/components/events/event-detail-client";
+import { EventArticle } from "@/components/events/event-article";
+import { eventPhase } from "@/lib/calendar";
 import { eventViewModel, loadPublicEvent, loadPublicEvents } from "@/lib/content/public-events";
-import { events } from "@/data/site";
+import { tokyoDateKey } from "@/lib/dates";
 import { getVillageForecast } from "@/lib/weather";
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
+export const revalidate = 120;
 export const dynamicParams = true;
 
-export function generateStaticParams() {
-  return events.map((event) => ({ slug: event.slug }));
+export async function generateStaticParams() {
+  const items = await loadPublicEvents();
+  return items.map((event) => ({ slug: event.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -22,20 +26,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [all, forecast] = await Promise.all([loadPublicEvents(), getVillageForecast()]);
+  const all = await loadPublicEvents();
   const event = all.find((item) => item.slug === slug) ?? null;
-  const { programs, venues, parent, lineage, nestedByParent, seriesPeers } = eventViewModel(event, all);
+  if (!event) notFound();
+
+  const archived = eventPhase(event) === "archive";
+  const { programs, venues, lineage, nestedByParent, seriesPeers } = eventViewModel(event, all);
+  const start = event.sessions[0]?.startsAt;
+  const forecast = !archived && event.isOutdoor && start ? await getVillageForecast() : {};
+  const weather = start ? forecast[tokyoDateKey(start)] : undefined;
+
   return (
-    <EventDetailClient
-      slug={slug}
-      initial={event}
-      initialPrograms={programs}
-      initialVenues={venues}
-      initialParent={parent}
-      initialLineage={lineage}
-      initialNestedByParent={nestedByParent}
-      initialSeriesPeers={seriesPeers}
-      forecast={forecast}
+    <EventArticle
+      event={event}
+      weather={weather}
+      venues={venues}
+      programs={programs}
+      nestedByParent={nestedByParent}
+      lineage={lineage}
+      seriesPeers={seriesPeers}
     />
   );
 }

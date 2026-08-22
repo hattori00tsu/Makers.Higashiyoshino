@@ -60,19 +60,20 @@ export function mapPlaces(
 }
 
 function studioMapsUrl(artist: Artist) {
-  const query = artist.studio.query.trim();
+  const query = (artist.studio?.query ?? "").trim();
   if (isGoogleMapsUrl(query)) return query;
   if (query) return googleMapsSearchUrl(query);
-  const address = artist.studio.address.trim();
+  const address = (artist.studio?.address ?? "").trim();
   if (address) return googleMapsSearchUrl(address);
   return village.mapsUrl;
 }
 
 function studioPin(artist: Artist) {
   const mapsUrl = studioMapsUrl(artist);
-  const fromUrl = coordsFromMapsUrl(mapsUrl) ?? coordsFromMapsUrl(artist.studio.query);
+  const fromUrl = coordsFromMapsUrl(mapsUrl) ?? coordsFromMapsUrl(artist.studio?.query ?? "");
   if (fromUrl) return { mapsUrl, ...fromUrl };
-  const { lat, lng } = artist.studio;
+  const lat = artist.studio?.lat;
+  const lng = artist.studio?.lng;
   if (
     Number.isFinite(lat) &&
     Number.isFinite(lng) &&

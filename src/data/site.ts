@@ -85,7 +85,7 @@ export function eventCover(src?: string | null) {
 export const maxEventGallery = 4;
 
 export function eventGallery(event: Pick<EventItem, "gallery">) {
-  return (event.gallery ?? []).map((src) => src.trim()).filter(Boolean).slice(0, maxEventGallery);
+  return (event.gallery ?? []).map((src) => String(src ?? "").trim()).filter(Boolean).slice(0, maxEventGallery);
 }
 
 export function parseImageList(value: unknown, limit = maxEventGallery): string[] {

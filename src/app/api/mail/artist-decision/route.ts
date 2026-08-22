@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { sendResendMail } from "@/lib/mail/resend";
 import { loadMailFlagsServer } from "@/lib/mail/flags-server";
+import { sendResendMail } from "@/lib/mail/resend";
+import { artistMailVars, renderMail } from "@/lib/mail/templates";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 type Body = {
@@ -32,18 +33,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ emailed: false });
   }
 
-  const origin = new URL(request.url).origin;
-  const emailed = await sendResendMail({
-    to: String(email),
-    subject:
-      status === "approved"
-        ? "【東吉野】作家登録を承認しました"
-        : "【東吉野】作家登録の申請について",
-    text:
-      status === "approved"
-        ? `${name} さま\n\n東吉野村アーティストコミュニティの作家登録を承認しました。マイページからプロフィールと作品を整えられます。\n${origin}/mypage\n`
-        : `${name} さま\n\n今回の申請は見送らせていただきました。内容を直して、再度お申し込みください。\n${origin}/register\n`,
-  });
+  const vars = artistMailVars(name, new URL(request.url).origin);
+  const key = status === "approved" ? "artistApproved" : "artistRejected";
+  const emailed = await sendResendMail({ to: String(email), ...renderMail(flags.copy, key, vars) });
 
   return NextResponse.json({ emailed });
 }

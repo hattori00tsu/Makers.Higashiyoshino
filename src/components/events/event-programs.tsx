@@ -25,6 +25,8 @@ type Props = {
   catalog?: EventItem[];
   currentSlug?: string;
   emptyMessage?: string;
+  liveSeats?: boolean;
+  allowApply?: boolean;
 };
 
 export function EventPrograms({
@@ -35,6 +37,8 @@ export function EventPrograms({
   catalog = [],
   currentSlug,
   emptyMessage,
+  liveSeats = true,
+  allowApply = true,
 }: Props) {
   const listed = useMemo(() => {
     const extra = Object.values(nestedByParent).flat();
@@ -46,6 +50,7 @@ export function EventPrograms({
   const [names, setNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (!liveSeats) return;
     Promise.all(
       listed.flatMap((program) =>
         program.sessions.map(async (session) => {
@@ -55,7 +60,7 @@ export function EventPrograms({
         }),
       ),
     ).then((entries) => setSeats(Object.fromEntries(entries)));
-  }, [listed]);
+  }, [listed, liveSeats]);
 
   useEffect(() => {
     linkableArtistsLive().then((artists) => {
@@ -87,6 +92,7 @@ export function EventPrograms({
             names={names}
             catalog={catalog}
             currentSlug={currentSlug}
+            allowApply={allowApply}
           />
         ))}
       </ul>
@@ -101,6 +107,7 @@ function ProgramRow({
   names,
   catalog,
   currentSlug,
+  allowApply,
 }: {
   program: EventItem;
   nested: EventItem[];
@@ -108,6 +115,7 @@ function ProgramRow({
   names: Record<string, string>;
   catalog: EventItem[];
   currentSlug?: string;
+  allowApply: boolean;
 }) {
   const people = program.artistSlugs
     .map((slug) => names[slug])
@@ -152,7 +160,7 @@ function ProgramRow({
             ) : null}
             {eventCategoryLabel(program.categories)}
             <span className="mx-2 text-line">/</span>
-            {apply ? (full ? "満席" : "要申込み") : "申込み不要"}
+            {apply ? (allowApply && full ? "満席" : "要申込み") : "申込み不要"}
           </p>
           <p className="mt-1 font-serif text-lg tracking-wide">{program.title}</p>
           {program.summary ? <p className="mt-2 text-sm leading-7 text-sumi-soft">{program.summary}</p> : null}
@@ -179,7 +187,7 @@ function ProgramRow({
             <Link href={`/events/${program.slug}`} className="text-[13px] tracking-[0.14em] text-sugi">
               詳しく
             </Link>
-            {apply && !full ? <ApplyButton href={`/events/${program.slug}/apply`} /> : null}
+            {allowApply && apply && !full ? <ApplyButton href={`/events/${program.slug}/apply`} /> : null}
           </div>
         </div>
       </div>

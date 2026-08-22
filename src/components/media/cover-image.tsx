@@ -16,7 +16,7 @@ export function CoverImage({ src, alt, className = "object-cover" }: Props) {
     setFailed(false);
   }, [src]);
 
-  const resolved = src.trim();
+  const resolved = typeof src === "string" ? src.trim() : "";
   if (failed || !resolved) {
     return <div className="absolute inset-0 bg-kami" aria-hidden />;
   }

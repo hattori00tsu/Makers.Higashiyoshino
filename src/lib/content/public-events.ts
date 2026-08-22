@@ -1,23 +1,29 @@
+import { unstable_cache } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { childEventsOf, eventLineage, getEvent, programsUnder, venueChildren, type EventItem } from "@/data/site";
 import { eventsInSeries } from "@/lib/calendar";
+import { PUBLIC_REVALIDATE_SECONDS } from "@/lib/content/public-cache";
 import { loadEventRows, mapEvent } from "@/lib/content/remote";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createPublicSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-export async function loadPublicEvents(): Promise<EventItem[]> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createServerSupabase();
-      if (supabase) {
-        const rows = await loadEventRows(supabase, { publishedOnly: true });
-        if (rows) return rows.map(mapEvent);
-      }
-    } catch {
-      /* fall through */
-    }
+async function fetchPublicEvents(): Promise<EventItem[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = createPublicSupabase();
+    if (!supabase) return [];
+    const rows = await loadEventRows(supabase, { publishedOnly: true });
+    return rows ? rows.map(mapEvent) : [];
+  } catch (error) {
+    unstable_rethrow(error);
+    return [];
   }
-  return [];
 }
+
+export const loadPublicEvents = unstable_cache(fetchPublicEvents, ["public-events"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: ["public-events"],
+});
 
 export async function loadPublicEvent(slug: string) {
   const all = await loadPublicEvents();

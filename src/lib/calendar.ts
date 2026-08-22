@@ -169,16 +169,22 @@ export function groupSlotsByDate(slots: TimedSlot[]) {
 }
 
 export function defaultMonth(items: EventItem[]) {
-  const now = Date.now();
+  const now = new Date();
   const stamps = items.flatMap((event) =>
     event.sessions.map((session) => new Date(session.startsAt)),
   );
   const upcoming = stamps
-    .filter((date) => date.getTime() >= now)
+    .filter((date) => Number.isFinite(date.getTime()) && date.getTime() >= now.getTime())
     .sort((a, b) => a.getTime() - b.getTime())[0];
-  const target =
-    upcoming ?? stamps.sort((a, b) => b.getTime() - a.getTime())[0] ?? new Date();
-  const [year, month] = tokyoDateKey(target).split("-").map(Number);
+  const past = stamps
+    .filter((date) => Number.isFinite(date.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  const target = upcoming ?? past ?? now;
+  const key = tokyoDateKey(target);
+  const [year, month] = key.split("-").map(Number);
+  if (!year || !Number.isFinite(month)) {
+    return { year: now.getFullYear(), month: now.getMonth() };
+  }
   return { year, month: month - 1 };
 }
 

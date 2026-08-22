@@ -14,6 +14,7 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+export const revalidate = 120;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
@@ -29,9 +30,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function hasStudio(artist: Artist) {
   return Boolean(
-    artist.studio.address.trim() ||
-      artist.studio.visit.trim() ||
-      (artist.studio.query.trim() && isGoogleMapsUrl(artist.studio.query)),
+    (artist.studio?.address ?? "").trim() ||
+      (artist.studio?.visit ?? "").trim() ||
+      ((artist.studio?.query ?? "").trim() && isGoogleMapsUrl(artist.studio?.query ?? "")),
   );
 }
 

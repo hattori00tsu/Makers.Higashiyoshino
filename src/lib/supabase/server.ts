@@ -2,6 +2,23 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
 
+function publicCookieAdapter() {
+  return {
+    getAll() {
+      return [] as { name: string; value: string }[];
+    },
+    setAll() {},
+  };
+}
+
+/** 公開データの読み取り用。cookies() を触らないので、公開ページの RSC が 500 にならない */
+export function createPublicSupabase() {
+  if (!isSupabaseConfigured()) return null;
+  return createServerClient(supabaseUrl(), supabaseAnonKey(), {
+    cookies: publicCookieAdapter(),
+  });
+}
+
 export async function createServerSupabase() {
   if (!isSupabaseConfigured()) return null;
   const cookieStore = await cookies();

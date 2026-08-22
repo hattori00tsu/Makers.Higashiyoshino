@@ -80,7 +80,7 @@ export function EventList({
                 <p className="text-[11px] tracking-[0.18em] text-tsuchi">
                   {eventCategoryLabel(event.categories)}
                   <span className="mx-2 text-line">/</span>
-                  {formatDateJa(first.startsAt)}
+                  {formatDateJa(first?.startsAt ?? "")}
                   {nestedVenues.length > 0 ? (
                     <>
                       <span className="mx-2 text-line">/</span>

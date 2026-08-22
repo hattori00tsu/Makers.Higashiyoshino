@@ -6,19 +6,23 @@ import { site } from "@/data/site";
 import "./globals.css";
 
 const mincho = Shippori_Mincho({
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   subsets: ["latin"],
   variable: "--font-mincho",
   display: "swap",
+  preload: false,
   adjustFontFallback: false,
+  fallback: ["Hiragino Mincho ProN", "Yu Mincho", "serif"],
 });
 
 const gothic = Zen_Kaku_Gothic_New({
-  weight: ["400", "500", "700"],
+  weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-gothic",
   display: "swap",
+  preload: false,
   adjustFontFallback: false,
+  fallback: ["Hiragino Sans", "Yu Gothic", "sans-serif"],
 });
 
 export const metadata: Metadata = {

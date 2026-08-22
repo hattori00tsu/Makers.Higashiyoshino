@@ -7,11 +7,15 @@ export async function GET(request: Request) {
   if (!isGoogleMapsUrl(url)) {
     return Response.json({ error: "invalid" }, { status: 400 });
   }
-  const coords = await resolveMapsCoords(url);
-  if (!coords) {
-    return Response.json({ error: "not found" }, { status: 404 });
+  try {
+    const coords = await resolveMapsCoords(url);
+    if (!coords) {
+      return Response.json({ error: "not found" }, { status: 404 });
+    }
+    return Response.json(coords, { headers: cacheHeaders });
+  } catch {
+    return Response.json({ error: "timeout" }, { status: 504 });
   }
-  return Response.json(coords, { headers: cacheHeaders });
 }
 
 export async function POST(request: Request) {
@@ -29,9 +33,13 @@ export async function POST(request: Request) {
   const unique = [...new Set(urls.map((item) => String(item).trim()).filter((item) => isGoogleMapsUrl(item)))];
   const coords: Record<string, MapCoords> = {};
   await Promise.all(
-    unique.map(async (url) => {
-      const found = await resolveMapsCoords(url);
-      if (found) coords[url] = found;
+    unique.map(async (item) => {
+      try {
+        const found = await resolveMapsCoords(item);
+        if (found) coords[item] = found;
+      } catch {
+        /* 1件の失敗で全体を止めない */
+      }
     }),
   );
   return Response.json({ coords }, { headers: cacheHeaders });

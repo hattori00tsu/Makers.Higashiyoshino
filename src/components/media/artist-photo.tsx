@@ -9,7 +9,7 @@ type Props = {
 };
 
 export function ArtistPhoto({ src, alt, className = "object-cover" }: Props) {
-  const resolved = src.trim();
+  const resolved = typeof src === "string" ? src.trim() : "";
   if (!resolved || resolved === defaultArtistImage) {
     return <div className="absolute inset-0 bg-kami" aria-hidden />;
   }

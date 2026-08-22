@@ -149,6 +149,14 @@ export default function AboutPage() {
           にまとめています。
         </p>
       </section>
+
+      <section className="mt-12 border-t border-line pt-12 md:mt-16">
+        <h2 className="font-serif text-xl tracking-wide">お問い合わせ</h2>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-sumi-soft">
+          info@makers-higashiyoshino.com
+        </p>
+      </section>
+
     </div>
   );
 }

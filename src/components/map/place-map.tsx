@@ -69,14 +69,16 @@ async function fillCoords(markers: PlaceMarker[]): Promise<PlaceMarker[]> {
   const urls = [...new Set(missing.map((marker) => marker.url as string))];
   let found: Record<string, MapCoords> = {};
   try {
+    const signal = AbortSignal.timeout(8000);
     if (urls.length === 1) {
-      const res = await fetch(`/api/maps-coords?url=${encodeURIComponent(urls[0])}`);
+      const res = await fetch(`/api/maps-coords?url=${encodeURIComponent(urls[0])}`, { signal });
       if (res.ok) found = { [urls[0]]: (await res.json()) as MapCoords };
     } else {
       const res = await fetch("/api/maps-coords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ urls }),
+        signal,
       });
       if (res.ok) {
         const data = (await res.json()) as { coords?: Record<string, MapCoords> };
