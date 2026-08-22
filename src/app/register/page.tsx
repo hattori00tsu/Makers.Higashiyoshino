@@ -8,6 +8,7 @@ import { LoginPanel } from "@/components/auth/login-panel";
 import { emptyDraft } from "@/lib/account/types";
 import { submitLocalApplication } from "@/lib/account/local";
 import { upsertRemoteArtist } from "@/lib/account/remote";
+import { notifyOps } from "@/lib/mail/notify";
 import { useSession } from "@/lib/account/use-session";
 
 export default function RegisterPage() {
@@ -74,6 +75,7 @@ export default function RegisterPage() {
               submitLocalApplication(user.id, draft);
             } else {
               await upsertRemoteArtist(user.id, draft);
+              await notifyOps({ type: "artist", name: draft.name });
             }
             router.push("/mypage");
             router.refresh();

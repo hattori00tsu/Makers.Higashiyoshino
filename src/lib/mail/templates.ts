@@ -13,6 +13,7 @@ export const MAIL_TEMPLATE_KEYS = [
   "artistApproved",
   "artistRejected",
   "artistPending",
+  "eventPending",
 ] as const;
 
 export type MailTemplateKey = (typeof MAIL_TEMPLATE_KEYS)[number];
@@ -28,6 +29,7 @@ export type ReservationMailVars = {
   note?: string;
   sessionLabel?: string;
   origin: string;
+  eventSlug?: string;
 };
 
 export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] = [
@@ -41,7 +43,7 @@ export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] 
   },
   {
     title: "作家登録",
-    keys: ["artistApproved", "artistRejected", "artistPending"],
+    keys: ["artistApproved", "artistRejected", "artistPending", "eventPending"],
   },
 ];
 
@@ -72,8 +74,12 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
     placeholders: "{{visitorName}} {{registerUrl}} {{siteShortName}}",
   },
   artistPending: {
-    label: "申請が届いたとき（運営）",
-    placeholders: "{{visitorName}} {{adminUrl}} {{siteShortName}}",
+    label: "作家が登録したとき（運営）",
+    placeholders: "{{visitorName}} {{artistsUrl}} {{siteShortName}}",
+  },
+  eventPending: {
+    label: "作家が催しを作ったとき（運営）",
+    placeholders: "{{visitorName}} {{eventTitle}} {{eventAdminUrl}} {{siteShortName}}",
   },
 };
 
@@ -105,8 +111,12 @@ export function defaultMailTemplates(): MailTemplates {
       text: `{{visitorName}} さま\n\n今回の申請は見送らせていただきました。内容を直して、再度お申し込みください。\n{{registerUrl}}\n`,
     },
     artistPending: {
-      subject: `${prefix}作家の申請が届きました（{{visitorName}}）`,
-      text: `{{visitorName}} さんから作家登録の申請が届きました。\n{{adminUrl}}\n`,
+      subject: `${prefix}作家が登録しました（{{visitorName}}）`,
+      text: `{{visitorName}} さんから作家登録がありました。\n{{artistsUrl}}\n`,
+    },
+    eventPending: {
+      subject: `${prefix}催しの登録がありました（{{eventTitle}}）`,
+      text: `{{visitorName}} さんが個別の催しを登録しました。公開待ちです。\n\n催し：{{eventTitle}}\n{{eventAdminUrl}}\n`,
     },
   };
 }
@@ -167,16 +177,25 @@ export function reservationMailVars(input: ReservationMailVars): Record<string, 
     mypageUrl: `${input.origin}/mypage`,
     registerUrl: `${input.origin}/register`,
     adminUrl: `${input.origin}/admin`,
+    artistsUrl: `${input.origin}/admin/artists`,
+    eventAdminUrl: input.eventSlug
+      ? `${input.origin}/admin/events/${input.eventSlug}`
+      : `${input.origin}/admin/events`,
     siteName: site.name,
     siteShortName: site.shortName,
   };
 }
 
-export function artistMailVars(name: string, origin: string): Record<string, string> {
+export function artistMailVars(
+  name: string,
+  origin: string,
+  extra?: { eventTitle?: string; eventSlug?: string },
+): Record<string, string> {
   return reservationMailVars({
-    eventTitle: "",
+    eventTitle: extra?.eventTitle ?? "",
     visitorName: name,
     visitorEmail: "",
     origin,
+    eventSlug: extra?.eventSlug,
   });
 }

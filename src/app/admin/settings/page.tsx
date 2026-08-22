@@ -426,8 +426,10 @@ export default function AdminSettingsPage() {
         <section>
           <h2 className="font-serif text-xl tracking-wide">メール承認</h2>
           <p className="mt-4 text-sm leading-7 text-sumi-soft">
-            メールにログイン用のリンクを送ります。パスワードはありません。Authentication の Email で Magic link をオンにし、Redirect URL に{" "}
-            <code className="text-sumi">/auth/callback</code> を入れてください。SMTP をまだ付けていないと、メールは届きません。
+            メールにログイン用のリンクを送ります。パスワードはありません。Authentication の Email で Magic link をオンにし、Redirect URL に
+            localhost、本番、Vercel のプレビュー（例: <code className="text-sumi">https://*-hattori-tsugutos-projects.vercel.app/**</code>
+            ）の <code className="text-sumi">/auth/callback</code> を入れてください。SMTP に Resend
+            を付けていないと、チーム以外のメールには届きません。
           </p>
         </section>
 
@@ -439,7 +441,7 @@ export default function AdminSettingsPage() {
             <code className="text-sumi">{"{{eventTitle}}"}</code> のように書きます。ログイン用のメールは
             Authentication の Email Templates です。
           </p>
-          <Field label="作家申請の通知先">
+          <Field label="運営の通知先">
             <TextInput
               type="email"
               value={draft.notifyEmail}
@@ -447,6 +449,15 @@ export default function AdminSettingsPage() {
               placeholder="ops@example.com"
             />
           </Field>
+          <label className="flex items-start gap-3 text-sm leading-7 text-sumi-soft">
+            <input
+              type="checkbox"
+              className="mt-1.5"
+              checked={draft.mailAdminPending}
+              onChange={(e) => setDraft({ ...draft, mailAdminPending: e.target.checked })}
+            />
+            <span>作家の登録、または作家が催しを作ったとき、運営へ通知する</span>
+          </label>
           <label className="flex items-start gap-3 text-sm leading-7 text-sumi-soft">
             <input
               type="checkbox"

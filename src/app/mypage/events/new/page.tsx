@@ -8,6 +8,7 @@ import { useSession } from "@/lib/account/use-session";
 import { getLocalAccount } from "@/lib/account/local";
 import { fetchRemoteArtist } from "@/lib/account/remote";
 import { saveEventLive } from "@/lib/content/live";
+import { notifyOps } from "@/lib/mail/notify";
 
 export default function MypageNewEventPage() {
   const router = useRouter();
@@ -65,6 +66,14 @@ export default function MypageNewEventPage() {
               undefined,
               user.source === "preview",
             );
+            if (user.source !== "preview") {
+              await notifyOps({
+                type: "event",
+                name: user.name,
+                eventTitle: event.title,
+                eventSlug: event.slug,
+              });
+            }
             router.push("/mypage/events");
           } catch (error) {
             saving.current = false;

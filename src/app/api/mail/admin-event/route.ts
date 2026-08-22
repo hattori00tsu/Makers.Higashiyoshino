@@ -6,16 +6,20 @@ import { artistMailVars, renderMail } from "@/lib/mail/templates";
 
 type Body = {
   name?: string;
+  eventTitle?: string;
+  eventSlug?: string;
 };
 
 export async function POST(request: Request) {
   const user = await getServerSession();
-  if (!user) {
+  if (!user || user.artistStatus === "none") {
     return NextResponse.json({ emailed: false }, { status: 401 });
   }
 
-  const name = ((await request.json()) as Body).name?.trim() || user.name;
-  if (!name) {
+  const body = (await request.json()) as Body;
+  const name = body.name?.trim() || user.name;
+  const eventTitle = body.eventTitle?.trim();
+  if (!name || !eventTitle) {
     return NextResponse.json({ emailed: false }, { status: 400 });
   }
 
@@ -26,7 +30,14 @@ export async function POST(request: Request) {
 
   const emailed = await sendResendMail({
     to: flags.notifyEmail,
-    ...renderMail(flags.copy, "artistPending", artistMailVars(name, new URL(request.url).origin)),
+    ...renderMail(
+      flags.copy,
+      "eventPending",
+      artistMailVars(name, new URL(request.url).origin, {
+        eventTitle,
+        eventSlug: body.eventSlug?.trim(),
+      }),
+    ),
   });
 
   return NextResponse.json({ emailed });
