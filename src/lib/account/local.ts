@@ -221,4 +221,11 @@ export function ensureLocalSeed() {
   read();
 }
 
+export function artistSlugForUser(user: SessionUser) {
+  if (user.source === "preview") {
+    return getLocalAccount(user.id)?.artist?.slug || user.artistSlug || "";
+  }
+  return user.artistSlug || "";
+}
+
 export { emptyDraft };

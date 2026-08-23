@@ -58,7 +58,13 @@ export async function loadMailSettings(preview?: boolean): Promise<MailSettings>
   if (preview || !isSupabaseConfigured()) return loadLocalMailSettings();
   const supabase = createBrowserSupabase();
   if (!supabase) return defaultMailSettings();
-  const { data, error } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select(
+      "notify_email, mail_applications, mail_artist_decision, mail_admin_pending, mail_artist_applications, mail_copy",
+    )
+    .eq("id", 1)
+    .maybeSingle();
   if (error || !data) {
     const { data: flags } = await supabase.rpc("mail_flags");
     return mapMailSettings((flags as Record<string, unknown> | null) ?? null);

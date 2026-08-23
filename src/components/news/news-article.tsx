@@ -1,17 +1,7 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { findNewsLive } from "@/lib/content/live";
 import { type NewsItem } from "@/lib/content/catalog";
 import { formatDateJa } from "@/lib/dates";
 
-export function NewsArticle({ slug, initial }: { slug: string; initial: NewsItem | null }) {
-  const [item, setItem] = useState(initial);
-
-  useEffect(() => {
-    findNewsLive(slug).then((item) => setItem(item ?? initial));
-  }, [slug, initial]);
-
+export function NewsArticle({ item }: { item: NewsItem | null }) {
   if (!item || item.status !== "published") {
     return <p className="text-sm text-sumi-soft">お知らせが見つかりません。</p>;
   }

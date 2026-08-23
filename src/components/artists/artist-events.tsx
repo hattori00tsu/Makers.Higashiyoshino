@@ -13,28 +13,26 @@ type Props = {
   initial?: EventItem[];
 };
 
-export function ArtistEvents({ slug, initial = [] }: Props) {
-  const [catalog, setCatalog] = useState<EventItem[]>(initial);
+export function ArtistEvents({ slug, initial }: Props) {
+  const fromServer = initial !== undefined;
+  const [liveCatalog, setLiveCatalog] = useState<EventItem[]>([]);
 
   useEffect(() => {
-    setCatalog(initial);
-  }, [initial]);
-
-  useEffect(() => {
-    if (initial.length > 0) return;
+    if (fromServer) return;
     let active = true;
     publishedEventsLive()
       .then((items) => {
-        if (active) setCatalog(items);
+        if (active) setLiveCatalog(items);
       })
       .catch(() => {
-        /* keep server data */
+        /* keep empty until data arrives */
       });
     return () => {
       active = false;
     };
-  }, [initial.length]);
+  }, [fromServer, slug]);
 
+  const catalog = fromServer ? (initial ?? []) : liveCatalog;
   const joined = useMemo(() => eventsForArtist(slug, catalog), [slug, catalog]);
   const { upcoming, past } = useMemo(() => partitionArtistEvents(joined), [joined]);
 

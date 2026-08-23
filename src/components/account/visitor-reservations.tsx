@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Field, PrimaryButton, TextArea } from "@/components/account/fields";
-import { cancelApplicationLive, loadEventsLive, loadMyApplicationsLive } from "@/lib/content/live";
+import { cancelApplicationLive, loadEventsBySlugsLive, loadMyApplicationsLive } from "@/lib/content/live";
 import type { Application } from "@/lib/content/applications";
 import { eventPathTitle, type EventItem } from "@/data/site";
 import { formatDateJa, formatSessionRange } from "@/lib/dates";
@@ -36,10 +36,11 @@ export function VisitorReservations({ user }: { user: SessionUser }) {
   const localOnly = user.source === "preview";
 
   async function refresh() {
-    const [nextEvents, nextRows] = await Promise.all([
-      loadEventsLive(localOnly),
-      loadMyApplicationsLive(user.id, localOnly),
-    ]);
+    const nextRows = await loadMyApplicationsLive(user.id, localOnly);
+    const nextEvents = await loadEventsBySlugsLive(
+      nextRows.map((row: Application) => row.eventSlug),
+      localOnly,
+    );
     setEvents(nextEvents);
     setRows(nextRows);
   }
@@ -47,10 +48,11 @@ export function VisitorReservations({ user }: { user: SessionUser }) {
   useEffect(() => {
     let active = true;
     async function load() {
-      const [nextEvents, nextRows] = await Promise.all([
-        loadEventsLive(localOnly),
-        loadMyApplicationsLive(user.id, localOnly),
-      ]);
+      const nextRows = await loadMyApplicationsLive(user.id, localOnly);
+      const nextEvents = await loadEventsBySlugsLive(
+        nextRows.map((row: Application) => row.eventSlug),
+        localOnly,
+      );
       if (!active) return;
       setEvents(nextEvents);
       setRows(nextRows);

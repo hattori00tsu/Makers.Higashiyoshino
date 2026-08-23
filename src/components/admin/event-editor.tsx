@@ -47,6 +47,8 @@ const statusLabel: Record<PublishStatus, string> = {
 
 type Props = {
   initial?: EventItem;
+  catalog?: EventItem[];
+  people?: { slug: string; name: string; genre: string }[];
   submitLabel: string;
   localOnly?: boolean;
   mode?: "admin" | "artist";
@@ -82,7 +84,16 @@ export function emptyEvent(kind: EventKind = "program"): EventItem {
   };
 }
 
-export function EventEditor({ initial, submitLabel, localOnly, mode = "admin", ownerArtistSlug, onSave }: Props) {
+export function EventEditor({
+  initial,
+  catalog: catalogProp,
+  people: peopleProp,
+  submitLabel,
+  localOnly,
+  mode = "admin",
+  ownerArtistSlug,
+  onSave,
+}: Props) {
   const source = initial ?? emptyEvent();
   const artistMode = mode === "artist";
   const [title, setTitle] = useState(source.title);
@@ -116,15 +127,19 @@ export function EventEditor({ initial, submitLabel, localOnly, mode = "admin", o
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const slugLock = useRef(source.slug);
-  const [people, setPeople] = useState<{ slug: string; name: string; genre: string }[]>([]);
-  const [catalog, setCatalog] = useState<EventItem[]>([]);
+  const [peopleFetched, setPeopleFetched] = useState<{ slug: string; name: string; genre: string }[]>([]);
+  const [catalogFetched, setCatalogFetched] = useState<EventItem[]>([]);
   const [options, setOptions] = useState(defaultEventOptions());
+  const people = peopleProp ?? peopleFetched;
+  const catalog = catalogProp ?? catalogFetched;
+  const hasCatalogProp = catalogProp !== undefined;
+  const hasPeopleProp = peopleProp !== undefined;
 
   useEffect(() => {
-    linkableArtistsLive(localOnly).then(setPeople);
-    loadEventsLive(localOnly).then(setCatalog);
+    if (!hasPeopleProp) linkableArtistsLive(localOnly).then(setPeopleFetched);
+    if (!hasCatalogProp) loadEventsLive(localOnly).then(setCatalogFetched);
     loadEventOptions(localOnly).then(setOptions);
-  }, [localOnly]);
+  }, [localOnly, hasCatalogProp, hasPeopleProp]);
 
   const parentOptions = useMemo(() => {
     const current: EventItem = {

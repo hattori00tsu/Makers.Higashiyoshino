@@ -1,4 +1,5 @@
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { forget, remember } from "@/lib/content/client-cache";
 import {
   emptyDraft,
   formatArtistGenres,
@@ -38,14 +39,23 @@ function rowToDraft(row: Record<string, unknown>): ArtistDraft {
   });
 }
 
+export const artistListColumns = "id, profile_id, slug, name, genre, area, status";
+export const artistDetailColumns =
+  "id, profile_id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
+export const artistWorkColumns = "id, artist_id, image_path, title, sort_order";
+
 export async function fetchRemoteArtist(userId: string) {
+  return remember(`artist:${userId}`, 30_000, () => loadRemoteArtist(userId));
+}
+
+async function loadRemoteArtist(userId: string) {
   const supabase = createBrowserSupabase();
   if (!supabase) return { artist: null as ArtistDraft | null, works: [] as WorkDraft[], artistId: null as string | null };
-  const { data } = await supabase.from("artists").select("*").eq("profile_id", userId).maybeSingle();
+  const { data } = await supabase.from("artists").select(artistDetailColumns).eq("profile_id", userId).maybeSingle();
   if (!data) return { artist: null, works: [], artistId: null };
   const { data: works } = await supabase
     .from("artist_works")
-    .select("*")
+    .select(artistWorkColumns)
     .eq("artist_id", data.id)
     .order("sort_order");
   return {
@@ -115,7 +125,10 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
   const { error } = existing.data
     ? await supabase.from("artists").update(payload).eq("profile_id", userId)
     : await supabase.from("artists").insert({ ...payload, status: "rejected" as const });
-  if (!error) return;
+  if (!error) {
+    forget(`artist:${userId}`);
+    return;
+  }
   throw new Error(formatRemoteError(error));
 }
 
@@ -142,21 +155,9 @@ async function emailsForAdminArtists(artistIds: string[]): Promise<Map<string, s
   if (!supabase) return map;
 
   const batch = await supabase.rpc("admin_emails_for_artists");
-  if (!batch.error && Array.isArray(batch.data)) {
-    for (const row of batch.data as { artist_id?: string; email?: string }[]) {
-      if (row.artist_id && row.email) map.set(String(row.artist_id), String(row.email));
-    }
-    return map;
-  }
-
-  const rows = await Promise.all(
-    artistIds.map(async (id) => {
-      const { data } = await supabase.rpc("admin_email_for_artist", { p_artist_id: id });
-      return [id, typeof data === "string" ? data : ""] as const;
-    }),
-  );
-  for (const [id, email] of rows) {
-    if (email) map.set(id, email);
+  if (batch.error || !Array.isArray(batch.data)) return map;
+  for (const row of batch.data as { artist_id?: string; email?: string }[]) {
+    if (row.artist_id && row.email) map.set(String(row.artist_id), String(row.email));
   }
   return map;
 }
@@ -169,7 +170,7 @@ async function withAdminEmails(artists: AdminArtistRecord[]): Promise<AdminArtis
 export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]> {
   const supabase = createBrowserSupabase();
   if (!supabase) return [];
-  const { data, error } = await supabase.from("artists").select("*").order("name");
+  const { data, error } = await supabase.from("artists").select(artistListColumns).order("name");
   if (error) throw error;
   return withAdminEmails((data ?? []).map((row: Record<string, unknown>) => rowToAdminArtist(row)));
 }
@@ -177,9 +178,9 @@ export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]>
 export async function fetchRemoteArtistForAdmin(slugOrId: string): Promise<AdminArtistRecord | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
-  const bySlug = await supabase.from("artists").select("*").eq("slug", slugOrId).maybeSingle();
+  const bySlug = await supabase.from("artists").select(artistDetailColumns).eq("slug", slugOrId).maybeSingle();
   const row = (bySlug.data ??
-    (await supabase.from("artists").select("*").eq("id", slugOrId).maybeSingle()).data) as
+    (await supabase.from("artists").select(artistDetailColumns).eq("id", slugOrId).maybeSingle()).data) as
     | Record<string, unknown>
     | null;
   if (!row) return null;
@@ -221,6 +222,7 @@ export async function updateRemoteArtistForAdmin(artist: AdminArtistRecord, draf
     .update({ ...artistWritePayload(draft, coverPath), updated_at: new Date().toISOString() })
     .eq("id", artist.id);
   if (error) throw new Error(formatRemoteError(error));
+  forget("artist");
 }
 
 export async function createRemoteArtistForAdmin(draft: ArtistDraft): Promise<AdminArtistRecord> {
@@ -231,7 +233,7 @@ export async function createRemoteArtistForAdmin(draft: ArtistDraft): Promise<Ad
   const { data, error } = await supabase
     .from("artists")
     .insert({ ...artistWritePayload(draft, coverPath), profile_id: null })
-    .select("*")
+    .select(artistDetailColumns)
     .single();
   if (error) throw new Error(formatRemoteError(error));
   return rowToAdminArtist(data as Record<string, unknown>);
@@ -269,13 +271,16 @@ export async function addRemoteWork(userId: string, artistId: string, file: File
     title,
   });
   if (error) throw error;
+  forget(`artist:${userId}`);
 }
 
-export async function deleteRemoteWork(id: string) {
+export async function deleteRemoteWork(id: string, userId?: string) {
   const supabase = createBrowserSupabase();
   if (!supabase) throw new Error("supabase");
   const { error } = await supabase.from("artist_works").delete().eq("id", id);
   if (error) throw error;
+  if (userId) forget(`artist:${userId}`);
+  else forget("artist");
 }
 
 export { emptyDraft };

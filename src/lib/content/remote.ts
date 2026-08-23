@@ -83,14 +83,30 @@ const eventSelectFallbacks = [
   `${eventColumns}, event_sessions ( starts_at, ends_at )`,
 ];
 
+export type LoadEventRowOptions = {
+  slug?: string;
+  slugs?: string[];
+  ids?: string[];
+  publishedOnly?: boolean;
+  ownerArtistSlug?: string;
+};
+
+type EventQueryClient = { from: (table: string) => { select: (columns: string) => any } };
+
 export async function loadEventRows(
-  supabase: { from: (table: string) => { select: (columns: string) => any } },
-  options?: { slug?: string; publishedOnly?: boolean },
+  supabase: EventQueryClient,
+  options?: LoadEventRowOptions,
 ): Promise<EventRow[] | null> {
+  if (options?.slugs && options.slugs.length === 0) return [];
+  if (options?.ids && options.ids.length === 0) return [];
+
   let lastError: { message?: string } | null = null;
   for (const select of eventSelectFallbacks) {
     let query = supabase.from("events").select(select);
     if (options?.publishedOnly) query = query.eq("status", "published");
+    if (options?.ownerArtistSlug) query = query.eq("owner_artist_slug", options.ownerArtistSlug);
+    if (options?.slugs?.length) query = query.in("slug", options.slugs);
+    if (options?.ids?.length) query = query.in("id", options.ids);
     const result = options?.slug ? await query.eq("slug", options.slug).maybeSingle() : await query;
     if (!result.error) {
       if (!result.data) return [];
@@ -102,6 +118,35 @@ export async function loadEventRows(
   return null;
 }
 
+export async function loadEventItemsForArtist(
+  supabase: EventQueryClient,
+  artistSlug: string,
+  options?: { publishedOnly?: boolean },
+): Promise<EventItem[] | null> {
+  const ownedRows = await loadEventRows(supabase, { ...options, ownerArtistSlug: artistSlug });
+  const { data: links } = await supabase.from("event_artists").select("event_id").eq("artist_slug", artistSlug);
+  const ids = [...new Set(((links ?? []) as { event_id?: string }[]).map((row) => String(row.event_id ?? "")))].filter(
+    Boolean,
+  );
+  const linkedRows = await loadEventRows(supabase, { ...options, ids });
+  const bySlug = new Map<string, EventItem>();
+  for (const row of [...(ownedRows ?? []), ...(linkedRows ?? [])]) {
+    const event = mapEvent(row);
+    bySlug.set(event.slug, event);
+  }
+  const parentSlugs = [...bySlug.values()]
+    .map((event) => event.parentSlug)
+    .filter((value): value is string => typeof value === "string" && value.length > 0 && !bySlug.has(value));
+  if (parentSlugs.length) {
+    const parents = await loadEventRows(supabase, { slugs: parentSlugs, publishedOnly: options?.publishedOnly });
+    for (const row of parents ?? []) {
+      const event = mapEvent(row);
+      bySlug.set(event.slug, event);
+    }
+  }
+  return [...bySlug.values()];
+}
+
 export async function fetchRemoteEvents(options?: { publishedOnly?: boolean }) {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
@@ -109,11 +154,42 @@ export async function fetchRemoteEvents(options?: { publishedOnly?: boolean }) {
   return rows ? rows.map(mapEvent) : null;
 }
 
+export async function fetchRemoteEventsBySlugs(slugs: string[], options?: { publishedOnly?: boolean }) {
+  const unique = [...new Set(slugs.filter(Boolean))];
+  if (unique.length === 0) return [];
+  const supabase = createBrowserSupabase();
+  if (!supabase) return null;
+  const rows = await loadEventRows(supabase, { ...options, slugs: unique });
+  return rows ? rows.map(mapEvent) : null;
+}
+
+export async function fetchRemoteEventsForArtist(artistSlug: string, options?: { publishedOnly?: boolean }) {
+  if (!artistSlug) return [];
+  const supabase = createBrowserSupabase();
+  if (!supabase) return null;
+  return loadEventItemsForArtist(supabase, artistSlug, options);
+}
+
 export async function fetchRemoteEvent(slug: string) {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
   const rows = await loadEventRows(supabase, { slug });
   return rows?.[0] ? mapEvent(rows[0]) : null;
+}
+
+export async function fetchRemoteCounts() {
+  const supabase = createBrowserSupabase();
+  if (!supabase) return null;
+  const [events, artists, applications] = await Promise.all([
+    supabase.from("events").select("id", { count: "exact", head: true }),
+    supabase.from("artists").select("id", { count: "exact", head: true }),
+    supabase.from("event_applications").select("id", { count: "exact", head: true }).neq("status", "cancelled"),
+  ]);
+  return {
+    events: events.count ?? 0,
+    artists: artists.count ?? 0,
+    applications: applications.count ?? 0,
+  };
 }
 
 async function ensureImagePath(image: string) {
@@ -240,50 +316,71 @@ export async function deleteRemoteEvent(slug: string) {
   if (error) throw error;
 }
 
+export const newsListColumns = "slug, title, published_at, status";
+export const newsDetailColumns = "slug, title, body, published_at, status";
+
+export function mapNews(row: Record<string, unknown>): NewsItem {
+  return {
+    slug: String(row.slug),
+    title: String(row.title),
+    body: String(row.body ?? ""),
+    publishedAt: String(row.published_at),
+    status: row.status === "published" ? "published" : "draft",
+  };
+}
+
 export async function fetchRemoteNews(): Promise<NewsItem[] | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
-  const { data, error } = await supabase.from("news").select("*").order("published_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("news")
+    .select(newsDetailColumns)
+    .order("published_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row: Record<string, unknown>) => ({
-    slug: String(row.slug),
-    title: String(row.title),
-    body: String(row.body),
-    publishedAt: String(row.published_at),
-    status: row.status === "published" ? "published" : "draft",
-  }));
+  return (data ?? []).map((row: Record<string, unknown>) => mapNews(row));
+}
+
+export async function fetchRemoteNewsItem(slug: string): Promise<NewsItem | null> {
+  const supabase = createBrowserSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("news").select(newsDetailColumns).eq("slug", slug).maybeSingle();
+  if (error) throw error;
+  return data ? mapNews(data as Record<string, unknown>) : null;
 }
 
 export async function saveRemoteNews(items: NewsItem[]) {
   const supabase = createBrowserSupabase();
   if (!supabase) throw new Error("supabase");
-  const { data: existing } = await supabase.from("news").select("slug");
   const keep = new Set(items.map((item) => item.slug));
-  for (const row of existing ?? []) {
-    if (!keep.has(String(row.slug))) {
-      const { error } = await supabase.from("news").delete().eq("slug", row.slug);
-      if (error) throw error;
-    }
-  }
-  for (const item of items) {
-    const { error } = await supabase.from("news").upsert(
-      {
-        slug: item.slug,
-        title: item.title,
-        body: item.body,
-        published_at: item.publishedAt,
-        status: item.status,
-      },
-      { onConflict: "slug" },
-    );
+  const { data: existing, error: existingError } = await supabase.from("news").select("slug");
+  if (existingError) throw existingError;
+  const toDelete = (existing ?? [])
+    .map((row: { slug?: string }) => String(row.slug ?? ""))
+    .filter((slug: string) => Boolean(slug) && !keep.has(slug));
+  if (toDelete.length) {
+    const { error } = await supabase.from("news").delete().in("slug", toDelete);
     if (error) throw error;
   }
+  if (items.length === 0) return;
+  const { error } = await supabase.from("news").upsert(
+    items.map((item) => ({
+      slug: item.slug,
+      title: item.title,
+      body: item.body,
+      published_at: item.publishedAt,
+      status: item.status,
+    })),
+    { onConflict: "slug" },
+  );
+  if (error) throw error;
 }
+
+const spotColumns = "category, name, note, query, maps_url";
 
 export async function fetchRemoteSpots(): Promise<SpotItem[] | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
-  const { data, error } = await supabase.from("spots").select("*");
+  const { data, error } = await supabase.from("spots").select(spotColumns);
   if (error) throw error;
   return (data ?? []).map((row: Record<string, unknown>) => normalizeSpot(row));
 }
@@ -306,18 +403,21 @@ export async function saveRemoteSpots(items: SpotItem[]) {
   if (error) throw error;
 }
 
-export async function fetchRemoteApplications(): Promise<Application[] | null> {
+export const applicationColumns =
+  "id, event_slug, session_starts_at, name, email, phone, party_size, note, status, created_at, user_id";
+
+export async function fetchRemoteApplications(eventSlugs?: string[]): Promise<Application[] | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
-  const { data, error } = await supabase
-    .from("event_applications")
-    .select("*")
-    .order("created_at", { ascending: false });
+  if (eventSlugs && eventSlugs.length === 0) return [];
+  let query = supabase.from("event_applications").select(applicationColumns).order("created_at", { ascending: false });
+  if (eventSlugs) query = query.in("event_slug", eventSlugs);
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []).map((row: Record<string, unknown>) => mapApplication(row));
 }
 
-function mapApplication(row: Record<string, unknown>): Application {
+export function mapApplication(row: Record<string, unknown>): Application {
   return {
     id: String(row.id),
     eventSlug: String(row.event_slug),
@@ -333,15 +433,15 @@ function mapApplication(row: Record<string, unknown>): Application {
   };
 }
 
-export async function fetchMyRemoteApplications() {
+export async function fetchMyRemoteApplications(): Promise<Application[]> {
   const supabase = createBrowserSupabase();
-  if (!supabase) return null;
+  if (!supabase) return [];
   const auth = await getAuthIdentity(supabase);
   const userId = auth?.id;
   if (!userId) return [];
   const { data, error } = await supabase
     .from("event_applications")
-    .select("*")
+    .select(applicationColumns)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
