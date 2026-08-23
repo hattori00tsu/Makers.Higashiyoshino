@@ -1,6 +1,7 @@
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import {
   emptyDraft,
+  formatArtistGenres,
   normalizeArtistDraft,
   serializeArtistLinks,
   type ArtistDraft,
@@ -17,7 +18,7 @@ function rowToDraft(row: Record<string, unknown>): ArtistDraft {
     slug: String(row.slug ?? ""),
     name: String(row.name ?? ""),
     reading: String(row.reading ?? ""),
-    genre: String(row.genre ?? "陶芸"),
+    genre: row.genre,
     area: String(row.area ?? ""),
     bio: String(row.bio ?? ""),
     profile: String(row.profile ?? ""),
@@ -94,7 +95,7 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
     slug: slugOf(draft.name, draft.slug),
     name: draft.name,
     reading: draft.reading,
-    genre: draft.genre,
+    genre: formatArtistGenres(draft.genre),
     area: draft.area,
     bio: draft.bio,
     profile: draft.profile,
@@ -121,15 +122,48 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
 export type AdminArtistRecord = {
   id: string;
   profileId: string | null;
+  email: string;
   draft: ArtistDraft;
 };
 
-function rowToAdminArtist(row: Record<string, unknown>): AdminArtistRecord {
+function rowToAdminArtist(row: Record<string, unknown>, email = ""): AdminArtistRecord {
   return {
     id: String(row.id ?? ""),
     profileId: row.profile_id ? String(row.profile_id) : null,
+    email,
     draft: rowToDraft(row),
   };
+}
+
+async function emailsForAdminArtists(artistIds: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (artistIds.length === 0) return map;
+  const supabase = createBrowserSupabase();
+  if (!supabase) return map;
+
+  const batch = await supabase.rpc("admin_emails_for_artists");
+  if (!batch.error && Array.isArray(batch.data)) {
+    for (const row of batch.data as { artist_id?: string; email?: string }[]) {
+      if (row.artist_id && row.email) map.set(String(row.artist_id), String(row.email));
+    }
+    return map;
+  }
+
+  const rows = await Promise.all(
+    artistIds.map(async (id) => {
+      const { data } = await supabase.rpc("admin_email_for_artist", { p_artist_id: id });
+      return [id, typeof data === "string" ? data : ""] as const;
+    }),
+  );
+  for (const [id, email] of rows) {
+    if (email) map.set(id, email);
+  }
+  return map;
+}
+
+async function withAdminEmails(artists: AdminArtistRecord[]): Promise<AdminArtistRecord[]> {
+  const emails = await emailsForAdminArtists(artists.map((artist) => artist.id));
+  return artists.map((artist) => ({ ...artist, email: emails.get(artist.id) ?? "" }));
 }
 
 export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]> {
@@ -137,17 +171,20 @@ export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]>
   if (!supabase) return [];
   const { data, error } = await supabase.from("artists").select("*").order("name");
   if (error) throw error;
-  return (data ?? []).map((row: Record<string, unknown>) => rowToAdminArtist(row));
+  return withAdminEmails((data ?? []).map((row: Record<string, unknown>) => rowToAdminArtist(row)));
 }
 
 export async function fetchRemoteArtistForAdmin(slugOrId: string): Promise<AdminArtistRecord | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
   const bySlug = await supabase.from("artists").select("*").eq("slug", slugOrId).maybeSingle();
-  if (bySlug.data) return rowToAdminArtist(bySlug.data as Record<string, unknown>);
-  const byId = await supabase.from("artists").select("*").eq("id", slugOrId).maybeSingle();
-  if (!byId.data) return null;
-  return rowToAdminArtist(byId.data as Record<string, unknown>);
+  const row = (bySlug.data ??
+    (await supabase.from("artists").select("*").eq("id", slugOrId).maybeSingle()).data) as
+    | Record<string, unknown>
+    | null;
+  if (!row) return null;
+  const [artist] = await withAdminEmails([rowToAdminArtist(row)]);
+  return artist;
 }
 
 function artistWritePayload(draft: ArtistDraft, coverPath: string) {
@@ -156,7 +193,7 @@ function artistWritePayload(draft: ArtistDraft, coverPath: string) {
     slug: slugOf(draft.name, draft.slug),
     name: draft.name,
     reading: draft.reading,
-    genre: draft.genre,
+    genre: formatArtistGenres(draft.genre),
     area: draft.area,
     bio: draft.bio,
     profile: draft.profile,

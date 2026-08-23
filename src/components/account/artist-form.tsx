@@ -8,7 +8,13 @@ import {
   TextArea,
   TextInput,
 } from "@/components/account/fields";
-import { genres, newArtistLink, type ArtistDraft } from "@/lib/account/types";
+import {
+  formatArtistGenres,
+  genres,
+  newArtistLink,
+  parseArtistGenres,
+  type ArtistDraft,
+} from "@/lib/account/types";
 import { useSession } from "@/lib/account/use-session";
 import { loadEventOptions } from "@/lib/content/live";
 import { blobToDataUrl, compressImage } from "@/lib/image/compress";
@@ -19,9 +25,17 @@ type Props = {
   onSave: (draft: ArtistDraft) => Promise<void> | void;
   showSlug?: boolean;
   showStatus?: boolean;
+  email?: string;
 };
 
-export function ArtistForm({ initial, submitLabel, onSave, showSlug = false, showStatus = false }: Props) {
+export function ArtistForm({
+  initial,
+  submitLabel,
+  onSave,
+  showSlug = false,
+  showStatus = false,
+  email,
+}: Props) {
   const { user } = useSession();
   const [draft, setDraft] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -64,8 +78,26 @@ export function ArtistForm({ initial, submitLabel, onSave, showSlug = false, sho
     }
   }
 
+  function toggleGenre(name: string) {
+    setDraft((current) => {
+      const selected = parseArtistGenres(current.genre);
+      const next = selected.includes(name)
+        ? selected.filter((item) => item !== name)
+        : [...selected, name];
+      const ordered = [
+        ...genreOptions.filter((item) => next.includes(item)),
+        ...next.filter((item) => !genreOptions.includes(item)),
+      ];
+      return { ...current, genre: formatArtistGenres(ordered) };
+    });
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (parseArtistGenres(draft.genre).length === 0) {
+      setMessage("カテゴリーを選んでください。");
+      return;
+    }
     if (draft.image.startsWith("blob:")) {
       setMessage("画像の処理が終わるまで待ってください。");
       return;
@@ -73,7 +105,7 @@ export function ArtistForm({ initial, submitLabel, onSave, showSlug = false, sho
     setSaving(true);
     setMessage("");
     try {
-      await onSave(draft);
+      await onSave({ ...draft, genre: formatArtistGenres(draft.genre) });
       setMessage("保存しました。");
     } catch (error) {
       const text = error instanceof Error ? error.message.trim() : "";
@@ -84,6 +116,11 @@ export function ArtistForm({ initial, submitLabel, onSave, showSlug = false, sho
   }
 
   const preview = draft.image.trim();
+  const selectedGenres = parseArtistGenres(draft.genre);
+  const listedGenres = [
+    ...genreOptions,
+    ...selectedGenres.filter((item) => !genreOptions.includes(item)),
+  ];
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -109,23 +146,16 @@ export function ArtistForm({ initial, submitLabel, onSave, showSlug = false, sho
             </Select>
           </Field>
         ) : null}
+        {email !== undefined ? (
+          <Field label="メールアドレス">
+            <p className="border border-transparent py-2.5 text-sm text-sumi">{email || "未登録"}</p>
+          </Field>
+        ) : null}
         <Field label="名前">
           <TextInput value={draft.name} onChange={(e) => set("name", e.target.value)} required />
         </Field>
         <Field label="よみ">
           <TextInput value={draft.reading} onChange={(e) => set("reading", e.target.value)} />
-        </Field>
-        <Field label="ジャンル">
-          <Select value={draft.genre} onChange={(e) => set("genre", e.target.value)}>
-            {(draft.genre && !genreOptions.includes(draft.genre)
-              ? [draft.genre, ...genreOptions]
-              : genreOptions
-            ).map((genre) => (
-              <option key={genre} value={genre}>
-                {genre}
-              </option>
-            ))}
-          </Select>
         </Field>
         <Field label="地区">
           <TextInput
@@ -134,6 +164,25 @@ export function ArtistForm({ initial, submitLabel, onSave, showSlug = false, sho
             placeholder="鷲家、小川など"
           />
         </Field>
+        <div className="md:col-span-2">
+          <Field label="カテゴリー">
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {listedGenres.map((genre) => (
+                <li key={genre}>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedGenres.includes(genre)}
+                      onChange={() => toggleGenre(genre)}
+                    />
+                    {genre}
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs leading-6 text-sumi-soft">木工と陶芸など、複数選べます。</p>
+          </Field>
+        </div>
       </div>
 
       <div>

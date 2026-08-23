@@ -85,11 +85,46 @@ export type WorkDraft = {
 
 export const genres = defaultArtistGenres;
 
+export function parseArtistGenres(value: unknown): string[] {
+  const rows: string[] = [];
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const name = String(item ?? "").trim();
+      if (name) rows.push(name);
+    }
+  } else {
+    const text = String(value ?? "").trim();
+    if (text.startsWith("[")) {
+      try {
+        return parseArtistGenres(JSON.parse(text));
+      } catch {
+        /* fall through */
+      }
+    }
+    if (text) {
+      for (const item of text.split(/\s*(?:、|,|／|\/)\s*/)) {
+        const name = item.trim();
+        if (name) rows.push(name);
+      }
+    }
+  }
+  const seen = new Set<string>();
+  return rows.filter((name) => {
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return true;
+  });
+}
+
+export function formatArtistGenres(value: unknown): string {
+  return parseArtistGenres(value).join("、");
+}
+
 export const emptyDraft = (): ArtistDraft => ({
   slug: "",
   name: "",
   reading: "",
-  genre: defaultArtistGenres[0],
+  genre: "",
   area: "",
   bio: "",
   profile: "",
@@ -165,7 +200,7 @@ export function normalizeArtistDraft(raw: Record<string, unknown>): ArtistDraft 
     slug: String(raw.slug ?? base.slug),
     name: String(raw.name ?? base.name),
     reading: String(raw.reading ?? base.reading),
-    genre: String(raw.genre ?? base.genre),
+    genre: formatArtistGenres(raw.genre ?? raw.genres ?? ""),
     area: String(raw.area ?? base.area),
     bio: String(raw.bio ?? base.bio),
     profile: String(raw.profile ?? base.profile),
