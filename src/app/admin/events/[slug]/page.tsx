@@ -53,6 +53,7 @@ export default function EditEventPage() {
       ) : null}
       <EventEditor
         initial={{ ...event, kind: inferEventKind(event, catalog) }}
+        catalog={catalog}
         localOnly={localOnly}
         submitLabel="更新する"
         onSave={async (next, previous) => {

@@ -61,9 +61,18 @@ export default function AdminEventsPage() {
   const { ready, user } = useAdmin();
   const [items, setItems] = useState<EventItem[]>([]);
 
+  const localOnly = user?.source === "preview";
+
   useEffect(() => {
-    if (ready) loadEventsLive(user?.source === "preview").then(setItems);
-  }, [ready, user]);
+    if (!ready) return;
+    let active = true;
+    loadEventsLive(localOnly).then((items) => {
+      if (active) setItems(items);
+    });
+    return () => {
+      active = false;
+    };
+  }, [ready, localOnly]);
 
   const grouped = useMemo(() => {
     const kindOf = (event: EventItem) => inferEventKind(event, items);

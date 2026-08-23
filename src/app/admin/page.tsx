@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { PrimaryButton } from "@/components/account/fields";
 import { useAdmin } from "@/components/admin/use-admin";
-import { loadApplicationsLive, loadArtistsForAdmin, loadEventsLive } from "@/lib/content/live";
+import { loadAdminCounts } from "@/lib/content/live";
 
 export default function AdminPage() {
   const { user, ready, signOut } = useAdmin();
@@ -13,22 +13,14 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!ready || !user) return;
-    async function load() {
-      if (!user) return;
-      const localOnly = user.source === "preview";
-      const [events, artists, applications] = await Promise.all([
-        loadEventsLive(localOnly),
-        loadArtistsForAdmin(localOnly),
-        loadApplicationsLive(localOnly),
-      ]);
-      setCounts({
-        events: events.length,
-        artists: artists.length,
-        applications: applications.filter((item) => item.status !== "cancelled").length,
-      });
-    }
-    load();
-  }, [user, ready]);
+    let active = true;
+    loadAdminCounts(user.source === "preview").then((next) => {
+      if (active) setCounts(next);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user?.source, user?.id, ready]);
 
   if (!ready || !user) {
     return (

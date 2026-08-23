@@ -6,7 +6,7 @@ import { InstagramEmbed } from "@/components/social/instagram-embed";
 import { ArtistEvents } from "@/components/artists/artist-events";
 import { ArtistPhoto } from "@/components/media/artist-photo";
 import { loadPublicArtist, loadPublicArtists } from "@/lib/content/public-artists";
-import { loadPublicEvents } from "@/lib/content/public-events";
+import { loadPublicEventsForArtist } from "@/lib/content/public-events";
 import { instagramEmbedPermalink } from "@/lib/social/instagram";
 import type { Artist } from "@/data/site";
 
@@ -38,7 +38,7 @@ function hasStudio(artist: Artist) {
 
 export default async function ArtistDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [artist, events] = await Promise.all([loadPublicArtist(slug), loadPublicEvents()]);
+  const [artist, events] = await Promise.all([loadPublicArtist(slug), loadPublicEventsForArtist(slug)]);
   if (!artist) notFound();
 
   const extraLinks = [

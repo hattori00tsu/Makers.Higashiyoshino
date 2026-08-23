@@ -83,7 +83,7 @@ export default function WorksPage() {
       saveLocalWorks(user.id, next);
       return;
     }
-    await deleteRemoteWork(id);
+    await deleteRemoteWork(id, user.id);
     setWorks((current) => current.filter((work) => work.id !== id));
   }
 
