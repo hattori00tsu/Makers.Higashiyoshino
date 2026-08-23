@@ -67,6 +67,7 @@ export default function AdminArtistsPage() {
                   ) : null}
                 </p>
                 <p className="mt-1 font-serif text-lg tracking-wide">{item.draft.name || "名前未設定"}</p>
+                <p className="mt-1 text-sm text-sumi-soft">{item.email || "メール未登録"}</p>
               </div>
               <Link href={artistHref(item)} className="text-[13px] tracking-[0.14em] text-sugi">
                 編集

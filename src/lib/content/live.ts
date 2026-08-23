@@ -32,6 +32,7 @@ import {
   type NewsItem,
   linkableArtists,
 } from "@/lib/content/catalog";
+import { forget, remember } from "@/lib/content/client-cache";
 import {
   deleteRemoteEvent,
   fetchLinkableRemoteArtists,
@@ -39,9 +40,13 @@ import {
   fetchOccupiedSeatsBySlugs,
   fetchMyRemoteApplications,
   fetchRemoteApplications,
+  fetchRemoteCounts,
   fetchRemoteEvent,
   fetchRemoteEvents,
+  fetchRemoteEventsBySlugs,
+  fetchRemoteEventsForArtist,
   fetchRemoteNews,
+  fetchRemoteNewsItem,
   fetchRemoteSpots,
   saveRemoteNews,
   saveRemoteSpots,
@@ -66,23 +71,79 @@ export function useLocalContent(preview?: boolean) {
   return Boolean(preview) || !isSupabaseConfigured();
 }
 
+const EVENTS_TTL = 15_000;
+
+function eventsCacheKey(preview: boolean | undefined, extra = "all") {
+  return `events:${preview ? "local" : "remote"}:${extra}`;
+}
+
 export async function loadEventsLive(preview?: boolean) {
-  if (useLocalContent(preview)) return loadEvents();
+  return remember(eventsCacheKey(preview), EVENTS_TTL, async () => {
+    if (useLocalContent(preview)) return loadEvents();
+    try {
+      return (await fetchRemoteEvents()) ?? [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+export async function publishedEventsLive(preview?: boolean) {
+  return remember(eventsCacheKey(preview, "published"), EVENTS_TTL, async () => {
+    if (useLocalContent(preview)) return publishedEvents();
+    try {
+      const items = await fetchRemoteEvents({ publishedOnly: true });
+      return (items ?? []).filter(isPublished);
+    } catch {
+      return [];
+    }
+  });
+}
+
+export async function loadEventsBySlugsLive(slugs: string[], preview?: boolean) {
+  const unique = [...new Set(slugs.filter(Boolean))];
+  if (unique.length === 0) return [] as EventItem[];
+  if (useLocalContent(preview)) {
+    const all = loadEvents();
+    const wanted = new Set(unique);
+    return all.filter((event) => wanted.has(event.slug));
+  }
   try {
-    return (await fetchRemoteEvents()) ?? [];
+    return (await fetchRemoteEventsBySlugs(unique)) ?? [];
   } catch {
     return [];
   }
 }
 
-export async function publishedEventsLive(preview?: boolean) {
-  if (useLocalContent(preview)) return publishedEvents();
-  try {
-    const items = await fetchRemoteEvents({ publishedOnly: true });
-    return (items ?? []).filter(isPublished);
-  } catch {
-    return [];
-  }
+export async function loadEventsForArtistLive(
+  artistSlug: string,
+  preview?: boolean,
+  options?: { publishedOnly?: boolean },
+) {
+  if (!artistSlug) return [] as EventItem[];
+  const publishedOnly = options?.publishedOnly ?? false;
+  return remember(
+    eventsCacheKey(preview, `artist:${artistSlug}:${publishedOnly ? "pub" : "all"}`),
+    EVENTS_TTL,
+    async () => {
+      if (useLocalContent(preview)) {
+        const items = publishedOnly ? publishedEvents() : loadEvents();
+        const managed = eventsManagedByArtist(artistSlug, items);
+        const parents = managed
+          .map((event) => event.parentSlug)
+          .filter((slug): slug is string => Boolean(slug));
+        const extra = items.filter((event) => parents.includes(event.slug));
+        const bySlug = new Map(managed.map((event) => [event.slug, event]));
+        for (const event of extra) bySlug.set(event.slug, event);
+        return [...bySlug.values()];
+      }
+      try {
+        return (await fetchRemoteEventsForArtist(artistSlug, { publishedOnly })) ?? [];
+      } catch {
+        return [];
+      }
+    },
+  );
 }
 
 export async function findEventLive(slug: string, preview?: boolean) {
@@ -97,17 +158,21 @@ export async function findEventLive(slug: string, preview?: boolean) {
 export async function saveEventLive(event: EventItem, previousSlug?: string, preview?: boolean) {
   if (useLocalContent(preview)) {
     upsertEvent(event, previousSlug);
+    forget("events");
     return;
   }
   await upsertRemoteEvent(event, previousSlug);
+  forget("events");
 }
 
 export async function deleteEventLive(slug: string, preview?: boolean) {
   if (useLocalContent(preview)) {
     deleteEvent(slug);
+    forget("events");
     return;
   }
   await deleteRemoteEvent(slug);
+  forget("events");
 }
 
 export async function loadNewsLive(preview?: boolean) {
@@ -128,8 +193,11 @@ export async function publishedNewsLive(preview?: boolean) {
 
 export async function findNewsLive(slug: string, preview?: boolean) {
   if (useLocalContent(preview)) return findNews(slug);
-  const items = await loadNewsLive(preview);
-  return items.find((item) => item.slug === slug);
+  try {
+    return (await fetchRemoteNewsItem(slug)) ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function saveNewsLive(items: NewsItem[], preview?: boolean) {
@@ -174,7 +242,7 @@ export async function addApplicationLive(
   await submitRemoteApplication(input);
 }
 
-export async function loadMyApplicationsLive(userId: string, preview?: boolean) {
+export async function loadMyApplicationsLive(userId: string, preview?: boolean): Promise<Application[]> {
   if (useLocalContent(preview)) return applicationsForUser(userId);
   try {
     return (await fetchMyRemoteApplications()) ?? [];
@@ -192,12 +260,43 @@ export async function cancelApplicationLive(id: string, userId: string, preview?
 }
 
 export async function loadApplicationsForArtistLive(artistSlug: string, preview?: boolean) {
-  const [applications, events] = await Promise.all([loadApplicationsLive(preview), loadEventsLive(preview)]);
-  const slugs = new Set(eventsManagedByArtist(artistSlug, events).map((event) => event.slug));
-  return {
-    events,
-    applications: applications.filter((item) => slugs.has(item.eventSlug)),
-  };
+  const events = await loadEventsForArtistLive(artistSlug, preview);
+  const slugs = eventsManagedByArtist(artistSlug, events).map((event) => event.slug);
+  if (useLocalContent(preview)) {
+    const wanted = new Set(slugs);
+    return {
+      events,
+      applications: loadApplications().filter((item) => wanted.has(item.eventSlug)),
+    };
+  }
+  try {
+    return {
+      events,
+      applications: (await fetchRemoteApplications(slugs)) ?? [],
+    };
+  } catch {
+    return { events, applications: [] as Application[] };
+  }
+}
+
+export async function loadAdminCounts(preview?: boolean) {
+  if (useLocalContent(preview)) {
+    const [events, artists, applications] = await Promise.all([
+      loadEventsLive(preview),
+      loadArtistsForAdmin(preview),
+      loadApplicationsLive(preview),
+    ]);
+    return {
+      events: events.length,
+      artists: artists.length,
+      applications: applications.filter((item) => item.status !== "cancelled").length,
+    };
+  }
+  try {
+    return (await fetchRemoteCounts()) ?? { events: 0, artists: 0, applications: 0 };
+  } catch {
+    return { events: 0, artists: 0, applications: 0 };
+  }
 }
 
 export function liveSeatKey(slug: string, sessionStartsAt: string) {
@@ -300,8 +399,10 @@ export async function linkableArtistsLive(preview?: boolean) {
 }
 
 export async function loadArtistsForAdmin(preview?: boolean): Promise<AdminArtistRecord[]> {
-  if (useLocalContent(preview)) return listLocalArtists();
-  return fetchRemoteArtistsForAdmin();
+  return remember(`admin-artists:${preview ? "local" : "remote"}`, 15_000, async () => {
+    if (useLocalContent(preview)) return listLocalArtists();
+    return fetchRemoteArtistsForAdmin();
+  });
 }
 
 export async function findArtistForAdmin(slugOrId: string, preview?: boolean) {
@@ -316,12 +417,16 @@ export async function saveArtistForAdmin(
 ) {
   if (useLocalContent(preview)) {
     saveLocalDraft(artist.profileId || artist.id, draft);
+    forget("admin-artists");
     return;
   }
   await updateRemoteArtistForAdmin(artist, draft);
+  forget("admin-artists");
+  forget("artist");
 }
 
 export async function createArtistForAdmin(draft: ArtistDraft, preview?: boolean) {
+  forget("admin-artists");
   if (useLocalContent(preview)) return createLocalArtist(draft);
   return createRemoteArtistForAdmin(draft);
 }

@@ -6,20 +6,17 @@ import { useEffect, useState } from "react";
 import { MypageNav } from "@/components/account/mypage-nav";
 import { PrimaryButton } from "@/components/account/fields";
 import { VisitorReservations } from "@/components/account/visitor-reservations";
-import { getLocalAccount } from "@/lib/account/local";
-import { fetchRemoteArtist } from "@/lib/account/remote";
+import { artistSlugForUser } from "@/lib/account/local";
 import { partitionArtistEvents } from "@/lib/calendar";
 import { eventAncestorTitle, eventCategoryLabel, eventsForArtist } from "@/data/site";
-import { publishedEventsLive } from "@/lib/content/live";
+import { loadEventsForArtistLive } from "@/lib/content/live";
 import { useSession } from "@/lib/account/use-session";
 import { formatDateJa } from "@/lib/dates";
-import type { ArtistDraft } from "@/lib/account/types";
 import type { EventItem } from "@/data/site";
 
 export default function MypagePage() {
   const router = useRouter();
   const { user, loading, signOut } = useSession();
-  const [draft, setDraft] = useState<ArtistDraft | null>(null);
   const [joined, setJoined] = useState<EventItem[]>([]);
   const [catalog, setCatalog] = useState<EventItem[]>([]);
 
@@ -30,22 +27,18 @@ export default function MypagePage() {
       return;
     }
     if (user.artistStatus === "none") return;
-    async function load() {
-      if (!user) return;
-      const all = await publishedEventsLive(user.source === "preview");
+    const slug = artistSlugForUser(user);
+    const localOnly = user.source === "preview";
+    let active = true;
+    loadEventsForArtistLive(slug, localOnly, { publishedOnly: true }).then((all) => {
+      if (!active) return;
       setCatalog(all);
-      if (user.source === "preview") {
-        const local = getLocalAccount(user.id)?.artist ?? null;
-        setDraft(local);
-        setJoined(local?.slug ? eventsForArtist(local.slug, all) : []);
-        return;
-      }
-      const remote = await fetchRemoteArtist(user.id);
-      setDraft(remote.artist);
-      setJoined(remote.artist?.slug ? eventsForArtist(remote.artist.slug, all) : []);
-    }
-    load();
-  }, [user, loading, router]);
+      setJoined(slug ? eventsForArtist(slug, all) : []);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user?.id, user?.artistSlug, user?.artistStatus, user?.source, loading, router, user]);
 
   async function onSignOut() {
     await signOut();
@@ -79,7 +72,8 @@ export default function MypagePage() {
     );
   }
 
-  const publicHref = draft?.slug ? `/artists/${draft.slug}` : null;
+  const slug = artistSlugForUser(user);
+  const publicHref = slug ? `/artists/${slug}` : null;
   const { upcoming, past } = partitionArtistEvents(joined);
 
   return (

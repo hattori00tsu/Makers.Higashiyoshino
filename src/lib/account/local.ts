@@ -169,6 +169,7 @@ export function listLocalArtists() {
     .map((account) => ({
       id: account.user.id,
       profileId: account.user.id,
+      email: account.user.email,
       draft: account.artist,
     }));
 }
@@ -203,6 +204,7 @@ export function createLocalArtist(draft: ArtistDraft) {
   return {
     id,
     profileId: id,
+    email: "",
     draft: registered,
   };
 }
@@ -217,6 +219,13 @@ export function saveLocalWorks(id: string, works: WorkDraft[]) {
 
 export function ensureLocalSeed() {
   read();
+}
+
+export function artistSlugForUser(user: SessionUser) {
+  if (user.source === "preview") {
+    return getLocalAccount(user.id)?.artist?.slug || user.artistSlug || "";
+  }
+  return user.artistSlug || "";
 }
 
 export { emptyDraft };

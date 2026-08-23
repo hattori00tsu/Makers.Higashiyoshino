@@ -6,8 +6,7 @@ import { ApplicationsBySchedule } from "@/components/account/applications-by-sch
 import { MypageNav } from "@/components/account/mypage-nav";
 import { Select } from "@/components/account/fields";
 import { useSession } from "@/lib/account/use-session";
-import { getLocalAccount } from "@/lib/account/local";
-import { fetchRemoteArtist } from "@/lib/account/remote";
+import { artistSlugForUser } from "@/lib/account/local";
 import { loadApplicationsForArtistLive } from "@/lib/content/live";
 import type { Application } from "@/lib/content/applications";
 import { eventsManagedByArtist, needsReservation, type EventItem } from "@/data/site";
@@ -37,9 +36,7 @@ export default function MypageApplicationsPage() {
     async function load() {
       if (!user) return;
       const localOnly = user.source === "preview";
-      const slug = localOnly
-        ? getLocalAccount(user.id)?.artist?.slug || user.artistSlug || ""
-        : user.artistSlug || (await fetchRemoteArtist(user.id)).artist?.slug || "";
+      const slug = artistSlugForUser(user);
       if (!slug) return;
       const next = await loadApplicationsForArtistLive(slug, localOnly);
       setArtistSlug(slug);

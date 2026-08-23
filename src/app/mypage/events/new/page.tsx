@@ -5,8 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { MypageNav } from "@/components/account/mypage-nav";
 import { EventEditor, emptyEvent } from "@/components/admin/event-editor";
 import { useSession } from "@/lib/account/use-session";
-import { getLocalAccount } from "@/lib/account/local";
-import { fetchRemoteArtist } from "@/lib/account/remote";
+import { artistSlugForUser } from "@/lib/account/local";
 import { saveEventLive } from "@/lib/content/live";
 import { notifyOps } from "@/lib/mail/notify";
 
@@ -28,12 +27,7 @@ export default function MypageNewEventPage() {
     }
     async function load() {
       if (!user) return;
-      if (user.source === "preview") {
-        setArtistSlug(user.artistSlug || getLocalAccount(user.id)?.artist?.slug || "");
-        return;
-      }
-      const remote = await fetchRemoteArtist(user.id);
-      setArtistSlug(user.artistSlug || remote.artist?.slug || "");
+      setArtistSlug(artistSlugForUser(user));
     }
     load();
   }, [user, loading, router]);

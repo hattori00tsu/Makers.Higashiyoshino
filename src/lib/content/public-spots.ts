@@ -10,7 +10,7 @@ async function fetchPublicSpots(): Promise<SpotItem[]> {
   try {
     const supabase = createPublicSupabase();
     if (!supabase) return [];
-    const { data, error } = await supabase.from("spots").select("*");
+    const { data, error } = await supabase.from("spots").select("category, name, note, query, maps_url");
     if (error || !data) return [];
     return data.map((row) => normalizeSpot(row));
   } catch (error) {

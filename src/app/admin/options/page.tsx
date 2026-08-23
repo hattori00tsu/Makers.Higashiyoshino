@@ -42,7 +42,7 @@ export default function AdminOptionsPage() {
       <h1 className="mt-3 font-serif text-3xl tracking-wide">項目</h1>
       <AdminNav />
       <p className="mb-10 text-sm leading-7 text-sumi-soft">
-        催しの種別と作家のカテゴリー、シリーズ、会場・駐車場をここで増やします。種別は催しの編集で、カテゴリーは作家登録で選びます。シリーズは毎年続く開催につけ、年号は入れません。会場・駐車場は総合開催と会場で選び、個別の催しは所属する会場の案内を使います。
+        催しの種別と作家のカテゴリー、シリーズ、会場・駐車場をここで増やします。種別は催しの編集で、カテゴリーは作家登録で複数選べます。シリーズは毎年続く開催につけ、年号は入れません。会場・駐車場は総合開催と会場で選び、個別の催しは所属する会場の案内を使います。
       </p>
       {message ? <p className="mb-8 text-sm text-sumi-soft">{message}</p> : null}
 

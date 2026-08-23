@@ -6,8 +6,7 @@ import { ConfirmDelete } from "@/components/account/confirm-delete";
 import { MypageNav } from "@/components/account/mypage-nav";
 import { EventEditor } from "@/components/admin/event-editor";
 import { useSession } from "@/lib/account/use-session";
-import { getLocalAccount } from "@/lib/account/local";
-import { fetchRemoteArtist } from "@/lib/account/remote";
+import { artistSlugForUser } from "@/lib/account/local";
 import { deleteEventLive, findEventLive, saveEventLive } from "@/lib/content/live";
 import { canEditArtistEvent, type EventItem } from "@/data/site";
 
@@ -32,9 +31,7 @@ export default function MypageEditEventPage() {
     async function load() {
       if (!user) return;
       const localOnly = user.source === "preview";
-      const slug = localOnly
-        ? getLocalAccount(user.id)?.artist?.slug || user.artistSlug || ""
-        : user.artistSlug || (await fetchRemoteArtist(user.id)).artist?.slug || "";
+      const slug = artistSlugForUser(user);
       setArtistSlug(slug);
       const next = await findEventLive(params.slug, localOnly);
       setEvent(next ?? null);

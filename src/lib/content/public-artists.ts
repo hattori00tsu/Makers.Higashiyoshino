@@ -65,27 +65,20 @@ function publicArtistFromRow(row: Record<string, unknown>, works: WorkRow[]): Ar
   };
 }
 
+const artistListColumns =
+  "id, slug, name, genre, area, cover_path, status, studio_lat, studio_lng, studio_address, studio_query";
+const artistDetailColumns =
+  "id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
+const artistWorkColumns = "artist_id, image_path, title, sort_order";
+
 async function fetchPublicArtists(): Promise<Artist[]> {
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = createPublicSupabase();
     if (!supabase) return [];
-    const { data, error } = await supabase.from("artists").select("*").eq("status", "approved");
+    const { data, error } = await supabase.from("artists").select(artistListColumns).eq("status", "approved");
     if (error || !data) return [];
-    const ids = data.map((row) => row.id as string);
-    const { data: works } = ids.length
-      ? await supabase.from("artist_works").select("*").in("artist_id", ids).order("sort_order")
-      : { data: [] as WorkRow[] };
-    const byArtist = new Map<string, WorkRow[]>();
-    for (const work of works ?? []) {
-      const id = String((work as WorkRow).artist_id ?? "");
-      const list = byArtist.get(id) ?? [];
-      list.push(work as WorkRow);
-      byArtist.set(id, list);
-    }
-    return data
-      .filter((row) => row.slug)
-      .map((row) => publicArtistFromRow(row, byArtist.get(String(row.id)) ?? []));
+    return data.filter((row) => row.slug).map((row) => publicArtistFromRow(row, []));
   } catch (error) {
     unstable_rethrow(error);
     return [];
@@ -126,6 +119,34 @@ export const loadPublicArtistNames = unstable_cache(fetchPublicArtistNames, ["pu
 });
 
 export async function loadPublicArtist(slug: string): Promise<Artist | undefined> {
-  const items = await loadPublicArtists();
-  return items.find((artist) => artist.slug === slug);
+  return loadPublicArtistBySlug(slug);
 }
+
+async function fetchPublicArtist(slug: string): Promise<Artist | undefined> {
+  if (!isSupabaseConfigured() || !slug) return undefined;
+  try {
+    const supabase = createPublicSupabase();
+    if (!supabase) return undefined;
+    const { data, error } = await supabase
+      .from("artists")
+      .select(artistDetailColumns)
+      .eq("status", "approved")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (error || !data) return undefined;
+    const { data: works } = await supabase
+      .from("artist_works")
+      .select(artistWorkColumns)
+      .eq("artist_id", data.id)
+      .order("sort_order");
+    return publicArtistFromRow(data, (works ?? []) as WorkRow[]);
+  } catch (error) {
+    unstable_rethrow(error);
+    return undefined;
+  }
+}
+
+const loadPublicArtistBySlug = unstable_cache(fetchPublicArtist, ["public-artist"], {
+  revalidate: PUBLIC_REVALIDATE_SECONDS,
+  tags: ["public-artists"],
+});

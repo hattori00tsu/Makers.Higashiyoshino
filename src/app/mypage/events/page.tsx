@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MypageNav } from "@/components/account/mypage-nav";
 import { useSession } from "@/lib/account/use-session";
-import { getLocalAccount } from "@/lib/account/local";
-import { fetchRemoteArtist } from "@/lib/account/remote";
-import { loadEventsLive } from "@/lib/content/live";
+import { artistSlugForUser } from "@/lib/account/local";
+import { loadEventsForArtistLive } from "@/lib/content/live";
 import { canEditArtistEvent, eventsManagedByArtist, type EventItem } from "@/data/site";
 import { formatDateJa } from "@/lib/dates";
 
@@ -36,15 +35,13 @@ export default function MypageEventsPage() {
     async function load() {
       if (!user) return;
       const localOnly = user.source === "preview";
-      const slug = localOnly
-        ? getLocalAccount(user.id)?.artist?.slug || user.artistSlug || ""
-        : user.artistSlug || (await fetchRemoteArtist(user.id)).artist?.slug || "";
+      const slug = artistSlugForUser(user);
       setArtistSlug(slug);
-      const all = await loadEventsLive(localOnly);
+      const all = await loadEventsForArtistLive(slug, localOnly);
       setItems(slug ? eventsManagedByArtist(slug, all) : []);
     }
     load();
-  }, [user, loading, router]);
+  }, [user?.id, user?.artistSlug, user?.artistStatus, user?.source, loading, router, user]);
 
   if (!user) {
     return (

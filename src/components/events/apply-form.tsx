@@ -8,11 +8,10 @@ import {
   addApplicationLive,
   findEventLive,
   liveSeatKey,
-  publishedEventsLive,
   remainingSeatsLive,
   remainingSeatsMapLive,
 } from "@/lib/content/live";
-import { eventLineage, eventPriceLabel, isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
+import { eventPriceLabel, isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
 import { formatSessionRange } from "@/lib/dates";
 import { useSession } from "@/lib/account/use-session";
 
@@ -24,8 +23,10 @@ type Props = {
 
 export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
   const { user, loading } = useSession();
-  const [event, setEvent] = useState<EventItem | null>(initial);
-  const [lineage, setLineage] = useState<EventItem[]>(initialLineage);
+  const [fetchedEvent, setFetchedEvent] = useState<EventItem | null>(null);
+  const [fetchedLineage, setFetchedLineage] = useState<EventItem[]>([]);
+  const event = initial ?? fetchedEvent;
+  const lineage = initial ? initialLineage : fetchedLineage;
   const [sessionStartsAt, setSessionStartsAt] = useState(initial?.sessions[0]?.startsAt ?? "");
   const [name, setName] = useState("");
   const [partySize, setPartySize] = useState("1");
@@ -38,35 +39,42 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
 
   useEffect(() => {
     if (initial) {
-      setEvent(initial);
-      setLineage(initialLineage);
       if (initial.sessions[0]) {
         setSessionStartsAt((current) => current || initial.sessions[0].startsAt);
       }
       return;
     }
 
+    let active = true;
     async function load() {
       const next = await findEventLive(slug);
-      setEvent(next ?? null);
-      if (next) {
-        const all = await publishedEventsLive();
-        setLineage(eventLineage(next, all));
-      } else {
-        setLineage([]);
+      if (!active) return;
+      setFetchedEvent(next ?? null);
+      if (!next) {
+        setFetchedLineage([]);
+        return;
       }
-      if (next?.sessions[0]) {
-        setSessionStartsAt((current) => current || next.sessions[0].startsAt);
+      const chain: EventItem[] = [next];
+      let current = next;
+      while (current.parentSlug) {
+        const parent = await findEventLive(current.parentSlug);
+        if (!parent) break;
+        chain.unshift(parent);
+        current = parent;
+      }
+      if (active) setFetchedLineage(chain);
+      if (next.sessions[0]) {
+        setSessionStartsAt((currentSession) => currentSession || next.sessions[0].startsAt);
       }
     }
     load();
-  }, [slug, initial, initialLineage]);
+    return () => {
+      active = false;
+    };
+  }, [slug, initial]);
 
   useEffect(() => {
-    if (!event) {
-      setLeftBySession({});
-      return;
-    }
+    if (!event) return;
     remainingSeatsMapLive([event]).then(setLeftBySession);
   }, [event]);
 

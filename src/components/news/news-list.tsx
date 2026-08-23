@@ -1,17 +1,8 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { publishedNewsLive } from "@/lib/content/live";
 import { type NewsItem } from "@/lib/content/catalog";
 import { formatDateJa } from "@/lib/dates";
 
-export function NewsList({ initial }: { initial: NewsItem[] }) {
-  const [items, setItems] = useState(initial);
-  useEffect(() => {
-    publishedNewsLive().then(setItems);
-  }, []);
-
+export function NewsList({ items }: { items: NewsItem[] }) {
   if (items.length === 0) {
     return <p className="mt-10 text-sm text-sumi-soft">まだお知らせはありません。</p>;
   }

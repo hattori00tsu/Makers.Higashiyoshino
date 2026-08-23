@@ -54,6 +54,7 @@ export default function AdminArtistEditPage() {
       <ArtistForm
         key={params.slug}
         initial={artist.draft}
+        email={artist.email}
         submitLabel="更新する"
         showSlug
         showStatus
