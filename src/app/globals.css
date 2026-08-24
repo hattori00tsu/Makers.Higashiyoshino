@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+:root {
+  --washi: #f4f0e6;
+  --kami: #faf7f0;
+  --sumi: #2c2416;
+  --sumi-soft: #5a5044;
+  --tsuchi: #8b6914;
+  --sugi: #5c4a32;
+  --line: color-mix(in srgb, var(--sumi) 14%, transparent);
+}
+
+@theme inline {
+  --color-washi: var(--washi);
+  --color-kami: var(--kami);
+  --color-sumi: var(--sumi);
+  --color-sumi-soft: var(--sumi-soft);
+  --color-tsuchi: var(--tsuchi);
+  --color-sugi: var(--sugi);
+  --color-line: var(--line);
+  --font-sans: var(--font-gothic);
+  --font-serif: var(--font-mincho);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--washi);
+  color: var(--sumi);
+  font-family: var(--font-gothic), "Hiragino Sans", "Yu Gothic", sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--tsuchi) 28%, transparent);
+  color: var(--sumi);
+}
+
+img {
+  user-select: none;
+}
+
+.place-map-pin,
+.place-map-pin-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--kami);
+  border-radius: 999px;
+  background: var(--sugi);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--sumi) 35%, transparent);
+}
+
+.place-map-pin {
+  padding: 0;
+  cursor: pointer;
+}
+
+.place-map-pin[data-kind="venue"],
+.place-map-pin[data-kind="studio"],
+.place-map-pin-swatch[data-kind="venue"],
+.place-map-pin-swatch[data-kind="studio"] {
+  background: var(--tsuchi);
+}
+
+.place-map-pin[data-kind="parking"],
+.place-map-pin-swatch[data-kind="parking"] {
+  background: #4a6b5c;
+}
+
+.place-map-pin[data-kind="spot"],
+.place-map-pin-swatch[data-kind="spot"] {
+  background: var(--sugi);
+}
+
+.place-map-pin[data-active="true"] {
+  width: 18px;
+  height: 18px;
+  outline: 2px solid var(--tsuchi);
+  outline-offset: 2px;
+}
+
+.place-map-popup-kind {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--tsuchi);
+}
+
+.place-map-popup-title {
+  margin-top: 4px;
+  font-family: var(--font-mincho), serif;
+  letter-spacing: 0.04em;
+}
+
+.place-map-popup a {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--line);
+}
+
+.maplibregl-popup-content {
+  background: var(--kami);
+  color: var(--sumi);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 10px 12px;
+  font-family: inherit;
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: var(--kami);
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: var(--kami);
+}
+
+.maplibregl-ctrl-group {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 11px;
+}
