@@ -49,8 +49,7 @@ export function Hero({ hero }: { hero?: HomeHero }) {
           <p className="mt-5 max-w-md text-sm leading-7 text-kami/90 md:text-[15px]">
             {leadLines.map((line, index) => (
               <span key={index}>
-                {index > 0 ? <br className="hidden sm:block" /> : null}
-                {index > 0 ? " " : null}
+                {index > 0 ? <br /> : null}
                 {line}
               </span>
             ))}

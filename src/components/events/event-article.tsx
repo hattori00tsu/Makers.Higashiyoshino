@@ -145,7 +145,7 @@ export function EventArticle({
             </div>
           )}
 
-          <p className="mt-8 text-[15px] leading-8 text-sumi-soft">{event.description}</p>
+          <p className="mt-8 whitespace-pre-wrap text-[15px] leading-8 text-sumi-soft">{event.description}</p>
 
           <EventPrograms
             heading="会場"
@@ -189,7 +189,7 @@ export function EventArticle({
         <section className="mt-12">
           <h2 className="font-serif text-xl tracking-wide">会場とアクセス</h2>
           {places.access ? (
-            <p className="mt-3 text-sm leading-7 text-sumi-soft">{places.access}</p>
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-sumi-soft">{places.access}</p>
           ) : null}
 
           <EventAccessSection archived={archived} venues={places.venues} parkings={places.parkings} />
