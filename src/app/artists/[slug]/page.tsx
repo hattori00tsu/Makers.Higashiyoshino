@@ -74,7 +74,7 @@ export default async function ArtistDetailPage({ params }: Props) {
           </p>
           <h1 className="mt-3 font-serif text-3xl tracking-wide md:text-4xl">{artist.name}</h1>
           <p className="mt-2 text-sm tracking-wide text-sumi-soft">{artist.reading}</p>
-          <p className="mt-8 text-[15px] leading-8 text-sumi-soft">{artist.profile}</p>
+          <p className="mt-8 whitespace-pre-wrap text-[15px] leading-8 text-sumi-soft">{artist.profile}</p>
 
           {links.length > 0 ? (
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
@@ -118,7 +118,7 @@ export default async function ArtistDetailPage({ params }: Props) {
             <p className="mt-3 text-sm leading-7 text-sumi-soft">{artist.studio.address}</p>
           ) : null}
           {artist.studio.visit ? (
-            <p className="mt-2 text-sm leading-7 text-sumi-soft">{artist.studio.visit}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-sumi-soft">{artist.studio.visit}</p>
           ) : null}
           {isGoogleMapsUrl(artist.studio.query) ? (
             <div className="mt-6">
