@@ -51,7 +51,7 @@ export function mapPlaces(
       name: spot.name,
       subtitle: spot.category,
       mapsUrl,
-      href: "/guide",
+      href: "/map",
       ...coords,
     };
   });
