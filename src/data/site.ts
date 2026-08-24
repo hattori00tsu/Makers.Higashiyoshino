@@ -2,11 +2,10 @@ import { eachDateKey } from "@/lib/dates";
 import { isGoogleMapsUrl } from "@/lib/maps-url";
 
 export const site = {
-  name: "東吉野村アーティストコミュニティ",
+  name: "東吉野 ARTISTS",
   shortName: "東吉野",
-  prefecture: "奈良県吉野郡東吉野村",
   description:
-    "奈良県東吉野村に暮らすつくり手と、村を訪ねる人をつなぐコミュニティサイト。催し、工房、周辺案内を発信しています。",
+    "東吉野村には、およそ十年前から、工芸作家、写真家、物書きといったつくり手が少しずつ移り住んできました。",
 };
 
 export const nav = [
@@ -14,7 +13,6 @@ export const nav = [
   { href: "/artists", label: "作家" },
   { href: "/map", label: "地図" },
   { href: "/news", label: "お知らせ" },
-  { href: "/guide", label: "案内" },
 ] as const;
 
 export const defaultEventCategories = ["開放", "展示", "ワークショップ", "音楽"];
