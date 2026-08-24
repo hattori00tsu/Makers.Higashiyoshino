@@ -100,7 +100,7 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <p className="mt-16 text-sm tracking-wide text-sumi-soft">{site.prefecture}</p>
+          <p className="mt-16 text-sm tracking-wide text-sumi-soft">{site.name}</p>
         </div>
       ) : null}
     </header>

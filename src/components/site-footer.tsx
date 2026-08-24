@@ -10,7 +10,7 @@ export function SiteFooter() {
           <p className="max-w-sm text-sm leading-7 text-sumi-soft">
             {site.name}
             <br />
-            {site.prefecture}
+            {site.name}
           </p>
         </div>
         <div className="flex flex-col gap-6 md:items-end">

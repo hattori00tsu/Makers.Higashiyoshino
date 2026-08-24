@@ -95,7 +95,7 @@ export default function AdminManualPage() {
           <h2 className="font-serif text-xl tracking-wide text-sumi">お知らせと周辺</h2>
           <p className="mt-4">
             <Link href="/admin/news" className="underline decoration-line underline-offset-4">お知らせ</Link> は公開サイトの「お知らせ」に出ます。
-            <Link href="/admin/spots" className="underline decoration-line underline-offset-4">周辺</Link> は案内ページと地図のピンになります。種別は周辺ページで増やせます。案内は短く書いてください。村は便が悪いので、アクセス文は催し側にも残します。
+            <Link href="/admin/spots" className="underline decoration-line underline-offset-4">周辺</Link> は食事・宿などの登録です。種別は周辺ページで増やせます。説明は短く書いてください。村は便が悪いので、アクセス文は催し側にも残します。
           </p>
         </section>
 
