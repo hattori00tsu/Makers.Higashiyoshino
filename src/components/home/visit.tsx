@@ -1,11 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { defaultVisitImage, resolveHomeImage } from "@/lib/content/home-display";
 
-export function VisitCta() {
+export function VisitCta({ image }: { image?: string }) {
+  const src = resolveHomeImage(image, defaultVisitImage);
+
   return (
     <section className="relative min-h-[520px] overflow-hidden md:min-h-[560px]">
       <Image
-        src="/images/4.jpg"
+        src={src}
         alt="森の道"
         fill
         sizes="100vw"
@@ -24,12 +27,6 @@ export function VisitCta() {
             className="inline-flex w-fit border border-kami/50 px-6 py-3 text-[13px] tracking-[0.18em] text-kami transition-colors hover:bg-kami hover:text-sumi"
           >
             村内マップ
-          </Link>
-          <Link
-            href="/guide"
-            className="inline-flex w-fit px-6 py-3 text-[13px] tracking-[0.18em] text-kami/90 underline decoration-kami/40 underline-offset-4"
-          >
-            アクセスと周辺案内
           </Link>
         </div>
       </div>

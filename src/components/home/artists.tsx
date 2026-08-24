@@ -1,10 +1,9 @@
 import { loadPublicArtists } from "@/lib/content/public-artists";
-import { arrangeHomeArtists } from "@/lib/content/home-display";
-import { loadPublicHomeDisplay } from "@/lib/content/public-home-display";
+import { arrangeHomeArtists, type HomeDisplay } from "@/lib/content/home-display";
 import { ArtistGridView } from "@/components/home/artist-grid-view";
 
-export async function ArtistGrid() {
-  const [artists, display] = await Promise.all([loadPublicArtists(), loadPublicHomeDisplay()]);
+export async function ArtistGrid({ display }: { display: HomeDisplay }) {
+  const artists = await loadPublicArtists();
 
   return (
     <ArtistGridView

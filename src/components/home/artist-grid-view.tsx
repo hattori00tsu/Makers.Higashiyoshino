@@ -25,14 +25,14 @@ export function ArtistGridView({
       <SectionHeading
         index="03"
         eyebrow="ARTISTS"
-        title="むらの作家"
+        title="作家"
         action={
           items.length > 0 || artists.length > 0 ? (
             <Link
               href="/artists"
               className="hidden text-[13px] tracking-[0.16em] text-sugi md:inline hover:opacity-70"
             >
-              全員を見る
+             詳細 
             </Link>
           ) : null
         }
@@ -42,7 +42,7 @@ export function ArtistGridView({
         <p className="mt-10 max-w-xl text-sm leading-7 text-sumi-soft md:mt-12">
           いま公開中の作家はいません。
           <Link href="/artists" className="ml-2 underline decoration-line underline-offset-4">
-            一覧を見る
+          詳細を見る
           </Link>
         </p>
       ) : (
@@ -69,7 +69,7 @@ export function ArtistGridView({
       {artists.length > 0 ? (
         <div className="mt-10 md:hidden">
           <Link href="/artists" className="text-[13px] tracking-[0.16em] text-sugi">
-            全員を見る
+          詳細
           </Link>
         </div>
       ) : null}
