@@ -11,6 +11,17 @@ export function isShortMapsUrl(url: string) {
   return /(maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(url);
 }
 
+/** API キー不要の埋め込み用 URL。場所名や住所を q に渡す */
+export function googleMapsEmbedUrl(query: string, zoom = 12) {
+  const params = new URLSearchParams({
+    q: query,
+    hl: "ja",
+    z: String(zoom),
+    output: "embed",
+  });
+  return `https://www.google.com/maps?${params.toString()}`;
+}
+
 function pair(lat: string | number, lng: string | number): MapCoords | null {
   const la = Number(lat);
   const ln = Number(lng);

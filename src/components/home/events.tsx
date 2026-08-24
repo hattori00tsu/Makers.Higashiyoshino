@@ -2,13 +2,12 @@ import Link from "next/link";
 import { SectionHeading } from "@/components/section-heading";
 import { CoverImage } from "@/components/media/cover-image";
 import { eventCategoryLabel, eventCover, isPublished } from "@/data/site";
-import { arrangeHomeEvents } from "@/lib/content/home-display";
+import { arrangeHomeEvents, type HomeDisplay } from "@/lib/content/home-display";
 import { loadPublicEvents } from "@/lib/content/public-events";
-import { loadPublicHomeDisplay } from "@/lib/content/public-home-display";
 import { formatMonthDaySpan } from "@/lib/dates";
 
-export async function EventHighlights() {
-  const [all, display] = await Promise.all([loadPublicEvents(), loadPublicHomeDisplay()]);
+export async function EventHighlights({ display }: { display: HomeDisplay }) {
+  const all = await loadPublicEvents();
   const items = arrangeHomeEvents(all.filter(isPublished), display);
 
   return (
@@ -23,7 +22,7 @@ export async function EventHighlights() {
               href="/events"
               className="hidden text-[13px] tracking-[0.16em] text-sugi md:inline hover:opacity-70"
             >
-              一覧を見る
+              詳細
             </Link>
           }
         />
@@ -33,7 +32,7 @@ export async function EventHighlights() {
         <p className="mx-auto mt-10 max-w-6xl px-5 text-sm leading-7 text-sumi-soft md:mt-12 md:px-8">
           いま公開中の催しはありません。
           <Link href="/events" className="ml-2 underline decoration-line underline-offset-4">
-            一覧を見る
+            詳細
           </Link>
         </p>
       ) : (
@@ -74,7 +73,7 @@ export async function EventHighlights() {
       {items.length > 0 ? (
         <div className="mt-8 px-5 md:hidden">
           <Link href="/events" className="text-[13px] tracking-[0.16em] text-sugi">
-            一覧を見る
+            詳細
           </Link>
         </div>
       ) : null}

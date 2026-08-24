@@ -1,5 +1,4 @@
-import Link from "next/link";
-import type { SpotItem } from "@/data/site";
+import { spotMapsUrl, type SpotItem } from "@/data/site";
 
 export function SpotList({ items }: { items: SpotItem[] }) {
   if (items.length === 0) {
@@ -14,12 +13,14 @@ export function SpotList({ items }: { items: SpotItem[] }) {
           <div>
             <p className="font-serif text-base tracking-wide text-sumi">{spot.name}</p>
             <p className="mt-1 leading-6 text-sumi-soft">{spot.note}</p>
-            <Link
-              href={`/map?focus=spot:${spot.name}`}
+            <a
+              href={spotMapsUrl(spot)}
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-2 inline-block text-[12px] tracking-[0.12em] text-sugi"
             >
               地図で見る
-            </Link>
+            </a>
           </div>
         </li>
       ))}

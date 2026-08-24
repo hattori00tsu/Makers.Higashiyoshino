@@ -4,21 +4,24 @@ import { EventHighlights } from "@/components/home/events";
 import { Hero } from "@/components/home/hero";
 import { Intro } from "@/components/home/intro";
 import { VisitCta } from "@/components/home/visit";
+import { loadPublicHomeDisplay } from "@/lib/content/public-home-display";
 
 export const revalidate = 120;
 
-export default function Home() {
+export default async function Home() {
+  const display = await loadPublicHomeDisplay();
+
   return (
     <>
-      <Hero />
-      <Intro />
+      <Hero hero={display.hero} />
+      <Intro village={display.village} />
       <Suspense fallback={<section className="min-h-[320px] border-y border-line bg-kami/60" />}>
-        <EventHighlights />
+        <EventHighlights display={display} />
       </Suspense>
       <Suspense fallback={<section className="mx-auto min-h-[320px] max-w-6xl" />}>
-        <ArtistGrid />
+        <ArtistGrid display={display} />
       </Suspense>
-      <VisitCta />
+      <VisitCta image={display.visitImage} />
     </>
   );
 }

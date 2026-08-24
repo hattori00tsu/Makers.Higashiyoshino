@@ -44,7 +44,7 @@ export default function AdminManualPage() {
               <Link href="/admin/artists" className="mx-1 underline decoration-line underline-offset-4">
                 作家
               </Link>
-              から一覧し、公開ページの内容と公開／非公開を直せます。作家の追加もここからできます。アカウントがなくても公開ページ用に足せます。参加する催しは、催しの編集で作家を紐付けたときに出ます。
+              から詳細し、公開ページの内容と公開／非公開を直せます。作家の追加もここからできます。アカウントがなくても公開ページ用に足せます。参加する催しは、催しの編集で作家を紐付けたときに出ます。
             </li>
           </ol>
         </section>
@@ -87,7 +87,7 @@ export default function AdminManualPage() {
             <Link href="/admin/settings" className="mx-1 underline decoration-line underline-offset-4">
               設定
             </Link>
-            で変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、過去の総合開催と会場はアーカイブです。
+            で変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、過去の総合開催と会場はアーカイブです。冒頭の写真と文言、01 VILLAGE、「このサイトについて」のコンセプト、村を訪ねるの写真も同じ画面から直せます。
           </p>
         </section>
 
@@ -108,8 +108,6 @@ export default function AdminManualPage() {
             <li>
               <code className="text-sumi">.env.example</code> を <code className="text-sumi">.env.local</code> にコピーし、Supabase の URL と anon key を入れます。
             </li>
-            <li>写真は仮のストックです。東吉野の実写へ差し替えてください。</li>
-            <li>屋外の催しは、開催が近い日だけ Open-Meteo の村役場付近の予報を添えます。設定は不要です。</li>
           </ul>
         </section>
       </div>

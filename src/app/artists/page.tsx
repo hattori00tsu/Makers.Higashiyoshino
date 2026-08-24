@@ -16,7 +16,7 @@ export default async function ArtistsPage() {
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">ARTISTS</p>
       <h1 className="mt-3 font-serif text-3xl tracking-wide md:text-4xl">作家</h1>
       <p className="mt-4 max-w-xl text-sm leading-7 text-sumi-soft">
-        東吉野村に工房を構えるつくり手たち。
+        つくり手たち。
       </p>
       <ArtistsBrowser artists={artists} />
     </div>

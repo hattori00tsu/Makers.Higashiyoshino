@@ -18,15 +18,26 @@ import {
   type MailTemplateKey,
 } from "@/lib/mail/templates";
 import {
+  defaultAboutConcept,
+  defaultAboutImage,
+  defaultHeroImage,
   defaultHomeDisplay,
+  defaultHomeHero,
+  defaultHomeVillage,
+  defaultVillageImage,
+  defaultVisitImage,
   homeEventLimit,
   loadHomeDisplay,
   saveHomeDisplay,
+  type AboutConcept,
   type HomeArtistsMode,
   type HomeDisplay,
   type HomeEventsMode,
+  type HomeHero,
+  type HomeVillage,
 } from "@/lib/content/home-display";
 import { loadArtistsForAdmin, loadEventsLive } from "@/lib/content/live";
+import { blobToDataUrl, compressImage } from "@/lib/image/compress";
 import { eventKindLabel, inferEventKind, isPublished, type EventItem } from "@/data/site";
 
 function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
@@ -96,6 +107,74 @@ function MailCopyEditor({
   );
 }
 
+function ImagePicker({
+  label,
+  hint,
+  value,
+  fallback,
+  aspectClass,
+  maxEdge,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  fallback: string;
+  aspectClass: string;
+  maxEdge: number;
+  onChange: (value: string) => void;
+}) {
+  const preview = value.trim() || fallback;
+
+  async function onFile(file?: File) {
+    if (!file) return;
+    const local = URL.createObjectURL(file);
+    onChange(local);
+    try {
+      const blob = await compressImage(file, maxEdge);
+      onChange(await blobToDataUrl(blob));
+    } catch {
+      onChange(fallback);
+    } finally {
+      window.setTimeout(() => URL.revokeObjectURL(local), 1500);
+    }
+  }
+
+  return (
+    <div>
+      <p className="mb-3 text-[12px] tracking-[0.14em] text-sumi-soft">{label}</p>
+      {hint ? <p className="mb-3 text-xs leading-6 text-sumi-soft">{hint}</p> : null}
+      <div className={`relative w-full overflow-hidden border border-line bg-kami ${aspectClass}`}>
+        {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={preview} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : null}
+      </div>
+      <label className="mt-3 block text-sm">
+        <span className="text-[12px] tracking-[0.14em] text-sumi-soft">画像をアップロード</span>
+        <input
+          type="file"
+          accept="image/*"
+          className="mt-2 block w-full text-sm"
+          onChange={(e) => {
+            onFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {value.trim() && value !== fallback ? (
+        <button
+          type="button"
+          className="mt-2 text-[13px] tracking-[0.14em] text-sumi-soft"
+          onClick={() => onChange(fallback)}
+        >
+          初期の写真に戻す
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function RadioRow<T extends string>({
   name,
   value,
@@ -162,18 +241,55 @@ export default function AdminSettingsPage() {
   );
   const unusedEvents = events.filter((event) => !home.eventSlugs.includes(event.slug));
   const unusedArtists = artists.filter((artist) => !home.artistSlugs.includes(artist.slug));
+  const hero = home.hero ?? defaultHomeHero();
+  const village = home.village ?? defaultHomeVillage();
+  const about = home.about ?? defaultAboutConcept();
 
   if (!ready) return <p className="px-5 pt-28 text-sm text-sumi-soft">読み込み中です。</p>;
 
   async function onSave(event: FormEvent) {
     event.preventDefault();
     setMessage("");
+    if (
+      (home.hero ?? defaultHomeHero()).image.startsWith("blob:") ||
+      home.visitImage.startsWith("blob:") ||
+      (home.village ?? defaultHomeVillage()).image.startsWith("blob:") ||
+      (home.about ?? defaultAboutConcept()).image.startsWith("blob:")
+    ) {
+      setMessage("画像の処理が終わるまで待ってください。");
+      return;
+    }
     try {
-      await Promise.all([saveMailSettings(draft, localOnly), saveHomeDisplay(home, localOnly)]);
+      const [, savedHome] = await Promise.all([
+        saveMailSettings(draft, localOnly),
+        saveHomeDisplay(home, localOnly),
+      ]);
+      setHome(savedHome);
       setMessage("保存しました。");
     } catch {
       setMessage("保存できませんでした。schema.sql の再実行を確認してください。");
     }
+  }
+
+  function patchHero(patch: Partial<HomeHero>) {
+    setHome((current) => ({
+      ...current,
+      hero: { ...(current.hero ?? defaultHomeHero()), ...patch },
+    }));
+  }
+
+  function patchVillage(patch: Partial<HomeVillage>) {
+    setHome((current) => ({
+      ...current,
+      village: { ...(current.village ?? defaultHomeVillage()), ...patch },
+    }));
+  }
+
+  function patchAbout(patch: Partial<AboutConcept>) {
+    setHome((current) => ({
+      ...current,
+      about: { ...(current.about ?? defaultAboutConcept()), ...patch },
+    }));
   }
 
   function setEventsMode(eventsMode: HomeEventsMode) {
@@ -203,6 +319,130 @@ export default function AdminSettingsPage() {
               直近の催しは最大{homeEventLimit}件です。むらの作家は、公開中の全員が出ます。一覧ページの並びは変わりません。
             </p>
           </div>
+
+          <div className="space-y-5">
+            <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">冒頭</h3>
+            <p className="text-sm leading-7 text-sumi-soft">
+              トップのいちばん上です。改行した行は、公開ページでも改行されます。
+            </p>
+            <ImagePicker
+              label="写真"
+              value={hero.image}
+              fallback={defaultHeroImage}
+              aspectClass="aspect-[16/10] max-w-md"
+              maxEdge={1920}
+              onChange={(image) => patchHero({ image })}
+            />
+            <Field label="縦書き">
+              <TextInput
+                value={hero.sideLabel}
+                onChange={(e) => patchHero({ sideLabel: e.target.value })}
+              />
+            </Field>
+            <Field label="英字">
+              <TextInput
+                value={hero.eyebrow}
+                onChange={(e) => patchHero({ eyebrow: e.target.value })}
+              />
+            </Field>
+            <Field label="見出し">
+              <TextArea
+                rows={3}
+                className="min-h-24"
+                value={hero.title}
+                onChange={(e) => patchHero({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="リード">
+              <TextArea
+                rows={4}
+                className="min-h-28"
+                value={hero.lead}
+                onChange={(e) => patchHero({ lead: e.target.value })}
+              />
+            </Field>
+          </div>
+
+          <div className="space-y-5">
+            <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">01 VILLAGE</h3>
+            <p className="text-sm leading-7 text-sumi-soft">
+              左に写真、右にタイトル・開催日時・紹介を出します。空の項目は公開ページに出ません。
+            </p>
+            <ImagePicker
+              label="写真"
+              value={village.image}
+              fallback={defaultVillageImage}
+              aspectClass="aspect-[4/5] max-w-xs"
+              maxEdge={1600}
+              onChange={(image) => patchVillage({ image })}
+            />
+            <Field label="タイトル">
+              <TextInput
+                value={village.title}
+                onChange={(e) => patchVillage({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="開催日時">
+              <TextInput
+                value={village.schedule}
+                onChange={(e) => patchVillage({ schedule: e.target.value })}
+                placeholder="例：4月1日〜6月30日"
+              />
+            </Field>
+            <Field label="紹介">
+              <TextArea
+                rows={6}
+                className="min-h-32"
+                value={village.summary}
+                onChange={(e) => patchVillage({ summary: e.target.value })}
+              />
+            </Field>
+          </div>
+
+          <div className="space-y-5">
+            <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">このサイトについて</h3>
+            <p className="text-sm leading-7 text-sumi-soft">
+              「このサイトについて」のコンセプトです。左に写真、右に見出しと本文を出します。
+            </p>
+            <ImagePicker
+              label="写真"
+              value={about.image}
+              fallback={defaultAboutImage}
+              aspectClass="aspect-[4/5] max-w-xs"
+              maxEdge={1600}
+              onChange={(image) => patchAbout({ image })}
+            />
+            <Field label="見出し">
+              <TextInput
+                value={about.heading}
+                onChange={(e) => patchAbout({ heading: e.target.value })}
+              />
+            </Field>
+            <Field label="タイトル">
+              <TextInput
+                value={about.title}
+                onChange={(e) => patchAbout({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="本文">
+              <TextArea
+                rows={6}
+                className="min-h-32"
+                value={about.body}
+                onChange={(e) => patchAbout({ body: e.target.value })}
+              />
+            </Field>
+          </div>
+
+          <ImagePicker
+            label="村を訪ねるの写真"
+            hint="ページ下部の「村を訪ねる」に出ます。"
+            value={home.visitImage}
+            fallback={defaultVisitImage}
+            aspectClass="aspect-[16/10] max-w-md"
+            maxEdge={1920}
+            onChange={(visitImage) => setHome((current) => ({ ...current, visitImage }))}
+          />
 
           <div className="space-y-4">
             <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">直近の催し</h3>

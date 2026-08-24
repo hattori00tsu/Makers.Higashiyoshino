@@ -16,11 +16,11 @@ export default async function GuidePage() {
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">VISIT</p>
       <h1 className="mt-3 font-serif text-3xl tracking-wide md:text-4xl">案内</h1>
       <p className="mt-4 text-sm leading-7 text-sumi-soft">
-        東吉野村は、鉄道の駅から少し離れています。催しに合わせて、行き方と滞在の目安を先に見ておいてください。工房と会場の位置は
+        東吉野村は、鉄道の駅から少し離れています。催しに合わせて、行き方と滞在の目安を先に見ておいてください。村の位置は
         <Link href="/map" className="mx-1 underline decoration-line underline-offset-4">
           地図
         </Link>
-        にまとめています。
+        からどうぞ。
       </p>
 
       <section className="mt-14">

@@ -141,7 +141,7 @@ export default async function ArtistDetailPage({ params }: Props) {
           <p className="mt-3 text-sm text-sumi-soft">
             村の全体図は
             <Link
-              href={`/map?focus=studio:${artist.slug}`}
+              href="/map"
               className="mx-1 underline decoration-line underline-offset-4"
             >
               地図
