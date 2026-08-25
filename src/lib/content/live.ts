@@ -39,6 +39,7 @@ import {
   fetchOccupiedSeats,
   fetchOccupiedSeatsBySlugs,
   fetchMyRemoteApplications,
+  fetchRemoteApplicationNotify,
   fetchRemoteApplications,
   fetchRemoteCounts,
   fetchRemoteEvent,
@@ -51,9 +52,14 @@ import {
   saveRemoteNews,
   saveRemoteSpots,
   cancelRemoteApplication,
+  setRemoteApplicationNotify,
   submitRemoteApplication,
   upsertRemoteEvent,
 } from "@/lib/content/remote";
+import {
+  localApplicationNotifyMap,
+  setLocalApplicationNotify,
+} from "@/lib/content/application-notify";
 import { createLocalArtist, findLocalArtist, listLocalArtists, saveLocalDraft } from "@/lib/account/local";
 import {
   createRemoteArtistForAdmin,
@@ -267,16 +273,35 @@ export async function loadApplicationsForArtistLive(artistSlug: string, preview?
     return {
       events,
       applications: loadApplications().filter((item) => wanted.has(item.eventSlug)),
+      notifyBySlug: localApplicationNotifyMap(artistSlug),
     };
   }
   try {
+    const [applications, notifyBySlug] = await Promise.all([
+      fetchRemoteApplications(slugs),
+      fetchRemoteApplicationNotify().catch(() => ({})),
+    ]);
     return {
       events,
-      applications: (await fetchRemoteApplications(slugs)) ?? [],
+      applications: applications ?? [],
+      notifyBySlug,
     };
   } catch {
-    return { events, applications: [] as Application[] };
+    return { events, applications: [] as Application[], notifyBySlug: {} as Record<string, boolean> };
   }
+}
+
+export async function setApplicationNotifyLive(
+  artistSlug: string,
+  eventSlug: string,
+  notify: boolean,
+  preview?: boolean,
+) {
+  if (useLocalContent(preview)) {
+    setLocalApplicationNotify(artistSlug, eventSlug, notify);
+    return;
+  }
+  await setRemoteApplicationNotify(eventSlug, notify);
 }
 
 export async function loadAdminCounts(preview?: boolean) {

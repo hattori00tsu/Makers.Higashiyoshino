@@ -2,6 +2,7 @@ import { normalizeSpot, type EventItem, type SpotItem } from "@/data/site";
 import { normalizeEvent } from "@/data/site";
 import type { NewsItem } from "@/lib/content/catalog";
 import type { Application, ApplicationStatus } from "@/lib/content/applications";
+import { notifyMapFromRows } from "@/lib/content/application-notify";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { getAuthIdentity } from "@/lib/supabase/identity";
 
@@ -459,6 +460,24 @@ export async function submitRemoteApplication(input: Omit<Application, "id" | "c
     p_phone: input.phone,
     p_party: input.partySize,
     p_note: input.note,
+  });
+  if (error) throw error;
+}
+
+export async function fetchRemoteApplicationNotify(): Promise<Record<string, boolean>> {
+  const supabase = createBrowserSupabase();
+  if (!supabase) return {};
+  const { data, error } = await supabase.rpc("my_event_application_notify");
+  if (error) throw error;
+  return notifyMapFromRows(data as { event_slug?: string; notify?: boolean }[] | null);
+}
+
+export async function setRemoteApplicationNotify(eventSlug: string, notify: boolean) {
+  const supabase = createBrowserSupabase();
+  if (!supabase) throw new Error("supabase");
+  const { error } = await supabase.rpc("set_my_event_application_notify", {
+    p_slug: eventSlug,
+    p_notify: notify,
   });
   if (error) throw error;
 }

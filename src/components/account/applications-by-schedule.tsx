@@ -153,11 +153,15 @@ export function ApplicationsBySchedule({
   rows,
   eventSlugs,
   includeEmptySessions = false,
+  notifyBySlug,
+  onNotifyChange,
 }: {
   events: EventItem[];
   rows: Application[];
   eventSlugs: string[];
   includeEmptySessions?: boolean;
+  notifyBySlug?: Record<string, boolean>;
+  onNotifyChange?: (eventSlug: string, notify: boolean) => void;
 }) {
   const tree = useMemo(() => {
     const byEvent = new Map<string, Application[]>();
@@ -211,6 +215,8 @@ export function ApplicationsBySchedule({
                       group={group}
                       nested={Boolean(host.festival || branch.venue)}
                       indent={Boolean(branch.venue)}
+                      notify={onNotifyChange ? notifyBySlug?.[group.slug] !== false : undefined}
+                      onNotifyChange={onNotifyChange}
                     />
                   ))}
                 </div>
@@ -223,25 +229,53 @@ export function ApplicationsBySchedule({
   );
 }
 
+function participantCount(event?: EventItem) {
+  if (!event) return 0;
+  return new Set([...event.artistSlugs, event.ownerArtistSlug].filter(Boolean)).size;
+}
+
 function EventApplications({
   group,
   nested,
   indent,
+  notify,
+  onNotifyChange,
 }: {
   group: EventGroup;
   nested: boolean;
   indent: boolean;
+  notify?: boolean;
+  onNotifyChange?: (eventSlug: string, notify: boolean) => void;
 }) {
   const title = group.event?.title ?? group.slug;
   const Heading = nested ? "h3" : "h2";
+  const emptyLabel = group.event?.sessions.some((session) => session.startsAt)
+    ? "予約はまだありません。"
+    : "日程はまだありません。";
   return (
     <div className={indent ? "border-l border-line pl-5" : ""}>
       {nested ? <p className="text-[11px] tracking-[0.18em] text-tsuchi">催し</p> : null}
       <Heading className={`${nested ? "mt-2 font-serif text-xl tracking-wide" : "font-serif text-2xl tracking-wide"}`}>
         <Link href={`/events/${group.slug}`}>{title}</Link>
       </Heading>
+      {onNotifyChange ? (
+        <label className="mt-3 flex items-start gap-3 text-sm leading-7 text-sumi-soft">
+          <input
+            type="checkbox"
+            className="mt-1.5"
+            checked={notify !== false}
+            onChange={(e) => onNotifyChange(group.slug, e.target.checked)}
+          />
+          <span>
+            申し込みがあったらメールで通知する
+            {participantCount(group.event) > 1 ? (
+              <span className="mt-1 block text-xs leading-6">複数人の催しでは、つくり手ごとに選べます。これはあなたの通知です。</span>
+            ) : null}
+          </span>
+        </label>
+      ) : null}
       {group.sessions.length === 0 ? (
-        <p className="mt-4 text-sm text-sumi-soft">日程はまだありません。</p>
+        <p className="mt-4 text-sm text-sumi-soft">{emptyLabel}</p>
       ) : (
         <div className="mt-6 space-y-8">
           {group.sessions.map((session) => (
