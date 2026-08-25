@@ -1,5 +1,5 @@
-import { inferEventKind, isPublished, isTopLevel, type EventItem } from "@/data/site";
-import { addDaysToDateKey, eachDateKey, isAllDayRange, parseDateKey, tokyoDateKey, tokyoHour } from "@/lib/dates";
+import { eventAncestorTitle, eventsForArtist, inferEventKind, isPublished, isTopLevel, type EventItem } from "@/data/site";
+import { addDaysToDateKey, eachDateKey, formatDateJa, isAllDayRange, parseDateKey, tokyoDateKey, tokyoHour } from "@/lib/dates";
 
 export const weekdays = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
@@ -309,4 +309,31 @@ export function partitionArtistEvents(items: EventItem[], now = Date.now()) {
   upcoming.sort((a, b) => eventStartTime(a) - eventStartTime(b));
   past.sort((a, b) => eventStartTime(b) - eventStartTime(a));
   return { upcoming, past };
+}
+
+export type ArtistPastEvent = {
+  slug: string;
+  title: string;
+  meta: string;
+};
+
+export function artistPastEvents(slug: string, catalog: EventItem[], now = Date.now()): ArtistPastEvent[] {
+  const { past } = partitionArtistEvents(eventsForArtist(slug, catalog), now);
+  return past.map((event) => {
+    const ancestor = eventAncestorTitle(event, catalog);
+    const date = formatDateJa(event.sessions[0]?.startsAt ?? "");
+    return {
+      slug: event.slug,
+      title: event.title,
+      meta: [ancestor || undefined, date].filter(Boolean).join(" / "),
+    };
+  });
+}
+
+export function artistsPastEventsBySlug(
+  slugs: string[],
+  catalog: EventItem[],
+  now = Date.now(),
+): Record<string, ArtistPastEvent[]> {
+  return Object.fromEntries(slugs.map((slug) => [slug, artistPastEvents(slug, catalog, now)]));
 }
