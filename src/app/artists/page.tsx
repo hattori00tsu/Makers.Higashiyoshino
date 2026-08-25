@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { ArtistsBrowser } from "@/components/artists/artists-browser";
+import { artistsPastEventsBySlug } from "@/lib/calendar";
 import { loadPublicArtists } from "@/lib/content/public-artists";
+import { loadPublicEvents } from "@/lib/content/public-events";
 
 export const revalidate = 120;
 
@@ -9,7 +11,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ArtistsPage() {
-  const artists = await loadPublicArtists();
+  const [artists, events] = await Promise.all([loadPublicArtists(), loadPublicEvents()]);
+  const history = artistsPastEventsBySlug(
+    artists.map((artist) => artist.slug),
+    events,
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-5 pt-24 pb-20 md:px-8 md:pt-28 md:pb-28">
@@ -18,7 +24,7 @@ export default async function ArtistsPage() {
       <p className="mt-4 max-w-xl text-sm leading-7 text-sumi-soft">
         つくり手たち。
       </p>
-      <ArtistsBrowser artists={artists} />
+      <ArtistsBrowser artists={artists} history={history} />
     </div>
   );
 }

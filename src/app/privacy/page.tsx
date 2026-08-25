@@ -91,7 +91,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="font-serif text-xl tracking-wide text-sumi">運営</h2>
-          <p className="mt-4">お問い合わせは、info@higashiyoshino-artists.comまでお願いします。</p>
+          <p className="mt-4">お問い合わせは、info@makers-higashiyoshino.comまでお願いします。</p>
           <p className="mt-6 text-[13px] tracking-wide">制定：2026年8月18日</p>
         </section>
       </div>
