@@ -39,6 +39,7 @@ export default function AdminPage() {
     <div className="mx-auto max-w-3xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">ADMIN</p>
       <h1 className="mt-3 font-serif text-3xl tracking-wide">運営</h1>
+      <p className="mt-2 text-sm text-sumi-soft">{user.email || "メール未登録"}</p>
       <AdminNav />
 
       <dl className="grid grid-cols-3 gap-4 border-y border-line py-6 text-center">
