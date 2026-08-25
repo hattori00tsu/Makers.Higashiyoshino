@@ -2,15 +2,15 @@ import { eachDateKey } from "@/lib/dates";
 import { isGoogleMapsUrl } from "@/lib/maps-url";
 
 export const site = {
-  name: "東吉野 ARTISTS",
-  shortName: "東吉野",
+  name: "makers higashiyoshino",
+  shortName: "makers higashiyoshino",
   description:
     "東吉野村には、およそ十年前から、工芸作家、写真家、物書きといったつくり手が少しずつ移り住んできました。",
 };
 
 export const nav = [
   { href: "/events", label: "催し" },
-  { href: "/artists", label: "作家" },
+  { href: "/artists", label: "つくり手" },
   { href: "/map", label: "地図" },
   { href: "/news", label: "お知らせ" },
 ] as const;
@@ -67,7 +67,7 @@ export type EventItem = {
   kind?: EventKind;
   /** 年をまたぐ系統。年号は入れない */
   series?: string;
-  /** 作家が作った個別催しの主催者 */
+  /** つくり手が作った個別催しの主催者 */
   ownerArtistSlug?: string;
 };
 

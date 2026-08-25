@@ -51,7 +51,7 @@ export default function AdminPage() {
           <dd className="mt-2 font-serif text-2xl">{counts.applications}</dd>
         </div>
         <div>
-          <dt className="text-[11px] tracking-[0.16em] text-sumi-soft">作家</dt>
+          <dt className="text-[11px] tracking-[0.16em] text-sumi-soft">つくり手</dt>
           <dd className="mt-2 font-serif text-2xl">{counts.artists}</dd>
         </div>
       </dl>

@@ -30,8 +30,8 @@ const pages = [
   },
   {
     href: "/artists",
-    label: "作家",
-    note: "作家情報",
+    label: "つくり手",
+    note: "つくり手情報",
   },
   {
     href: "/map",
@@ -61,7 +61,7 @@ export default async function AboutPage() {
           <div className="relative aspect-[4/5] overflow-hidden">
             <Image
               src={image}
-              alt={concept.title || concept.heading || "村の道"}
+              alt={concept.title || concept.heading || ""}
               fill
               sizes="(max-width: 768px) 100vw, 40vw"
               className="object-cover"
@@ -119,10 +119,10 @@ export default async function AboutPage() {
           </div>
           <p className="mt-6">
             <Link
-              href="/login"
+              href="/visit"
               className="text-[13px] tracking-[0.16em] text-sugi underline decoration-line underline-offset-4"
             >
-              来訪者の入口
+              来訪者
             </Link>
           </p>
         </section>

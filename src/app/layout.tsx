@@ -3,7 +3,7 @@ import { Shippori_Mincho, Zen_Kaku_Gothic_New } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SessionProvider } from "@/lib/account/use-session";
-import { site } from "@/data/site";
+import { nav, site } from "@/data/site";
 import "./globals.css";
 
 const mincho = Shippori_Mincho({
@@ -43,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-washi font-sans text-sumi">
         <SessionProvider>
-          <SiteHeader />
+          <SiteHeader items={nav} shortName={site.shortName} name={site.name} />
           <main className="flex-1">{children}</main>
           <SiteFooter />
         </SessionProvider>

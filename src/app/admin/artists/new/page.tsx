@@ -22,7 +22,7 @@ export default function AdminArtistNewPage() {
       <h1 className="mt-3 font-serif text-3xl tracking-wide">作家を追加</h1>
       <AdminNav />
       <p className="mb-10 text-sm leading-7 text-sumi-soft">
-        アカウントがなくても、公開ページ用の作家を追加できます。作品の追加は、本人がマイページから行います。
+        アカウントがなくても、公開ページ用のつくり手を追加できます。作品の追加は、本人がマイページから行います。
       </p>
       <ArtistForm
         initial={emptyDraft()}

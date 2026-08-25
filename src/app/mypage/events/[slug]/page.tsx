@@ -9,6 +9,7 @@ import { useSession } from "@/lib/account/use-session";
 import { artistSlugForUser } from "@/lib/account/local";
 import { deleteEventLive, findEventLive, saveEventLive } from "@/lib/content/live";
 import { canEditArtistEvent, type EventItem } from "@/data/site";
+import { artistEntryPath } from "@/lib/account/paths";
 
 export default function MypageEditEventPage() {
   const router = useRouter();
@@ -21,11 +22,11 @@ export default function MypageEditEventPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace(`/login?next=/mypage/events/${params.slug}`);
+      router.replace(artistEntryPath(`/mypage/events/${params.slug}`));
       return;
     }
     if (user.artistStatus === "none") {
-      router.replace("/mypage");
+      router.replace(artistEntryPath());
       return;
     }
     async function load() {
@@ -37,7 +38,7 @@ export default function MypageEditEventPage() {
       setEvent(next ?? null);
     }
     load();
-  }, [user, loading, router, params.slug]);
+  }, [user?.id, user?.artistStatus, user?.source, loading, router, params.slug]);
 
   if (!user || event === undefined) {
     return (

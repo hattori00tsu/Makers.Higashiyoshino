@@ -13,6 +13,7 @@ import {
   fetchRemoteArtist,
 } from "@/lib/account/remote";
 import { useSession } from "@/lib/account/use-session";
+import { artistEntryPath } from "@/lib/account/paths";
 import type { WorkDraft } from "@/lib/account/types";
 
 export default function WorksPage() {
@@ -26,11 +27,11 @@ export default function WorksPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/login?next=/mypage/works");
+      router.replace(artistEntryPath("/mypage/works"));
       return;
     }
     if (user.artistStatus === "none") {
-      router.replace("/mypage");
+      router.replace(artistEntryPath());
       return;
     }
     async function load() {
@@ -44,7 +45,7 @@ export default function WorksPage() {
       setArtistId(remote.artistId);
     }
     load();
-  }, [user, loading, router]);
+  }, [user?.id, user?.artistStatus, user?.source, loading, router]);
 
   if (!user) {
     return (

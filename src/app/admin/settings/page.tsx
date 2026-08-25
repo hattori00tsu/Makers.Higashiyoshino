@@ -23,12 +23,15 @@ import {
   defaultHeroImage,
   defaultHomeDisplay,
   defaultHomeHero,
-  defaultHomeVillage,
   defaultVillageImage,
   defaultVisitImage,
+  hasPendingHomeImage,
   homeEventLimit,
+  homeVillageLimit,
   loadHomeDisplay,
+  newHomeVillage,
   saveHomeDisplay,
+  withVillageIds,
   type AboutConcept,
   type HomeArtistsMode,
   type HomeDisplay,
@@ -220,7 +223,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     if (!ready) return;
     loadMailSettings(localOnly).then(setDraft);
-    loadHomeDisplay(localOnly).then(setHome);
+    loadHomeDisplay(localOnly).then((display) => setHome(withVillageIds(display)));
     loadEventsLive(localOnly).then((items) => setEvents(items.filter(isPublished)));
     loadArtistsForAdmin(localOnly).then((items) =>
       setArtists(
@@ -242,7 +245,7 @@ export default function AdminSettingsPage() {
   const unusedEvents = events.filter((event) => !home.eventSlugs.includes(event.slug));
   const unusedArtists = artists.filter((artist) => !home.artistSlugs.includes(artist.slug));
   const hero = home.hero ?? defaultHomeHero();
-  const village = home.village ?? defaultHomeVillage();
+  const villages = home.villages ?? [];
   const about = home.about ?? defaultAboutConcept();
 
   if (!ready) return <p className="px-5 pt-28 text-sm text-sumi-soft">読み込み中です。</p>;
@@ -250,12 +253,7 @@ export default function AdminSettingsPage() {
   async function onSave(event: FormEvent) {
     event.preventDefault();
     setMessage("");
-    if (
-      (home.hero ?? defaultHomeHero()).image.startsWith("blob:") ||
-      home.visitImage.startsWith("blob:") ||
-      (home.village ?? defaultHomeVillage()).image.startsWith("blob:") ||
-      (home.about ?? defaultAboutConcept()).image.startsWith("blob:")
-    ) {
+    if (hasPendingHomeImage(home)) {
       setMessage("画像の処理が終わるまで待ってください。");
       return;
     }
@@ -264,7 +262,7 @@ export default function AdminSettingsPage() {
         saveMailSettings(draft, localOnly),
         saveHomeDisplay(home, localOnly),
       ]);
-      setHome(savedHome);
+      setHome(withVillageIds(savedHome));
       setMessage("保存しました。");
     } catch {
       setMessage("保存できませんでした。schema.sql の再実行を確認してください。");
@@ -278,10 +276,12 @@ export default function AdminSettingsPage() {
     }));
   }
 
-  function patchVillage(patch: Partial<HomeVillage>) {
+  function patchVillage(id: string | undefined, index: number, patch: Partial<HomeVillage>) {
     setHome((current) => ({
       ...current,
-      village: { ...(current.village ?? defaultHomeVillage()), ...patch },
+      villages: current.villages.map((item, itemIndex) =>
+        (id ? item.id === id : itemIndex === index) ? { ...item, ...patch } : item,
+      ),
     }));
   }
 
@@ -366,37 +366,102 @@ export default function AdminSettingsPage() {
           <div className="space-y-5">
             <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">01 VILLAGE</h3>
             <p className="text-sm leading-7 text-sumi-soft">
-              左に写真、右にタイトル・開催日時・紹介を出します。空の項目は公開ページに出ません。
+              左に写真、右にタイトル・開催日時・紹介を出します。空の項目は公開ページに出ません。複数あるときは、約20秒ごとに次へスライドし、矢印・点・スワイプでも切り替えられます。最大{homeVillageLimit}件です。
             </p>
-            <ImagePicker
-              label="写真"
-              value={village.image}
-              fallback={defaultVillageImage}
-              aspectClass="aspect-[4/5] max-w-xs"
-              maxEdge={1600}
-              onChange={(image) => patchVillage({ image })}
-            />
-            <Field label="タイトル">
-              <TextInput
-                value={village.title}
-                onChange={(e) => patchVillage({ title: e.target.value })}
-              />
-            </Field>
-            <Field label="開催日時">
-              <TextInput
-                value={village.schedule}
-                onChange={(e) => patchVillage({ schedule: e.target.value })}
-                placeholder="例：4月1日〜6月30日"
-              />
-            </Field>
-            <Field label="紹介">
-              <TextArea
-                rows={6}
-                className="min-h-32"
-                value={village.summary}
-                onChange={(e) => patchVillage({ summary: e.target.value })}
-              />
-            </Field>
+            {villages.length === 0 ? (
+              <p className="text-sm text-sumi-soft">まだありません。追加するとトップに出ます。</p>
+            ) : (
+              villages.map((village, index) => (
+                <div key={village.id ?? index} className="space-y-5 border-t border-line pt-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm text-sumi">{index + 1}枚目</p>
+                    <span className="flex shrink-0 gap-3 text-[13px] tracking-[0.14em]">
+                      <button
+                        type="button"
+                        className="text-sumi-soft disabled:opacity-30"
+                        disabled={index === 0}
+                        onClick={() =>
+                          setHome((current) => ({
+                            ...current,
+                            villages: moveItem(current.villages, index, -1),
+                          }))
+                        }
+                      >
+                        上へ
+                      </button>
+                      <button
+                        type="button"
+                        className="text-sumi-soft disabled:opacity-30"
+                        disabled={index === villages.length - 1}
+                        onClick={() =>
+                          setHome((current) => ({
+                            ...current,
+                            villages: moveItem(current.villages, index, 1),
+                          }))
+                        }
+                      >
+                        下へ
+                      </button>
+                      <button
+                        type="button"
+                        className="text-sumi-soft"
+                        onClick={() =>
+                          setHome((current) => ({
+                            ...current,
+                            villages: current.villages.filter((_, itemIndex) => itemIndex !== index),
+                          }))
+                        }
+                      >
+                        外す
+                      </button>
+                    </span>
+                  </div>
+                  <ImagePicker
+                    label="写真"
+                    value={village.image}
+                    fallback={defaultVillageImage}
+                    aspectClass="aspect-[4/5] max-w-xs"
+                    maxEdge={1600}
+                    onChange={(image) => patchVillage(village.id, index, { image })}
+                  />
+                  <Field label="タイトル">
+                    <TextInput
+                      value={village.title}
+                      onChange={(e) => patchVillage(village.id, index, { title: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="開催日時">
+                    <TextInput
+                      value={village.schedule}
+                      onChange={(e) => patchVillage(village.id, index, { schedule: e.target.value })}
+                      placeholder="例：4月1日〜6月30日"
+                    />
+                  </Field>
+                  <Field label="紹介">
+                    <TextArea
+                      rows={6}
+                      className="min-h-32"
+                      value={village.summary}
+                      onChange={(e) => patchVillage(village.id, index, { summary: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              ))
+            )}
+            {villages.length < homeVillageLimit ? (
+              <button
+                type="button"
+                className="text-[13px] tracking-[0.14em] text-sumi-soft"
+                onClick={() =>
+                  setHome((current) => ({
+                    ...current,
+                    villages: [...current.villages, newHomeVillage()].slice(0, homeVillageLimit),
+                  }))
+                }
+              >
+                スライドを足す
+              </button>
+            ) : null}
           </div>
 
           <div className="space-y-5">
@@ -558,7 +623,7 @@ export default function AdminSettingsPage() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">むらの作家</h3>
+            <h3 className="text-[12px] tracking-[0.14em] text-sumi-soft">つくり手</h3>
             <RadioRow
               name="home-artists"
               value="default"
@@ -696,7 +761,7 @@ export default function AdminSettingsPage() {
               checked={draft.mailAdminPending}
               onChange={(e) => setDraft({ ...draft, mailAdminPending: e.target.checked })}
             />
-            <span>作家の登録、または作家が催しを作ったとき、運営へ通知する</span>
+            <span>つくり手の登録、またはつくり手が催しを作ったとき、運営へ通知する</span>
           </label>
           <label className="flex items-start gap-3 text-sm leading-7 text-sumi-soft">
             <input
@@ -714,7 +779,7 @@ export default function AdminSettingsPage() {
               checked={draft.mailArtistApplications}
               onChange={(e) => setDraft({ ...draft, mailArtistApplications: e.target.checked })}
             />
-            <span>催しの申込みがあったとき、参加作家へ通知メールを送る</span>
+            <span>催しの申込みがあったとき、参加つくり手へ通知メールを送る</span>
           </label>
           <label className="flex items-start gap-3 text-sm leading-7 text-sumi-soft">
             <input
@@ -723,7 +788,7 @@ export default function AdminSettingsPage() {
               checked={draft.mailArtistDecision}
               onChange={(e) => setDraft({ ...draft, mailArtistDecision: e.target.checked })}
             />
-            <span>作家を公開または非公開にしたとき、本人へメールを送る</span>
+            <span>つくり手を公開または非公開にしたとき、本人へメールを送る</span>
           </label>
         </section>
 

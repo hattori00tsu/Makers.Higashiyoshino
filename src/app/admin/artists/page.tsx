@@ -30,22 +30,22 @@ export default function AdminArtistsPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">ADMIN</p>
-      <h1 className="mt-3 font-serif text-3xl tracking-wide">作家</h1>
+      <h1 className="mt-3 font-serif text-3xl tracking-wide">つくり手</h1>
       <AdminNav />
       <div className="mb-10">
         <Link
           href="/admin/artists/new"
           className="inline-flex items-center border border-sumi bg-sumi px-5 py-2.5 text-[13px] tracking-[0.16em] text-kami"
         >
-          作家を追加
+          つくり手を追加
         </Link>
         <p className="mt-6 text-sm leading-7 text-sumi-soft">
-          運営からも作家を追加できます。作家自身の登録は非公開ではじまり、ここで公開します。登録済みの作家は、プロフィールと公開／非公開を直せます。作品の追加は各作家のマイページから行います。
+          運営からもつくり手を追加できます。つくり手自身の登録は非公開ではじまり、ここで公開します。登録済みのつくり手は、プロフィールと公開／非公開を直せます。作品の追加は各作家のマイページから行います。
         </p>
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-sumi-soft">登録された作家はまだいません。</p>
+        <p className="text-sm text-sumi-soft">登録されたつくり手はまだいません。</p>
       ) : (
         <ul className="divide-y divide-line border-y border-line">
           {items.map((item) => (

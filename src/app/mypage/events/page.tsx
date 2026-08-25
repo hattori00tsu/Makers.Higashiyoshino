@@ -9,6 +9,7 @@ import { artistSlugForUser } from "@/lib/account/local";
 import { loadEventsForArtistLive } from "@/lib/content/live";
 import { canEditArtistEvent, eventsManagedByArtist, type EventItem } from "@/data/site";
 import { formatDateJa } from "@/lib/dates";
+import { artistEntryPath } from "@/lib/account/paths";
 
 const statusLabel: Record<string, string> = {
   draft: "公開待ち",
@@ -25,11 +26,11 @@ export default function MypageEventsPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/login?next=/mypage/events");
+      router.replace(artistEntryPath("/mypage/events"));
       return;
     }
     if (user.artistStatus === "none") {
-      router.replace("/mypage");
+      router.replace(artistEntryPath());
       return;
     }
     async function load() {
@@ -41,7 +42,7 @@ export default function MypageEventsPage() {
       setItems(slug ? eventsManagedByArtist(slug, all) : []);
     }
     load();
-  }, [user?.id, user?.artistSlug, user?.artistStatus, user?.source, loading, router, user]);
+  }, [user?.id, user?.artistSlug, user?.artistStatus, user?.source, loading, router]);
 
   if (!user) {
     return (

@@ -35,7 +35,7 @@ export default function AdminArtistEditPage() {
   return (
     <div className="mx-auto max-w-2xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">ADMIN</p>
-      <h1 className="mt-3 font-serif text-3xl tracking-wide">作家を編集</h1>
+      <h1 className="mt-3 font-serif text-3xl tracking-wide">つくり手を編集</h1>
       <AdminNav />
       {artist.draft.slug ? (
         <p className="mb-10 text-sm text-sumi-soft">
@@ -49,7 +49,7 @@ export default function AdminArtistEditPage() {
           です。
         </p>
       ) : (
-        <p className="mb-10 text-sm text-sumi-soft">公開URLを入れると、作家ページに出ます。</p>
+        <p className="mb-10 text-sm text-sumi-soft">公開URLを入れると、つくり手ページに出ます。</p>
       )}
       <ArtistForm
         key={params.slug}

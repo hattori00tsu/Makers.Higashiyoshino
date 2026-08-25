@@ -10,7 +10,7 @@ type Body = {
 };
 
 function safeNext(path?: string) {
-  return path?.startsWith("/") ? path : "/mypage";
+  return path?.startsWith("/") ? path : "/visit";
 }
 
 function signInHtml(text: string, signInUrl: string) {

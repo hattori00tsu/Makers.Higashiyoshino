@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         to: artist.email,
         ...renderMail(flags.copy, "cancelArtist", {
           ...vars,
-          artistName: artist.name?.trim() || "作家",
+          artistName: artist.name?.trim() || "つくり手",
         }),
       });
     }

@@ -8,6 +8,7 @@ import { emptyDraft, type ArtistDraft } from "@/lib/account/types";
 import { getLocalAccount, saveLocalDraft } from "@/lib/account/local";
 import { fetchRemoteArtist, upsertRemoteArtist } from "@/lib/account/remote";
 import { useSession } from "@/lib/account/use-session";
+import { artistEntryPath } from "@/lib/account/paths";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -17,11 +18,11 @@ export default function ProfilePage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/login?next=/mypage/profile");
+      router.replace(artistEntryPath("/mypage/profile"));
       return;
     }
     if (user.artistStatus === "none") {
-      router.replace("/mypage");
+      router.replace(artistEntryPath());
       return;
     }
     async function load() {
@@ -34,7 +35,7 @@ export default function ProfilePage() {
       setDraft(remote.artist ?? emptyDraft());
     }
     load();
-  }, [user, loading, router]);
+  }, [user?.id, user?.artistStatus, user?.source, loading, router]);
 
   if (!draft || !user) {
     return (
@@ -51,6 +52,7 @@ export default function ProfilePage() {
       <MypageNav />
       <ArtistForm
         initial={draft}
+        email={user.email}
         submitLabel="保存する"
         onSave={async (next) => {
           if (user.source === "preview") saveLocalDraft(user.id, next);

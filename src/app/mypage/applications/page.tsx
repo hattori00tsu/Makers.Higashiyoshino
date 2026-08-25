@@ -10,6 +10,7 @@ import { artistSlugForUser } from "@/lib/account/local";
 import { loadApplicationsForArtistLive } from "@/lib/content/live";
 import type { Application } from "@/lib/content/applications";
 import { eventsManagedByArtist, needsReservation, type EventItem } from "@/data/site";
+import { artistEntryPath } from "@/lib/account/paths";
 
 function byFirstSession(a: EventItem, b: EventItem) {
   return new Date(a.sessions[0]?.startsAt ?? 0).getTime() - new Date(b.sessions[0]?.startsAt ?? 0).getTime();
@@ -26,11 +27,11 @@ export default function MypageApplicationsPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/login?next=/mypage/applications");
+      router.replace(artistEntryPath("/mypage/applications"));
       return;
     }
     if (user.artistStatus === "none") {
-      router.replace("/mypage");
+      router.replace(artistEntryPath());
       return;
     }
     async function load() {
@@ -44,7 +45,7 @@ export default function MypageApplicationsPage() {
       setRows(next.applications);
     }
     load();
-  }, [user, loading, router]);
+  }, [user?.id, user?.artistSlug, user?.artistStatus, user?.source, loading, router]);
 
   const listedEvents = useMemo(() => {
     const managed = new Set(eventsManagedByArtist(artistSlug, events).map((event) => event.slug));

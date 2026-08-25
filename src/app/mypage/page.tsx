@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MypageNav } from "@/components/account/mypage-nav";
 import { PrimaryButton } from "@/components/account/fields";
-import { VisitorReservations } from "@/components/account/visitor-reservations";
 import { artistSlugForUser } from "@/lib/account/local";
+import { artistEntryPath } from "@/lib/account/paths";
 import { partitionArtistEvents } from "@/lib/calendar";
 import { eventAncestorTitle, eventCategoryLabel, eventsForArtist } from "@/data/site";
 import { loadEventsForArtistLive } from "@/lib/content/live";
@@ -23,10 +23,13 @@ export default function MypagePage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/login?next=/mypage");
+      router.replace(artistEntryPath("/mypage"));
       return;
     }
-    if (user.artistStatus === "none") return;
+    if (user.artistStatus === "none") {
+      router.replace(artistEntryPath());
+      return;
+    }
     const slug = artistSlugForUser(user);
     const localOnly = user.source === "preview";
     let active = true;
@@ -38,36 +41,17 @@ export default function MypagePage() {
     return () => {
       active = false;
     };
-  }, [user?.id, user?.artistSlug, user?.artistStatus, user?.source, loading, router, user]);
+  }, [user?.id, user?.artistSlug, user?.artistStatus, user?.source, loading, router]);
 
   async function onSignOut() {
     await signOut();
     window.location.assign("/");
   }
 
-  if (!user) {
+  if (!user || user.artistStatus === "none") {
     return (
       <div className="mx-auto max-w-3xl px-5 pt-28">
         <p className="text-sm text-sumi-soft">読み込み中です。</p>
-      </div>
-    );
-  }
-
-  if (user.artistStatus === "none") {
-    return (
-      <div className="mx-auto max-w-3xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
-        <p className="text-[11px] tracking-[0.28em] text-tsuchi">ACCOUNT</p>
-        <h1 className="mt-3 font-serif text-3xl tracking-wide">{user.name}</h1>
-        <p className="mt-8 text-sm leading-7 text-sumi-soft">
-          申し込んだ催しです。参加予定の予約は、ここからキャンセルを申請できます。
-          {user.role === "admin" ? " 運営画面はこのアカウントのまま使えます。" : ""}
-        </p>
-        <VisitorReservations user={user} />
-        <div className="mt-14">
-          <PrimaryButton type="button" onClick={onSignOut}>
-            ログアウト
-          </PrimaryButton>
-        </div>
       </div>
     );
   }
@@ -80,6 +64,7 @@ export default function MypagePage() {
     <div className="mx-auto max-w-3xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">MYPAGE</p>
       <h1 className="mt-3 font-serif text-3xl tracking-wide">{user.name}</h1>
+      <p className="mt-2 text-sm text-sumi-soft">{user.email || "メール未登録"}</p>
       <MypageNav />
 
       {user.artistStatus === "approved" ? (

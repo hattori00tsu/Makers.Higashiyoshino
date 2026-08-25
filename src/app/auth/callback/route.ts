@@ -9,8 +9,8 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const nextParam = url.searchParams.get("next") ?? "/mypage";
-  const requested = nextParam.startsWith("/") ? nextParam : "/mypage";
+  const nextParam = url.searchParams.get("next") ?? "/visit";
+  const requested = nextParam.startsWith("/") ? nextParam : "/visit";
   const supabase = await createServerSupabase();
 
   if (supabase && code) {

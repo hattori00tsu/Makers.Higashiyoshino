@@ -25,7 +25,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const artist = await loadPublicArtist(slug);
-  return { title: artist?.name ?? "作家" };
+  return { title: artist?.name ?? "つくり手" };
 }
 
 function hasStudio(artist: Artist) {

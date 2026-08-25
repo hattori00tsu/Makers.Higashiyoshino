@@ -8,6 +8,7 @@ import { useSession } from "@/lib/account/use-session";
 import { artistSlugForUser } from "@/lib/account/local";
 import { saveEventLive } from "@/lib/content/live";
 import { notifyOps } from "@/lib/mail/notify";
+import { artistEntryPath } from "@/lib/account/paths";
 
 export default function MypageNewEventPage() {
   const router = useRouter();
@@ -18,11 +19,11 @@ export default function MypageNewEventPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace("/login?next=/mypage/events/new");
+      router.replace(artistEntryPath("/mypage/events/new"));
       return;
     }
     if (user.artistStatus === "none") {
-      router.replace("/mypage");
+      router.replace(artistEntryPath());
       return;
     }
     async function load() {
@@ -30,7 +31,7 @@ export default function MypageNewEventPage() {
       setArtistSlug(artistSlugForUser(user));
     }
     load();
-  }, [user, loading, router]);
+  }, [user?.id, user?.artistStatus, loading, router]);
 
   if (!user || !artistSlug) {
     return (

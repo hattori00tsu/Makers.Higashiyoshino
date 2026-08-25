@@ -21,7 +21,7 @@ export default function AdminManualPage() {
             来訪者は催しの閲覧だけならログインしません。申込みと予約の確認は、来訪者の入口から入ります。作家と運営の入口は分けています。どれも Google、またはメールに届くリンクで入ります。パスワードはありません。同じアカウントに運営権限と作家登録の両方を付けられます。
           </p>
           <p className="mt-3">
-            来訪者は <Link href="/login" className="underline decoration-line underline-offset-4">入る</Link>、作家は
+            来訪者は <Link href="/visit" className="underline decoration-line underline-offset-4">来訪者</Link>、つくり手は
             <Link href="/register" className="mx-1 underline decoration-line underline-offset-4">つくり手として入る</Link>
             、運営は
             <Link href="/admin/login" className="mx-1 underline decoration-line underline-offset-4">運営として入る</Link>
@@ -30,21 +30,21 @@ export default function AdminManualPage() {
         </section>
 
         <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">作家登録</h2>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">つくり手登録</h2>
           <ol className="mt-4 list-decimal space-y-2 pl-5">
             <li>
-              作家は
+              つくり手は
               <Link href="/register" className="mx-1 underline decoration-line underline-offset-4">
                 つくり手の入口
               </Link>
-              から入り、未登録なら作家登録をします。運営アカウントでも、同じ手順で作家登録できます。登録直後は非公開で、運営が公開するとサイトに出ます。
+              から入り、未登録ならつくり手登録をします。運営アカウントでも、同じ手順でつくり手登録できます。登録直後は非公開で、運営が公開するとサイトに出ます。
             </li>
             <li>
-              登録後、作家はマイページでプロフィール、作品、個別の催しを直せます。運営は
+              登録後、つくり手はマイページでプロフィール、作品、個別の催しを直せます。運営は
               <Link href="/admin/artists" className="mx-1 underline decoration-line underline-offset-4">
-                作家
+                つくり手
               </Link>
-              から詳細し、公開ページの内容と公開／非公開を直せます。作家の追加もここからできます。アカウントがなくても公開ページ用に足せます。参加する催しは、催しの編集で作家を紐付けたときに出ます。
+              から詳細し、公開ページの内容と公開／非公開を直せます。つくり手の追加もここからできます。アカウントがなくても公開ページ用に足せます。参加する催しは、催しの編集でつくり手を紐付けたときに出ます。
             </li>
           </ol>
         </section>
@@ -52,7 +52,7 @@ export default function AdminManualPage() {
         <section>
           <h2 className="font-serif text-xl tracking-wide text-sumi">催しを出す</h2>
           <p className="mt-4">
-            運営は <Link href="/admin/events" className="underline decoration-line underline-offset-4">催し</Link> から作ります。総合開催と会場は運営だけが作ります。催しの種別・作家のカテゴリー・シリーズ・会場・駐車場は
+            運営は <Link href="/admin/events" className="underline decoration-line underline-offset-4">催し</Link> から作ります。総合開催と会場は運営だけが作ります。催しの種別・つくり手のカテゴリー・シリーズ・会場・駐車場は
             <Link href="/admin/options" className="mx-1 underline decoration-line underline-offset-4">項目</Link>
             で増やします。シリーズは毎年続く開催につけ、年号は入れません。同じシリーズの過去回は、各ページの下に出ます。会場と駐車場は総合開催と会場で選び、個別の催しは所属する会場の案内を使います。
           </p>
@@ -60,9 +60,9 @@ export default function AdminManualPage() {
             総合開催は日付だけの枠で、カレンダーに出ます。会場は総合開催がなくても公開でき、下に置くこともできます。会場の日程は、個別の催しと同じ時刻つきの枠と、総合開催と同じ終日枠の両方を入れられます。個別の催しは、総合開催または会場の編集ページから入れます。詳細な日程ごとに、予約がいるときは参加可能人数を付けられます。
           </p>
           <p className="mt-3">
-            作家はマイページの
+            つくり手はマイページの
             <Link href="/mypage/events" className="mx-1 underline decoration-line underline-offset-4">催し</Link>
-            から個別の催しを作れます。公開状態と、総合開催・会場への所属は作家側では扱えません。運営が所属先のページへ入れ、公開を承認すると、トップ・催し一覧・地図に載ります。終了した総合開催と会場は
+            から個別の催しを作れます。公開状態と、総合開催・会場への所属はつくり手側では扱えません。運営が所属先のページへ入れ、公開を承認すると、トップ・催し一覧・地図に載ります。終了した総合開催と会場は
             <Link href="/archive" className="mx-1 underline decoration-line underline-offset-4">アーカイブ</Link>
             へ移ります。
           </p>
@@ -71,23 +71,25 @@ export default function AdminManualPage() {
         <section>
           <h2 className="font-serif text-xl tracking-wide text-sumi">申込み</h2>
           <p className="mt-4">
-            来訪者はログインしたうえで、名前・人数を入れて送ります。残席がなくなると受付がしまります。予約の一覧とキャンセル申請は、来訪者ページ（<Link href="/mypage" className="underline decoration-line underline-offset-4">/mypage</Link>）から行えます。
+            来訪者はログインしたうえで、名前・人数を入れて送ります。残席がなくなると受付がしまります。予約の一覧とキャンセル申請は、
+            <Link href="/visit" className="underline decoration-line underline-offset-4">来訪者</Link>
+            から行えます。
           </p>
           <p className="mt-3">
-            申込みが届いた時点で予約が確定します。内容は運営の <Link href="/admin/applications" className="underline decoration-line underline-offset-4">申込み</Link> と、作家の
+            申込みが届いた時点で予約が確定します。内容は運営の <Link href="/admin/applications" className="underline decoration-line underline-offset-4">申込み</Link> と、つくり手の
             <Link href="/mypage/applications" className="mx-1 underline decoration-line underline-offset-4">申込み</Link>
-            で確認できます。予約が入ると、参加作家へ通知メールを送ります。定員はサーバー側でも見て、残席を超える申込みは受け付けません。確認メールは任意です。サーバーの環境変数に <code className="text-sumi">RESEND_API_KEY</code> と <code className="text-sumi">RESEND_FROM</code> があれば送り、なければ保存だけします。
+            で確認できます。予約が入ると、参加つくり手へ通知メールを送ります。定員はサーバー側でも見て、残席を超える申込みは受け付けません。確認メールは任意です。サーバーの環境変数に <code className="text-sumi">RESEND_API_KEY</code> と <code className="text-sumi">RESEND_FROM</code> があれば送り、なければ保存だけします。
           </p>
         </section>
 
         <section>
           <h2 className="font-serif text-xl tracking-wide text-sumi">トップページ</h2>
           <p className="mt-4">
-            直近の催しとむらの作家の並びは、
+            直近の催しとむらのつくり手の並びは、
             <Link href="/admin/settings" className="mx-1 underline decoration-line underline-offset-4">
               設定
             </Link>
-            で変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、過去の総合開催と会場はアーカイブです。冒頭の写真と文言、01 VILLAGE、「このサイトについて」のコンセプト、村を訪ねるの写真も同じ画面から直せます。
+            で変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、過去の総合開催と会場はアーカイブです。冒頭の写真と文言、01 VILLAGE（複数可。複数あるときは約20秒ごとにスライドします）、「このサイトについて」のコンセプト、村を訪ねるの写真も同じ画面から直せます。
           </p>
         </section>
 

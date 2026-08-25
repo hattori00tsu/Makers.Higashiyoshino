@@ -27,11 +27,11 @@ export default function PrivacyPage() {
               催しの申込み：お名前、メールアドレス、人数、連絡事項、対象の催しと日程。申込みにはログインが必要です
             </li>
             <li>
-              来訪者・作家・運営のログイン：メールアドレス。Google
+              来訪者・つくり手・運営のログイン：メールアドレス。Google
               で入る場合は、Google が本サイトへ渡すアカウント情報。入口は分けていますが、認証は同じです
             </li>
             <li>
-              作家登録：氏名、よみ、紹介文、工房の所在と見学案内、作品画像、SNS
+              つくり手登録：氏名、よみ、紹介文、工房の所在と見学案内、作品画像、SNS
               や店舗のURL
             </li>
           </ul>
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
           <h2 className="font-serif text-xl tracking-wide text-sumi">利用目的</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5">
             <li>催しの受付、残席の管理、キャンセル、当日までの連絡</li>
-            <li>作家ページの公開</li>
+            <li>つくり手ページの公開</li>
             <li>ログイン状態の維持</li>
             <li>申込みの確認メールなど、運営上必要な連絡</li>
           </ul>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
             催しの申込み内容は公開しません。運営と、必要があれば当該催しの関係者が確認します。
           </p>
           <p className="mt-3">
-            作家プロフィール、作品、工房の位置は、登録した内容がサイトへ出ます。公開したくない項目は、空欄のままにしてください。
+            つくり手プロフィール、作品、工房の位置は、登録した内容がサイトへ出ます。公開したくない項目は、空欄のままにしてください。
           </p>
         </section>
 
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="font-serif text-xl tracking-wide text-sumi">Cookie</h2>
           <p className="mt-4">
-            作家と運営がログインした状態を保つため、Cookie
+            つくり手と運営がログインした状態を保つため、Cookie
             を使います。閲覧や催しの申込みだけであれば、ログイン用の Cookie は不要です。
           </p>
         </section>
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="font-serif text-xl tracking-wide text-sumi">保管と削除</h2>
           <p className="mt-4">
-            申込みの記録は、催しの運営に必要な期間、保管します。作家アカウントの情報は、登録が続くあいだ保管します。
+            申込みの記録は、催しの運営に必要な期間、保管します。つくり手アカウントの情報は、登録が続くあいだ保管します。
           </p>
           <p className="mt-3">
             開示、訂正、利用停止、削除のご請求は、下記の運営までご連絡ください。本人確認のうえ、対応します。

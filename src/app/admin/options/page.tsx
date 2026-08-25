@@ -59,7 +59,7 @@ export default function AdminOptionsPage() {
       />
 
       <NameListSection
-        title="作家のカテゴリー"
+        title="つくり手のカテゴリー"
         placeholder="例：金工"
         items={options.genres}
         draft={genreDraft}

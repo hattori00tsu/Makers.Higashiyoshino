@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { loginEntryFor } from "@/lib/account/paths";
 import { PREVIEW_COOKIE } from "@/lib/account/types";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 import { hasSupabaseAuthCookie, isPrefetchRequest } from "@/lib/supabase/auth-cookie";
@@ -15,6 +16,12 @@ function signedInFromCookies(request: NextRequest) {
   return Boolean(hasSupabaseAuthCookie(request.cookies.getAll()) || (!isSupabaseConfigured() && preview));
 }
 
+function authEntry(request: NextRequest, pathname: string) {
+  const login = new URL(loginEntryFor(pathname), request.url);
+  login.searchParams.set("next", pathname);
+  return login;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const needsAuth =
@@ -25,9 +32,7 @@ export async function middleware(request: NextRequest) {
     const preview = request.cookies.get(PREVIEW_COOKIE)?.value;
     const signedIn = signedInFromCookies(request);
     if (needsAuth && !signedIn) {
-      const login = new URL(pathname.startsWith("/admin") ? "/admin/login" : "/login", request.url);
-      login.searchParams.set("next", pathname);
-      return NextResponse.redirect(login);
+      return NextResponse.redirect(authEntry(request, pathname));
     }
     if (pathname.startsWith("/admin") && !isAdminLogin(pathname) && preview && preview !== "preview-admin" && !hasSupabaseAuthCookie(request.cookies.getAll())) {
       return NextResponse.redirect(new URL("/admin/login?denied=1", request.url));
@@ -40,9 +45,7 @@ export async function middleware(request: NextRequest) {
   const signedIn = Boolean(userId || (!isSupabaseConfigured() && preview));
 
   if (needsAuth && !signedIn) {
-    const login = new URL(pathname.startsWith("/admin") ? "/admin/login" : "/login", request.url);
-    login.searchParams.set("next", pathname);
-    return NextResponse.redirect(login);
+    return NextResponse.redirect(authEntry(request, pathname));
   }
 
   if (
