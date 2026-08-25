@@ -89,7 +89,7 @@ export default function AdminManualPage() {
             <Link href="/admin/settings" className="mx-1 underline decoration-line underline-offset-4">
               設定
             </Link>
-            で変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、過去の総合開催と会場はアーカイブです。冒頭の写真と文言、01 VILLAGE（複数可。複数あるときは約20秒ごとにスライドします）、「このサイトについて」のコンセプト、村を訪ねるの写真も同じ画面から直せます。
+            のトップから変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、過去の総合開催と会場はアーカイブです。冒頭の写真と文言、01 VILLAGE（複数可。複数あるときは約20秒ごとにスライドします）、「このサイトについて」のコンセプト、村を訪ねるの写真も同じ画面から直せます。
           </p>
         </section>
 
@@ -105,7 +105,7 @@ export default function AdminManualPage() {
           <h2 className="font-serif text-xl tracking-wide text-sumi">本番の前に</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5">
             <li>
-              Supabase で <code className="text-sumi">supabase/schema.sql</code> を実行し、Authentication の Google と Email（Magic link）を有効にします。Redirect URL に <code className="text-sumi">/auth/callback</code> を入れます。ログインや申込みのメール文面は <Link href="/admin/settings" className="underline decoration-line underline-offset-4">設定</Link> で変更できます。
+              Supabase で <code className="text-sumi">supabase/schema.sql</code> を実行し、Authentication の Google と Email（Magic link）を有効にします。Redirect URL に <code className="text-sumi">/auth/callback</code> を入れます。ログインや申込みのメール文面は <Link href="/admin/settings/mail" className="underline decoration-line underline-offset-4">設定のメール</Link> で変更できます。
             </li>
             <li>
               <code className="text-sumi">.env.example</code> を <code className="text-sumi">.env.local</code> にコピーし、Supabase の URL と anon key を入れます。
