@@ -22,7 +22,7 @@ async function fetchPublicHomeDisplay(): Promise<HomeDisplay> {
   return parseHomeDisplay((data as { items?: unknown }).items);
 }
 
-export const loadPublicHomeDisplay = unstable_cache(fetchPublicHomeDisplay, ["public-home-display-v3"], {
+export const loadPublicHomeDisplay = unstable_cache(fetchPublicHomeDisplay, ["public-home-display-v4"], {
   revalidate: PUBLIC_REVALIDATE_SECONDS,
   tags: ["public-home-display"],
 });

@@ -23,9 +23,9 @@ export function ArtistGridView({
   return (
     <section className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
       <SectionHeading
-        index="03"
+        index=""
         eyebrow="ARTISTS"
-        title="作家"
+        title="つくり手"
         action={
           items.length > 0 || artists.length > 0 ? (
             <Link
@@ -40,7 +40,7 @@ export function ArtistGridView({
 
       {artists.length === 0 ? (
         <p className="mt-10 max-w-xl text-sm leading-7 text-sumi-soft md:mt-12">
-          いま公開中の作家はいません。
+          いま公開中のつくり手はいません。
           <Link href="/artists" className="ml-2 underline decoration-line underline-offset-4">
           詳細を見る
           </Link>

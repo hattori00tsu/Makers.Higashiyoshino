@@ -3,10 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AuthMenu } from "@/components/auth/auth-menu";
-import { nav, site } from "@/data/site";
 
-export function SiteHeader() {
+type NavItem = {
+  href: string;
+  label: string;
+};
+
+export function SiteHeader({
+  items,
+  shortName,
+  name,
+}: {
+  items: readonly NavItem[];
+  shortName: string;
+  name: string;
+}) {
   const pathname = usePathname();
   const overlay = pathname === "/";
   const [scrolled, setScrolled] = useState(false);
@@ -41,18 +52,17 @@ export function SiteHeader() {
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5 md:h-16 md:px-8">
         <Link href="/" className="flex items-baseline gap-2 tracking-wide">
-          <span className="font-serif text-[17px] leading-none">{site.shortName}</span>
+          <span className="font-serif text-[17px] leading-none">{shortName}</span>
           <span
             className={`hidden text-[10px] tracking-[0.28em] sm:inline ${
               light ? "text-kami/80" : "text-sumi-soft"
             }`}
           >
-            ARTISTS
           </span>
         </Link>
 
         <nav className="hidden items-center gap-5 lg:gap-8 md:flex">
-          {nav.map((item) => (
+          {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -65,32 +75,29 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
-          <AuthMenu light={light} />
-          <button
-            type="button"
-            className="relative h-10 w-10 md:hidden"
-            aria-label={open ? "メニューを閉じる" : "メニューを開く"}
-            onClick={() => setOpen((value) => !value)}
-          >
-            <span
-              className={`absolute left-2 right-2 h-px transition-all ${
-                light ? "bg-kami" : "bg-sumi"
-              } ${open ? "top-1/2 rotate-45" : "top-[15px]"}`}
-            />
-            <span
-              className={`absolute left-2 right-2 h-px transition-all ${
-                light ? "bg-kami" : "bg-sumi"
-              } ${open ? "top-1/2 -rotate-45" : "top-[23px]"}`}
-            />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="relative h-10 w-10 md:hidden"
+          aria-label={open ? "メニューを閉じる" : "メニューを開く"}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <span
+            className={`absolute left-2 right-2 h-px transition-all ${
+              light ? "bg-kami" : "bg-sumi"
+            } ${open ? "top-1/2 rotate-45" : "top-[15px]"}`}
+          />
+          <span
+            className={`absolute left-2 right-2 h-px transition-all ${
+              light ? "bg-kami" : "bg-sumi"
+            } ${open ? "top-1/2 -rotate-45" : "top-[23px]"}`}
+          />
+        </button>
       </div>
 
       {open ? (
         <div className="fixed inset-0 top-14 z-40 bg-washi px-8 pt-10 text-sumi md:hidden">
           <nav className="flex flex-col gap-7">
-            {nav.map((item) => (
+            {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -100,7 +107,7 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <p className="mt-16 text-sm tracking-wide text-sumi-soft">{site.name}</p>
+          <p className="mt-16 text-sm tracking-wide text-sumi-soft">{name}</p>
         </div>
       ) : null}
     </header>

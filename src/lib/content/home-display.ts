@@ -5,6 +5,8 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const homeEventLimit = 3;
+export const homeVillageLimit = 8;
+export const villageSlideIntervalMs = 20_000;
 export const defaultHeroImage = "/images/2.jpg";
 export const defaultVillageImage = "/images/3.jpg";
 export const defaultVisitImage = "/images/4.jpg";
@@ -22,6 +24,7 @@ export type HomeHero = {
 };
 
 export type HomeVillage = {
+  id?: string;
   image: string;
   title: string;
   schedule: string;
@@ -37,7 +40,7 @@ export type AboutConcept = {
 
 export type HomeDisplay = {
   hero: HomeHero;
-  village: HomeVillage;
+  villages: HomeVillage[];
   visitImage: string;
   about: AboutConcept;
   eventsMode: HomeEventsMode;
@@ -61,6 +64,10 @@ export const defaultHomeVillage = (): HomeVillage => ({
   summary: "",
 });
 
+export function newHomeVillage(): HomeVillage {
+  return { ...defaultHomeVillage(), id: crypto.randomUUID() };
+}
+
 export const defaultAboutConcept = (): AboutConcept => ({
   image: defaultAboutImage,
   heading: "コンセプト",
@@ -70,7 +77,7 @@ export const defaultAboutConcept = (): AboutConcept => ({
 
 export const defaultHomeDisplay = (): HomeDisplay => ({
   hero: defaultHomeHero(),
-  village: defaultHomeVillage(),
+  villages: [defaultHomeVillage()],
   visitImage: defaultVisitImage,
   about: defaultAboutConcept(),
   eventsMode: "upcoming",
@@ -138,11 +145,20 @@ function normalizeVillage(value: unknown): HomeVillage {
   if (!value || typeof value !== "object" || Array.isArray(value)) return fallback;
   const row = value as Partial<HomeVillage>;
   return {
+    id: asText(row.id) || undefined,
     image: asText(row.image) || fallback.image,
     title: asText(row.title),
     schedule: asText(row.schedule),
     summary: typeof row.summary === "string" ? row.summary.trim() : "",
   };
+}
+
+function normalizeVillages(villages: unknown, legacyVillage: unknown): HomeVillage[] {
+  if (Array.isArray(villages)) {
+    return villages.map(normalizeVillage).slice(0, homeVillageLimit);
+  }
+  if (legacyVillage) return [normalizeVillage(legacyVillage)];
+  return [defaultHomeVillage()];
 }
 
 function normalizeAbout(value: unknown): AboutConcept {
@@ -158,13 +174,13 @@ function normalizeAbout(value: unknown): AboutConcept {
 }
 
 export function normalizeHomeDisplay(
-  value: (Partial<HomeDisplay> & { heroImage?: unknown }) | null | undefined,
+  value: (Partial<HomeDisplay> & { heroImage?: unknown; village?: unknown }) | null | undefined,
 ): HomeDisplay {
   const fallback = defaultHomeDisplay();
   if (!value || Array.isArray(value)) return fallback;
   return {
     hero: normalizeHero(value.hero, value.heroImage),
-    village: normalizeVillage(value.village),
+    villages: normalizeVillages(value.villages, value.village),
     visitImage: asText(value.visitImage) || fallback.visitImage,
     about: normalizeAbout(value.about),
     eventsMode: asEventsMode(value.eventsMode),
@@ -207,7 +223,32 @@ export function arrangeHomeArtists(items: Artist[], display: HomeDisplay) {
 
 export function parseHomeDisplay(items: unknown): HomeDisplay {
   if (!items || typeof items !== "object" || Array.isArray(items)) return defaultHomeDisplay();
-  return normalizeHomeDisplay(items as Partial<HomeDisplay> & { heroImage?: unknown });
+  return normalizeHomeDisplay(items as Partial<HomeDisplay> & { heroImage?: unknown; village?: unknown });
+}
+
+export function hasPendingHomeImage(display: HomeDisplay) {
+  return (
+    display.hero.image.startsWith("blob:") ||
+    display.visitImage.startsWith("blob:") ||
+    display.about.image.startsWith("blob:") ||
+    display.villages.some((item) => item.image.startsWith("blob:"))
+  );
+}
+
+export function withVillageIds(display: HomeDisplay): HomeDisplay {
+  return {
+    ...display,
+    villages: display.villages.map((item) => ({
+      ...item,
+      id: item.id || crypto.randomUUID(),
+    })),
+  };
+}
+
+export function homeVillages(display: HomeDisplay & { village?: HomeVillage }): HomeVillage[] {
+  if (Array.isArray(display.villages)) return display.villages;
+  if (display.village) return [display.village];
+  return [defaultHomeVillage()];
 }
 
 export function loadLocalHomeDisplay(): HomeDisplay {
@@ -255,29 +296,27 @@ async function ensureHomeImage(image: string) {
 
 export async function saveHomeDisplay(display: HomeDisplay, preview?: boolean) {
   const next = normalizeHomeDisplay(display);
-  if (
-    next.hero.image.startsWith("blob:") ||
-    next.visitImage.startsWith("blob:") ||
-    next.village.image.startsWith("blob:") ||
-    next.about.image.startsWith("blob:")
-  ) {
+  if (hasPendingHomeImage(next)) {
     throw new Error("image");
   }
   if (preview || !isSupabaseConfigured()) {
     saveLocalHomeDisplay(next);
     return next;
   }
-  const [heroImage, visitImage, villageImage, aboutImage] = await Promise.all([
+  const [heroImage, visitImage, aboutImage, ...villageImages] = await Promise.all([
     ensureHomeImage(next.hero.image),
     ensureHomeImage(next.visitImage),
-    ensureHomeImage(next.village.image),
     ensureHomeImage(next.about.image),
+    ...next.villages.map((item) => ensureHomeImage(item.image)),
   ]);
   const payload: HomeDisplay = {
     ...next,
     hero: { ...next.hero, image: heroImage },
     visitImage,
-    village: { ...next.village, image: villageImage },
+    villages: next.villages.map((item, index) => ({
+      ...item,
+      image: villageImages[index] ?? item.image,
+    })),
     about: { ...next.about, image: aboutImage },
   };
   const supabase = createBrowserSupabase();

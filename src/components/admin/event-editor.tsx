@@ -835,10 +835,10 @@ export function EventEditor({
 
       {kind === "program" ? (
         <div>
-          <p className="mb-3 text-[12px] tracking-[0.14em] text-sumi-soft">参加作家</p>
+          <p className="mb-3 text-[12px] tracking-[0.14em] text-sumi-soft">参加つくり手</p>
           {artistMode ? (
             <p className="text-sm leading-7 text-sumi-soft">
-              参加作家として、この催しにあなたの名前が載ります。申込みの管理と通知も、参加作家が担当します。
+              参加つくり手として、この催しにあなたの名前が載ります。申込みの管理と通知も、参加つくり手が担当します。
             </p>
           ) : (
             <>
@@ -858,7 +858,7 @@ export function EventEditor({
                 ))}
               </ul>
               <p className="mt-3 text-xs leading-6 text-sumi-soft">
-                参加作家は、運営と同じく催しを編集できます。申込みの管理と通知先にもなります。
+                参加つくり手は、運営と同じく催しを編集できます。申込みの管理と通知先にもなります。
               </p>
             </>
           )}

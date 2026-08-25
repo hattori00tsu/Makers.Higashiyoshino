@@ -10,7 +10,6 @@ export function SiteFooter() {
           <p className="max-w-sm text-sm leading-7 text-sumi-soft">
             {site.name}
             <br />
-            {site.name}
           </p>
         </div>
         <div className="flex flex-col gap-6 md:items-end">
@@ -20,11 +19,11 @@ export function SiteFooter() {
                 {item.label}
               </Link>
             ))}
-            <Link href="/login" className="hover:text-sugi">
-            ログイン
-            </Link>
           </nav>
           <nav className="flex flex-wrap gap-8 text-[13px] tracking-[0.16em] text-sumi-soft">
+            <Link href="/login" className="hover:text-sugi">
+              ログイン
+            </Link>
             <Link href="/archive" className="hover:text-sugi">
               アーカイブ
             </Link>

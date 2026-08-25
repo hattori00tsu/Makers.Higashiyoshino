@@ -16,7 +16,7 @@ export function ArtistsBrowser({ artists }: { artists: Artist[] }) {
   if (artists.length === 0) {
     return (
       <p className="mt-12 max-w-xl text-sm leading-7 text-sumi-soft">
-        いま公開中の作家はいません。
+        いま公開中のつくり手はいません。
       </p>
     );
   }

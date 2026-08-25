@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const items = [
   { href: "/admin", label: "ホーム" },
   { href: "/admin/events", label: "催し" },
-  { href: "/admin/artists", label: "作家" },
+  { href: "/admin/artists", label: "つくり手" },
   { href: "/admin/options", label: "項目" },
   { href: "/admin/applications", label: "申込み" },
   { href: "/admin/news", label: "お知らせ" },

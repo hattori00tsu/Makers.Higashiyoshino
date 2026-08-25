@@ -152,7 +152,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         <h1 className="mt-3 font-serif text-3xl tracking-wide">予約が確定しました</h1>
         <p className="mt-6 text-sm leading-7 text-sumi-soft">{message}</p>
         <Link
-          href="/mypage"
+          href="/visit"
           className="mt-8 inline-block text-sm underline decoration-line underline-offset-4"
         >
           参加予定を見る
@@ -369,9 +369,9 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
             <Link href="/privacy" className="mx-1 underline decoration-line underline-offset-4">
               プライバシーポリシー
             </Link>
-            をご確認ください。キャンセルは
-            <Link href="/mypage" className="mx-1 underline decoration-line underline-offset-4">
-              来訪者ページ
+            をご確認ください。            キャンセルは
+            <Link href="/visit" className="mx-1 underline decoration-line underline-offset-4">
+              来訪者
             </Link>
             から申請できます。
           </p>

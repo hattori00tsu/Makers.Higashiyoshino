@@ -17,7 +17,7 @@ export function Hero({ hero }: { hero?: HomeHero }) {
     <section className="relative h-[100svh] min-h-[560px] w-full overflow-hidden">
       <Image
         src={src}
-        alt={titleLines[0] || "霧のかかる山と森"}
+        alt={titleLines[0] || ""}
         fill
         priority
         sizes="100vw"

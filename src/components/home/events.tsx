@@ -14,7 +14,7 @@ export async function EventHighlights({ display }: { display: HomeDisplay }) {
     <section className="border-y border-line bg-kami/60 py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHeading
-          index="02"
+          index=""
           eyebrow="EVENTS"
           title="直近の催し"
           action={

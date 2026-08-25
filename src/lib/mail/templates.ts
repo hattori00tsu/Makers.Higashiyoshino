@@ -60,10 +60,10 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
   },
   reservationConfirmed: {
     label: "来訪者への確定",
-    placeholders: "{{visitorName}} {{eventTitle}} {{session}} {{party}} {{siteName}} {{siteShortName}}",
+    placeholders: "{{visitorName}} {{eventTitle}} {{session}} {{party}} {{visitUrl}} {{siteName}} {{siteShortName}}",
   },
   reservationArtist: {
-    label: "参加作家への通知",
+    label: "参加つくり手への通知",
     placeholders:
       "{{artistName}} {{eventTitle}} {{visitorName}} {{visitorEmail}} {{phone}} {{session}} {{party}} {{note}} {{listUrl}}",
   },
@@ -72,7 +72,7 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
     placeholders: "{{visitorName}} {{eventTitle}} {{session}} {{party}} {{siteName}} {{siteShortName}}",
   },
   cancelArtist: {
-    label: "参加作家への通知",
+    label: "参加つくり手への通知",
     placeholders: "{{artistName}} {{eventTitle}} {{visitorName}} {{visitorEmail}} {{session}} {{party}} {{reason}} {{listUrl}}",
   },
   artistApproved: {
@@ -84,11 +84,11 @@ export const MAIL_TEMPLATE_META: Record<MailTemplateKey, { label: string; placeh
     placeholders: "{{visitorName}} {{registerUrl}} {{siteShortName}}",
   },
   artistPending: {
-    label: "作家が登録したとき（運営）",
+    label: "つくり手が登録したとき（運営）",
     placeholders: "{{visitorName}} {{artistsUrl}} {{siteShortName}}",
   },
   eventPending: {
-    label: "作家が催しを作ったとき（運営）",
+    label: "つくり手が催しを作ったとき（運営）",
     placeholders: "{{visitorName}} {{eventTitle}} {{eventAdminUrl}} {{siteShortName}}",
   },
 };
@@ -102,7 +102,7 @@ export function defaultMailTemplates(): MailTemplates {
     },
     reservationConfirmed: {
       subject: `${prefix}{{eventTitle}}の予約が確定しました`,
-      text: `{{visitorName}} さま\n\n{{eventTitle}}の予約が確定しました。\n{{session}}\n{{party}}\n\n当日まで、このメールを控えておいてください。\n{{siteName}}\n`,
+      text: `{{visitorName}} さま\n\n{{eventTitle}}の予約が確定しました。\n{{session}}\n{{party}}\n\n予約の確認とキャンセルは、次のページから行えます。\n{{visitUrl}}\n\n当日まで、このメールを控えておいてください。\n{{siteName}}\n`,
     },
     reservationArtist: {
       subject: `${prefix}{{eventTitle}}に申込みがありました`,
@@ -117,16 +117,16 @@ export function defaultMailTemplates(): MailTemplates {
       text: `{{artistName}} さま\n\n{{eventTitle}}の予約がキャンセルされました。\n\nお名前：{{visitorName}}\nメール：{{visitorEmail}}\n{{session}}\n{{party}}\n{{reason}}\n\n予約者の一覧：\n{{listUrl}}\n`,
     },
     artistApproved: {
-      subject: `${prefix}作家登録を承認しました`,
-      text: `{{visitorName}} さま\n\n{{siteName}}の作家登録を承認しました。マイページからプロフィールと作品を整えられます。\n{{mypageUrl}}\n`,
+      subject: `${prefix}つくり手登録を承認しました`,
+      text: `{{visitorName}} さま\n\n{{siteName}}のつくり手登録を承認しました。マイページからプロフィールと作品を整えられます。\n{{mypageUrl}}\n`,
     },
     artistRejected: {
-      subject: `${prefix}作家登録の申請について`,
+      subject: `${prefix}つくり手登録の申請について`,
       text: `{{visitorName}} さま\n\n今回の申請は見送らせていただきました。内容を直して、再度お申し込みください。\n{{registerUrl}}\n`,
     },
     artistPending: {
-      subject: `${prefix}作家が登録しました（{{visitorName}}）`,
-      text: `{{visitorName}} さんから作家登録がありました。いまは非公開です。公開は作家の一覧から行えます。\n{{artistsUrl}}\n`,
+      subject: `${prefix}つくり手が登録しました（{{visitorName}}）`,
+      text: `{{visitorName}} さんからつくり手登録がありました。いまは非公開です。公開はつくり手の一覧から行えます。\n{{artistsUrl}}\n`,
     },
     eventPending: {
       subject: `${prefix}催しの登録がありました（{{eventTitle}}）`,
@@ -188,7 +188,7 @@ export function reservationMailVars(input: ReservationMailVars): Record<string, 
     eventTitle: input.eventTitle,
     visitorName: input.visitorName,
     visitorEmail: input.visitorEmail,
-    artistName: input.artistName?.trim() || "作家",
+    artistName: input.artistName?.trim() || "つくり手",
     session: input.sessionLabel?.trim() ? `日程：${input.sessionLabel.trim()}` : "",
     party: input.partySize ? `人数：${input.partySize}名` : "",
     phone: input.phone?.trim() ? `電話：${input.phone.trim()}` : "",
@@ -196,6 +196,7 @@ export function reservationMailVars(input: ReservationMailVars): Record<string, 
     reason: input.reason?.trim() ? `キャンセル理由：${input.reason.trim()}` : "",
     listUrl: `${input.origin}/mypage/applications`,
     mypageUrl: `${input.origin}/mypage`,
+    visitUrl: `${input.origin}/visit`,
     registerUrl: `${input.origin}/register`,
     adminUrl: `${input.origin}/admin`,
     artistsUrl: `${input.origin}/admin/artists`,

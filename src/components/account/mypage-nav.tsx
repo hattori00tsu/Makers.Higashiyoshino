@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/mypage", label: "ホーム" },
-  { href: "/mypage/reservations", label: "予約" },
   { href: "/mypage/events", label: "催し" },
   { href: "/mypage/applications", label: "申込み" },
   { href: "/mypage/profile", label: "プロフィール" },

@@ -81,7 +81,11 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
       router.replace(nextPath.startsWith("/mypage") ? nextPath : "/mypage");
       return;
     }
-    router.replace(nextPath.startsWith("/admin") || nextPath.startsWith("/register") ? "/mypage" : nextPath);
+    router.replace(
+      nextPath.startsWith("/admin") || nextPath.startsWith("/register") || nextPath.startsWith("/mypage")
+        ? "/visit"
+        : nextPath || "/visit",
+    );
   }, [admin, intent, loading, nextPath, router, user]);
 
   async function google() {
@@ -191,14 +195,14 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
               <button
                 type="button"
                 className="text-[13px] tracking-[0.14em] text-sugi underline decoration-line underline-offset-4"
-                onClick={() => preview("preview-artist", "/mypage")}
+                onClick={() => preview("preview-artist", nextPath.startsWith("/mypage") ? nextPath : "/mypage")}
               >
                 登録済みの作家として見る
               </button>
             </div>
           </>
         ) : (
-          <PrimaryButton type="button" onClick={() => preview("preview-visitor", nextPath || "/mypage")}>
+          <PrimaryButton type="button" onClick={() => preview("preview-visitor", nextPath || "/visit")}>
             来訪者として見る
           </PrimaryButton>
         )}
@@ -213,7 +217,7 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
     <div className="space-y-8">
       {blocked ? (
         <p className="text-sm leading-7 text-sumi-soft">
-          このアカウントには運営権限がありません。作家として入る場合は
+          このアカウントには運営権限がありません。つくり手として入る場合は
           <Link href="/register" className="mx-1 underline decoration-line underline-offset-4">
             つくり手の入口
           </Link>
