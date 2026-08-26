@@ -21,7 +21,7 @@ function VillageSlide({ village, priority }: { village: HomeVillage; priority?: 
     .filter(Boolean);
 
   return (
-    <div className="grid w-full shrink-0 items-center gap-12 md:grid-cols-12 md:gap-16">
+    <div className="grid w-full min-w-full shrink-0 basis-full items-center gap-12 md:grid-cols-12 md:gap-16">
       <div className="relative aspect-[4/5] overflow-hidden md:col-span-5">
         <Image
           src={src}
@@ -162,8 +162,8 @@ export function VillageSlides({ villages }: Props) {
         onPointerCancel={onPointerUp}
       >
         <div
-          className={`flex motion-reduce:transition-none ${dragging ? "" : "transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"}`}
-          style={{ transform: `translateX(calc(-${index * 100}% + ${dragX}px))` }}
+          className={`flex gap-[var(--village-slide-gap)] [--village-slide-gap:1.25rem] motion-reduce:transition-none md:[--village-slide-gap:2rem] ${dragging ? "" : "transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"}`}
+          style={{ transform: `translateX(calc(-${index} * (100% + var(--village-slide-gap)) + ${dragX}px))` }}
         >
           {items.map((village, slideIndex) => (
             <VillageSlide
