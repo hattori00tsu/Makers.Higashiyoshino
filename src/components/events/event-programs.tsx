@@ -6,7 +6,6 @@ import { CoverImage } from "@/components/media/cover-image";
 import { useLiveSeats } from "@/components/events/live-seats";
 import { liveSeatKey } from "@/lib/content/live";
 import {
-  eventCategoryLabel,
   eventCover,
   eventPlaces,
   eventPriceLabel,
@@ -16,7 +15,8 @@ import {
   type EventItem,
 } from "@/data/site";
 import { formatSessionRange, isAllDayRange } from "@/lib/dates";
-import { useLocale, useMessages } from "@/lib/i18n/provider";
+import { localizedCategoryLabel } from "@/lib/i18n/content";
+import { useCatalog, useLocale, useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   heading: string;
@@ -101,6 +101,7 @@ function ProgramRow({
 }) {
   const locale = useLocale();
   const t = useMessages();
+  const options = useCatalog();
   const people = program.artistSlugs
     .map((slug) => names[slug])
     .filter(Boolean)
@@ -145,7 +146,7 @@ function ProgramRow({
                 <span className="mx-2 text-line">/</span>
               </>
             ) : null}
-            {eventCategoryLabel(program.categories)}
+            {localizedCategoryLabel(program.categories, locale, options.categories)}
             <span className="mx-2 text-line">/</span>
             {apply ? (allowApply && full ? t.events.full : t.events.reservationRequired) : t.events.noReservation}
           </p>

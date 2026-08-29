@@ -7,7 +7,7 @@ import { ArtistPhoto } from "@/components/media/artist-photo";
 import type { Artist } from "@/data/site";
 import { shuffleItems } from "@/lib/content/home-display";
 import { localizedArtists } from "@/lib/i18n/content";
-import { useLocale, useMessages } from "@/lib/i18n/provider";
+import { useCatalog, useLocale, useMessages } from "@/lib/i18n/provider";
 
 export function ArtistGridView({
   artists,
@@ -18,7 +18,8 @@ export function ArtistGridView({
 }) {
   const locale = useLocale();
   const t = useMessages();
-  const localized = useMemo(() => localizedArtists(artists, locale), [artists, locale]);
+  const options = useCatalog();
+  const localized = useMemo(() => localizedArtists(artists, locale, options), [artists, locale, options]);
   const [items, setItems] = useState(localized);
 
   useEffect(() => {

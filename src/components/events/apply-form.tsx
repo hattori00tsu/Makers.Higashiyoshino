@@ -14,7 +14,7 @@ import {
 import { eventPriceLabel, isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
 import { formatSessionRange } from "@/lib/dates";
 import { localizedEvent, localizedEvents } from "@/lib/i18n/content";
-import { useLocale, useMessages } from "@/lib/i18n/provider";
+import { useCatalog, useLocale, useMessages } from "@/lib/i18n/provider";
 import { useSession } from "@/lib/account/use-session";
 
 type Props = {
@@ -27,6 +27,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
   const { user, loading } = useSession();
   const locale = useLocale();
   const t = useMessages();
+  const options = useCatalog();
   const [fetchedEvent, setFetchedEvent] = useState<EventItem | null>(null);
   const [fetchedLineage, setFetchedLineage] = useState<EventItem[]>([]);
   const event = initial ?? fetchedEvent;
@@ -98,8 +99,8 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
     );
   }
 
-  const view = localizedEvent(event, locale);
-  const viewLineage = localizedEvents(lineage, locale);
+  const view = localizedEvent(event, locale, options);
+  const viewLineage = localizedEvents(lineage, locale, options);
 
   if (!isPublished(event) || (event.status ?? "published") === "cancelled") {
     return (

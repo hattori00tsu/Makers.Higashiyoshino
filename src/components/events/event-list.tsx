@@ -3,7 +3,6 @@
 import { CoverImage } from "@/components/media/cover-image";
 import Link from "next/link";
 import {
-  eventCategoryLabel,
   eventCover,
   eventPlaces,
   eventVenueLabel,
@@ -13,7 +12,8 @@ import {
   type EventItem,
 } from "@/data/site";
 import { formatDateJa } from "@/lib/dates";
-import { useLocale, useMessages } from "@/lib/i18n/provider";
+import { localizedCategoryLabel } from "@/lib/i18n/content";
+import { useCatalog, useLocale, useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   items: EventItem[];
@@ -33,6 +33,7 @@ export function EventList({
 }: Props) {
   const locale = useLocale();
   const t = useMessages();
+  const options = useCatalog();
   const empty = emptyLabel ?? t.events.noPlans;
   if (items.length === 0) {
     return <p className="text-sm leading-7 text-sumi-soft">{empty}</p>;
@@ -84,7 +85,7 @@ export function EventList({
                 }
               >
                 <p className="text-[11px] tracking-[0.18em] text-tsuchi">
-                  {eventCategoryLabel(event.categories)}
+                  {localizedCategoryLabel(event.categories, locale, options.categories)}
                   <span className="mx-2 text-line">/</span>
                   {formatDateJa(first?.startsAt ?? "", locale)}
                   {nestedVenues.length > 0 ? (

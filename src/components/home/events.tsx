@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { SectionHeading } from "@/components/section-heading";
 import { CoverImage } from "@/components/media/cover-image";
-import { eventCategoryLabel, eventCover, isPublished } from "@/data/site";
+import { eventAncestorTitle, eventCover, isPublished } from "@/data/site";
 import { arrangeHomeEvents, type HomeDisplay } from "@/lib/content/home-display";
 import { loadPublicEvents } from "@/lib/content/public-events";
+import { loadPublicEventOptions } from "@/lib/content/public-options";
 import { formatMonthDaySpan } from "@/lib/dates";
-import { localizedEvents } from "@/lib/i18n/content";
+import { localizedCategoryLabel, localizedEvents } from "@/lib/i18n/content";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 
 export async function EventHighlights({ display }: { display: HomeDisplay }) {
   const locale = await getLocale();
   const t = await getMessages();
-  const all = await loadPublicEvents();
-  const items = localizedEvents(arrangeHomeEvents(all.filter(isPublished), display), locale);
+  const [all, options] = await Promise.all([loadPublicEvents(), loadPublicEventOptions()]);
+  const catalog = localizedEvents(all.filter(isPublished), locale, options);
+  const items = arrangeHomeEvents(catalog, display);
 
   return (
     <section className="border-y border-line bg-kami/60 py-20 md:py-28">
@@ -43,6 +45,7 @@ export async function EventHighlights({ display }: { display: HomeDisplay }) {
         <div className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 md:mx-auto md:mt-12 md:max-w-6xl md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:px-8">
           {items.map((event) => {
             const cover = eventCover(event.image);
+            const ancestor = eventAncestorTitle(event, catalog);
             return (
               <Link
                 key={event.slug}
@@ -61,7 +64,13 @@ export async function EventHighlights({ display }: { display: HomeDisplay }) {
                     </div>
                   ) : null}
                   <p className={`text-[11px] tracking-[0.18em] text-tsuchi ${cover ? "mt-4" : ""}`}>
-                    {eventCategoryLabel(event.categories)}
+                    {ancestor ? (
+                      <>
+                        {ancestor}
+                        <span className="mx-2 text-line">/</span>
+                      </>
+                    ) : null}
+                    {localizedCategoryLabel(event.categories, locale, options.categories)}
                     <span className="mx-2 text-line">/</span>
                     {formatMonthDaySpan(event.sessions, locale)}
                   </p>

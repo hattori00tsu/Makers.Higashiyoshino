@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { PlaceMap, PlaceMapLegend, type PlaceMarker } from "@/components/map/place-map";
 import { isGoogleMapsUrl } from "@/lib/maps-url";
 import type { PlaceOption } from "@/data/site";
+import { useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   venues: PlaceOption[];
@@ -22,6 +23,7 @@ function toMarkers(places: PlaceOption[], kind: PlaceMarker["kind"]): PlaceMarke
 }
 
 export function EventPlacesMap({ venues, parkings }: Props) {
+  const t = useMessages();
   const [activeId, setActiveId] = useState("");
   const markers = useMemo(
     () => [...toMarkers(venues, "venue"), ...toMarkers(parkings, "parking")],
@@ -35,7 +37,7 @@ export function EventPlacesMap({ venues, parkings }: Props) {
       {markers.length > 0 ? (
         <>
           <PlaceMap
-            title="会場と駐車場"
+            title={t.events.venuesAndParking}
             markers={markers}
             activeId={activeId}
             onSelect={setActiveId}
@@ -43,8 +45,8 @@ export function EventPlacesMap({ venues, parkings }: Props) {
           <PlaceMapLegend kinds={markers.map((marker) => marker.kind)} />
         </>
       ) : null}
-      <PlaceList label="会場" places={venues} markerKind="venue" onSelect={setActiveId} />
-      <PlaceList label="駐車場" places={parkings} markerKind="parking" onSelect={setActiveId} />
+      <PlaceList label={t.events.venuesHeading} places={venues} markerKind="venue" onSelect={setActiveId} />
+      <PlaceList label={t.events.parking} places={parkings} markerKind="parking" onSelect={setActiveId} />
     </div>
   );
 }

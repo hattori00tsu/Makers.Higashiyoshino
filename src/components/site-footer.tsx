@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { site } from "@/data/site";
 import { getMessages } from "@/lib/i18n/server";
@@ -13,7 +14,19 @@ export async function SiteFooter({
     <footer className="border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-5 py-12 md:flex-row md:items-end md:justify-between md:px-8 md:py-16">
         <div className="space-y-3">
-          <p className="font-serif text-lg tracking-wide">{site.shortName}</p>
+          <Link
+            href="/"
+            className="group inline-flex items-center gap-2.5"
+          >
+            <Image
+              src="/brand-mark.png"
+              alt=""
+              width={32}
+              height={32}
+              className="h-8 w-8 opacity-55 transition-opacity group-hover:opacity-80"
+            />
+            <span className="font-serif text-lg tracking-wide">{site.shortName}</span>
+          </Link>
           <p className="max-w-sm text-sm leading-7 text-sumi-soft">
             {site.name}
             <br />

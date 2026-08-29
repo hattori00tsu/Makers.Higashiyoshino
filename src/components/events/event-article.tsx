@@ -10,7 +10,6 @@ import { EventGallery } from "@/components/events/event-gallery";
 import { EventSeriesNote } from "@/components/events/event-series-note";
 import { LiveSeatsProvider } from "@/components/events/live-seats";
 import {
-  eventCategoryLabel,
   eventCover,
   eventPlaces,
   eventPriceLabel,
@@ -22,8 +21,9 @@ import {
 } from "@/data/site";
 import { eventPhase } from "@/lib/calendar";
 import type { PublicArtistName } from "@/lib/content/public-artists";
+import { loadPublicEventOptions } from "@/lib/content/public-options";
 import { formatSessionRange } from "@/lib/dates";
-import { localizedEvent, localizedEvents } from "@/lib/i18n/content";
+import { localizedCategoryLabel, localizedEvent, localizedEvents, localizedGenreLabel } from "@/lib/i18n/content";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { pickCopy } from "@/lib/i18n/locale";
 import type { DailyWeather } from "@/lib/weather";
@@ -51,13 +51,14 @@ export async function EventArticle({
 }: Props) {
   const locale = await getLocale();
   const t = await getMessages();
-  const view = localizedEvent(event, locale);
-  const localizedVenues = localizedEvents(venues, locale);
-  const localizedPrograms = localizedEvents(programs, locale);
-  const localizedLineage = localizedEvents(lineage, locale);
-  const localizedPeers = localizedEvents(seriesPeers, locale);
+  const options = await loadPublicEventOptions();
+  const view = localizedEvent(event, locale, options);
+  const localizedVenues = localizedEvents(venues, locale, options);
+  const localizedPrograms = localizedEvents(programs, locale, options);
+  const localizedLineage = localizedEvents(lineage, locale, options);
+  const localizedPeers = localizedEvents(seriesPeers, locale, options);
   const localizedNested = Object.fromEntries(
-    Object.entries(nestedByParent).map(([slug, items]) => [slug, localizedEvents(items, locale)]),
+    Object.entries(nestedByParent).map(([slug, items]) => [slug, localizedEvents(items, locale, options)]),
   );
   const catalog = [...localizedLineage, view, ...localizedVenues, ...localizedPrograms];
   const kind = inferEventKind(event, [...lineage, event, ...venues, ...programs]);
@@ -78,7 +79,7 @@ export async function EventArticle({
       return {
         slug,
         name: pickCopy(locale, artist.name, artist.i18nEnabled ? artist.nameEn : ""),
-        genre: artist.genre,
+        genre: localizedGenreLabel(artist.genre, locale, options.genres) || artist.genre,
       };
     })
     .filter((item): item is { slug: string; name: string; genre: string } => Boolean(item));
@@ -93,7 +94,7 @@ export async function EventArticle({
       ) : null}
 
         <div className={`mx-auto max-w-3xl px-5 md:px-8 ${cover ? "pt-10 md:pt-14" : "pt-24 md:pt-28"}`}>
-        <p className="text-[11px] tracking-[0.18em] text-tsuchi">{eventCategoryLabel(event.categories)}</p>
+        <p className="text-[11px] tracking-[0.18em] text-tsuchi">{localizedCategoryLabel(event.categories, locale, options.categories)}</p>
         {lineage.length > 0 ? (
           <p className="mt-3 text-sm text-sumi-soft">
             {localizedLineage.map((item, index) => (

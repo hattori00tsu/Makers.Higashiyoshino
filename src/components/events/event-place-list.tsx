@@ -1,4 +1,7 @@
+"use client";
+
 import type { PlaceOption } from "@/data/site";
+import { useMessages } from "@/lib/i18n/provider";
 
 export function EventPlaceList({
   venues,
@@ -7,12 +10,13 @@ export function EventPlaceList({
   venues: PlaceOption[];
   parkings: PlaceOption[];
 }) {
+  const t = useMessages();
   if (venues.length === 0 && parkings.length === 0) return null;
 
   return (
     <div className="mt-10">
-      <NamedPlaces label="会場" places={venues} />
-      <NamedPlaces label="駐車場" places={parkings} />
+      <NamedPlaces label={t.events.venuesHeading} places={venues} />
+      <NamedPlaces label={t.events.parking} places={parkings} />
     </div>
   );
 }

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { eventAncestorTitle, eventCategoryLabel, eventsForArtist } from "@/data/site";
+import { eventAncestorTitle, eventsForArtist } from "@/data/site";
 import { partitionArtistEvents } from "@/lib/calendar";
 import { publishedEventsLive } from "@/lib/content/live";
 import { formatDateJa } from "@/lib/dates";
+import { localizedCategoryLabel } from "@/lib/i18n/content";
+import { useCatalog, useLocale } from "@/lib/i18n/provider";
 import type { EventItem } from "@/data/site";
 
 type Props = {
@@ -55,6 +57,8 @@ function EventGroup({
   items: EventItem[];
   catalog: EventItem[];
 }) {
+  const locale = useLocale();
+  const options = useCatalog();
   if (items.length === 0) return null;
 
   return (
@@ -67,9 +71,9 @@ function EventGroup({
             <li key={event.slug}>
               <Link href={`/events/${event.slug}`} className="group block">
                 <p className="text-[11px] tracking-[0.16em] text-tsuchi">
-                  {parentTitle ? parentTitle : eventCategoryLabel(event.categories)}
+                  {parentTitle ? parentTitle : localizedCategoryLabel(event.categories, locale, options.categories)}
                   <span className="mx-2 text-line">/</span>
-                  {formatDateJa(event.sessions[0]?.startsAt ?? "")}
+                  {formatDateJa(event.sessions[0]?.startsAt ?? "", locale)}
                 </p>
                 <p className="mt-1 font-serif text-lg tracking-wide group-hover:text-sugi">
                   {event.title}

@@ -12,8 +12,8 @@ import {
   monthCells,
 } from "@/lib/calendar";
 import { formatMonthTitle, shiftMonth, tokyoTodayKey } from "@/lib/dates";
-import { localizedEvents } from "@/lib/i18n/content";
-import { useLocale, useMessages } from "@/lib/i18n/provider";
+import { localizedEvents, namedLabel } from "@/lib/i18n/content";
+import { useCatalog, useLocale, useMessages } from "@/lib/i18n/provider";
 import { weatherLabel } from "@/lib/weather";
 import type { DailyWeather } from "@/lib/weather";
 
@@ -29,13 +29,14 @@ type Props = {
 export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Props) {
   const locale = useLocale();
   const t = useMessages();
+  const options = useCatalog();
   const events = useMemo(
-    () => localizedEvents([...ongoing, ...upcoming], locale),
-    [ongoing, upcoming, locale],
+    () => localizedEvents([...ongoing, ...upcoming], locale, options),
+    [ongoing, upcoming, locale, options],
   );
-  const localizedOngoing = useMemo(() => localizedEvents(ongoing, locale), [ongoing, locale]);
-  const localizedUpcoming = useMemo(() => localizedEvents(upcoming, locale), [upcoming, locale]);
-  const localizedPrograms = useMemo(() => localizedEvents(programs, locale), [programs, locale]);
+  const localizedOngoing = useMemo(() => localizedEvents(ongoing, locale, options), [ongoing, locale, options]);
+  const localizedUpcoming = useMemo(() => localizedEvents(upcoming, locale, options), [upcoming, locale, options]);
+  const localizedPrograms = useMemo(() => localizedEvents(programs, locale, options), [programs, locale, options]);
   const initial = defaultMonth(events);
   const legend = useMemo(
     () => [...new Set(events.flatMap((event) => event.categories))],
@@ -185,7 +186,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
                         <span
                           key={`${event.slug}-${category}`}
                           className={`h-1.5 w-1.5 rounded-full ${categoryMark(category)}`}
-                          title={`${event.title}（${category}）`}
+                          title={`${event.title}（${namedLabel(category, options.categories, locale)}）`}
                         />
                       )),
                     )}
@@ -204,7 +205,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
             {legend.map((category) => (
               <li key={category} className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full ${categoryMark(category)}`} />
-                {category}
+                {namedLabel(category, options.categories, locale)}
               </li>
             ))}
           </ul>
@@ -221,7 +222,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
               ) : null}
             </p>
             <div className="mt-5">
-              <EventList items={localizedEvents(dated, locale)} programs={localizedPrograms} compact />
+              <EventList items={localizedEvents(dated, locale, options)} programs={localizedPrograms} compact />
             </div>
           </div>
         </div>

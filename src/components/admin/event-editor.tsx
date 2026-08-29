@@ -12,7 +12,7 @@ import {
 } from "@/components/account/fields";
 import { blobToDataUrl, compressImage } from "@/lib/image/compress";
 import { linkableArtistsLive, loadEventOptions, loadEventsLive } from "@/lib/content/live";
-import { defaultEventOptions } from "@/lib/content/options";
+import { defaultEventOptions, optionNames } from "@/lib/content/options";
 import {
   defaultEventImage,
   eventKindLabel,
@@ -405,14 +405,14 @@ export function EventEditor({
           </div>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {options.categories.map((item) => (
-              <li key={item}>
+              <li key={item.name}>
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={categories.includes(item)}
-                    onChange={() => toggleCategory(item)}
+                    checked={categories.includes(item.name)}
+                    onChange={() => toggleCategory(item.name)}
                   />
-                  {item}
+                  {item.name}
                 </label>
               </li>
             ))}
@@ -430,7 +430,7 @@ export function EventEditor({
               <Field label="シリーズ（任意）">
                 <Select value={series} onChange={(e) => setSeries(e.target.value)}>
                   <option value="">なし</option>
-                  {[...new Set([...options.series, series].filter(Boolean))].map((item) => (
+                  {[...new Set([...optionNames(options.series), series].filter(Boolean))].map((item) => (
                     <option key={item} value={item}>
                       {item}
                     </option>
@@ -528,7 +528,7 @@ export function EventEditor({
               <Field label="シリーズ（任意）">
                 <Select value={series} onChange={(e) => setSeries(e.target.value)}>
                   <option value="">なし</option>
-                  {[...new Set([...options.series, series].filter(Boolean))].map((item) => (
+                  {[...new Set([...optionNames(options.series), series].filter(Boolean))].map((item) => (
                     <option key={item} value={item}>
                       {item}
                     </option>

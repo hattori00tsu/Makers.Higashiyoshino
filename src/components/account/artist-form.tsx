@@ -17,6 +17,7 @@ import {
 } from "@/lib/account/types";
 import { useSession } from "@/lib/account/use-session";
 import { loadEventOptions } from "@/lib/content/live";
+import { optionNames } from "@/lib/content/options";
 import { blobToDataUrl, compressImage } from "@/lib/image/compress";
 
 type Props = {
@@ -45,7 +46,7 @@ export function ArtistForm({
   useEffect(() => {
     let active = true;
     loadEventOptions(user?.source === "preview").then((options) => {
-      if (active) setGenreOptions(options.genres);
+      if (active) setGenreOptions(optionNames(options.genres));
     });
     return () => {
       active = false;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { inferEventKind, type EventItem } from "@/data/site";
 import { eventPhase, eventSeriesName } from "@/lib/calendar";
 import { formatMonthDaySpan } from "@/lib/dates";
-import { useLocale, useMessages } from "@/lib/i18n/provider";
+import { useLocale, useMessages, useSeriesLabel } from "@/lib/i18n/provider";
 
 type Props = {
   event: EventItem;
@@ -15,6 +15,7 @@ export function EventSeriesNote({ event, peers }: Props) {
   const locale = useLocale();
   const t = useMessages();
   const series = eventSeriesName(event);
+  const seriesLabel = useSeriesLabel(series);
   if (!series || peers.length === 0) return null;
 
   const current = peers.filter((item) => {
@@ -31,7 +32,7 @@ export function EventSeriesNote({ event, peers }: Props) {
   return (
     <section className="mt-16 border-t border-line pt-8">
       <p className="text-[11px] tracking-[0.2em] text-tsuchi">SERIES</p>
-      <h2 className="mt-2 font-serif text-lg tracking-wide">{series}</h2>
+      <h2 className="mt-2 font-serif text-lg tracking-wide">{seriesLabel}</h2>
       {current.length > 0 ? (
         <ul className="mt-4 space-y-2 text-sm leading-7">
           {current.map((item) => (
