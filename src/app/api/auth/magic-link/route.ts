@@ -1,25 +1,29 @@
 import { NextResponse } from "next/server";
 import { loadMailFlagsServer } from "@/lib/mail/flags-server";
+import { mailCopyFor } from "@/lib/mail/settings";
 import { isResendConfigured, sendResendMail } from "@/lib/mail/resend";
 import { renderMail, signInMailVars } from "@/lib/mail/templates";
 import { createServiceSupabase } from "@/lib/supabase/admin";
+import { localeFromCookieHeader, parseLocale, type Locale } from "@/lib/i18n/locale";
 
 type Body = {
   email?: string;
   nextPath?: string;
+  locale?: Locale;
 };
 
 function safeNext(path?: string) {
   return path?.startsWith("/") ? path : "/visit";
 }
 
-function signInHtml(text: string, signInUrl: string) {
+function signInHtml(text: string, signInUrl: string, locale: Locale) {
   const escape = (value: string) =>
     value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const label = locale === "en" ? "Sign in" : "ログインする";
   const inner = text
     .split(signInUrl)
     .map(escape)
-    .join(`<a href="${escape(signInUrl)}">ログインする</a>`);
+    .join(`<a href="${escape(signInUrl)}">${label}</a>`);
   return `<div style="font-family: sans-serif; font-size: 14px; line-height: 1.8; color: #222; white-space: pre-wrap;">${inner}</div>`;
 }
 
@@ -54,13 +58,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "リンクを作れませんでした。" }, { status: 500 });
   }
 
+  const locale = body.locale ? parseLocale(body.locale) : localeFromCookieHeader(request.headers.get("cookie"));
   const signInUrl = `${origin}/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}&next=${encodeURIComponent(next)}`;
   const flags = await loadMailFlagsServer();
-  const copy = renderMail(flags.copy, "signInLink", signInMailVars({ email, signInUrl }));
+  const copy = renderMail(mailCopyFor(flags, locale), "signInLink", signInMailVars({ email, signInUrl }));
   const emailed = await sendResendMail({
     to: email,
     ...copy,
-    html: signInHtml(copy.text, signInUrl),
+    html: signInHtml(copy.text, signInUrl, locale),
   });
   if (!emailed) {
     return NextResponse.json({ error: "mail" }, { status: 500 });

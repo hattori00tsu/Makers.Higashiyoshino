@@ -156,11 +156,11 @@ export default function AdminSpotsPage() {
             placeholder="東吉野村役場 など"
           />
         </Field>
-        <Field label="Google マップ">
+        <Field label="Google 地図">
           <TextInput
             value={draft.mapsUrl}
             onChange={(e) => setDraft({ ...draft, mapsUrl: e.target.value })}
-            placeholder="Google マップのリンク"
+            placeholder="Google 地図のリンク"
           />
         </Field>
         <PrimaryButton type="button" onClick={onSave}>

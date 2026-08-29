@@ -13,6 +13,7 @@ import {
 } from "@/lib/mail/settings";
 import {
   defaultMailTemplates,
+  defaultMailTemplatesEn,
   MAIL_TEMPLATE_GROUPS,
   MAIL_TEMPLATE_META,
   type MailCopy,
@@ -33,7 +34,7 @@ function MailCopyEditor({
       <div>
         <h2 className="font-serif text-xl tracking-wide">メールの文面</h2>
         <p className="mt-4 text-sm leading-7 text-sumi-soft">
-          空になった差し込みは、その行が消えます。保存すると、次の送信から使います。
+          空になった差し込みは、その行が消えます。保存すると、次の送信から使います。来訪者向けのメールは、英語版サイトからの申込み・ログインでは英語の文面を使います。
         </p>
       </div>
       {MAIL_TEMPLATE_GROUPS.map((group) => (
@@ -83,6 +84,7 @@ export default function AdminMailSettingsPage() {
   const localOnly = user?.source === "preview";
   const [draft, setDraft] = useState<MailSettings>(defaultMailSettings());
   const [message, setMessage] = useState("");
+  const [copyLang, setCopyLang] = useState<"ja" | "en">("ja");
 
   useEffect(() => {
     if (!ready) return;
@@ -174,19 +176,42 @@ export default function AdminMailSettingsPage() {
           </label>
         </section>
 
+        <div className="flex gap-4 text-[13px] tracking-[0.16em]">
+          <button
+            type="button"
+            className={copyLang === "ja" ? "text-sumi" : "text-sumi-soft"}
+            onClick={() => setCopyLang("ja")}
+          >
+            日本語
+          </button>
+          <button
+            type="button"
+            className={copyLang === "en" ? "text-sumi" : "text-sumi-soft"}
+            onClick={() => setCopyLang("en")}
+          >
+            English
+          </button>
+        </div>
         <MailCopyEditor
-          copy={draft.copy}
+          copy={copyLang === "en" ? draft.copyEn : draft.copy}
           onChange={(key, patch) =>
-            setDraft((current) => ({
-              ...current,
-              copy: { ...current.copy, [key]: { ...current.copy[key], ...patch } },
-            }))
+            setDraft((current) => {
+              const bucket = copyLang === "en" ? "copyEn" : "copy";
+              return {
+                ...current,
+                [bucket]: { ...current[bucket], [key]: { ...current[bucket][key], ...patch } },
+              };
+            })
           }
           onReset={(key) =>
-            setDraft((current) => ({
-              ...current,
-              copy: { ...current.copy, [key]: defaultMailTemplates()[key] },
-            }))
+            setDraft((current) => {
+              const bucket = copyLang === "en" ? "copyEn" : "copy";
+              const defaults = copyLang === "en" ? defaultMailTemplatesEn() : defaultMailTemplates();
+              return {
+                ...current,
+                [bucket]: { ...current[bucket], [key]: defaults[key] },
+              };
+            })
           }
         />
 

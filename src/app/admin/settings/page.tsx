@@ -264,6 +264,12 @@ export default function AdminSettingsPage() {
                 onChange={(e) => patchHero({ sideLabel: e.target.value })}
               />
             </Field>
+            <Field label="縦書き（英語）">
+              <TextInput
+                value={hero.sideLabelEn}
+                onChange={(e) => patchHero({ sideLabelEn: e.target.value })}
+              />
+            </Field>
             <Field label="英字">
               <TextInput
                 value={hero.eyebrow}
@@ -278,12 +284,28 @@ export default function AdminSettingsPage() {
                 onChange={(e) => patchHero({ title: e.target.value })}
               />
             </Field>
+            <Field label="見出し（英語）">
+              <TextArea
+                rows={3}
+                className="min-h-24"
+                value={hero.titleEn}
+                onChange={(e) => patchHero({ titleEn: e.target.value })}
+              />
+            </Field>
             <Field label="リード">
               <TextArea
                 rows={4}
                 className="min-h-28"
                 value={hero.lead}
                 onChange={(e) => patchHero({ lead: e.target.value })}
+              />
+            </Field>
+            <Field label="リード（英語）">
+              <TextArea
+                rows={4}
+                className="min-h-28"
+                value={hero.leadEn}
+                onChange={(e) => patchHero({ leadEn: e.target.value })}
               />
             </Field>
           </div>
@@ -370,6 +392,26 @@ export default function AdminSettingsPage() {
                       onChange={(e) => patchVillage(village.id, index, { summary: e.target.value })}
                     />
                   </Field>
+                  <Field label="タイトル（英語）">
+                    <TextInput
+                      value={village.titleEn}
+                      onChange={(e) => patchVillage(village.id, index, { titleEn: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="開催日時（英語）">
+                    <TextInput
+                      value={village.scheduleEn}
+                      onChange={(e) => patchVillage(village.id, index, { scheduleEn: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="紹介（英語）">
+                    <TextArea
+                      rows={6}
+                      className="min-h-32"
+                      value={village.summaryEn}
+                      onChange={(e) => patchVillage(village.id, index, { summaryEn: e.target.value })}
+                    />
+                  </Field>
                 </div>
               ))
             )}
@@ -420,6 +462,26 @@ export default function AdminSettingsPage() {
                 className="min-h-32"
                 value={about.body}
                 onChange={(e) => patchAbout({ body: e.target.value })}
+              />
+            </Field>
+            <Field label="見出し（英語）">
+              <TextInput
+                value={about.headingEn}
+                onChange={(e) => patchAbout({ headingEn: e.target.value })}
+              />
+            </Field>
+            <Field label="タイトル（英語）">
+              <TextInput
+                value={about.titleEn}
+                onChange={(e) => patchAbout({ titleEn: e.target.value })}
+              />
+            </Field>
+            <Field label="本文（英語）">
+              <TextArea
+                rows={6}
+                className="min-h-32"
+                value={about.bodyEn}
+                onChange={(e) => patchAbout({ bodyEn: e.target.value })}
               />
             </Field>
           </div>

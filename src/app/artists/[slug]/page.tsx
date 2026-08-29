@@ -8,6 +8,8 @@ import { ArtistPhoto } from "@/components/media/artist-photo";
 import { loadPublicArtist, loadPublicArtists } from "@/lib/content/public-artists";
 import { loadPublicEventsForArtist } from "@/lib/content/public-events";
 import { instagramEmbedPermalink } from "@/lib/social/instagram";
+import { localizedArtist, localizedEvents } from "@/lib/i18n/content";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 import type { Artist } from "@/data/site";
 
 type Props = {
@@ -24,8 +26,11 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const locale = await getLocale();
+  const t = await getMessages();
   const artist = await loadPublicArtist(slug);
-  return { title: artist?.name ?? "つくり手" };
+  const view = artist ? localizedArtist(artist, locale) : undefined;
+  return { title: view?.name ?? t.artists.title };
 }
 
 function hasStudio(artist: Artist) {
@@ -38,8 +43,11 @@ function hasStudio(artist: Artist) {
 
 export default async function ArtistDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [artist, events] = await Promise.all([loadPublicArtist(slug), loadPublicEventsForArtist(slug)]);
-  if (!artist) notFound();
+  const locale = await getLocale();
+  const t = await getMessages();
+  const [rawArtist, events] = await Promise.all([loadPublicArtist(slug), loadPublicEventsForArtist(slug)]);
+  if (!rawArtist) notFound();
+  const artist = localizedArtist(rawArtist, locale);
 
   const extraLinks = [
     ...(artist.x ? [{ href: artist.x, label: "X" }] : []),
@@ -97,7 +105,7 @@ export default async function ArtistDetailPage({ params }: Props) {
 
       {artist.works.length > 0 ? (
         <section className="mt-16">
-          <h2 className="font-serif text-xl tracking-wide">作品</h2>
+          <h2 className="font-serif text-xl tracking-wide">{t.artists.works}</h2>
           <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
             {artist.works.map((work) => (
               <li key={work.src + work.title}>
@@ -113,7 +121,7 @@ export default async function ArtistDetailPage({ params }: Props) {
 
       {studioOpen ? (
         <section className="mt-16">
-          <h2 className="font-serif text-xl tracking-wide">工房</h2>
+          <h2 className="font-serif text-xl tracking-wide">{t.artists.studio}</h2>
           {artist.studio.address ? (
             <p className="mt-3 text-sm leading-7 text-sumi-soft">{artist.studio.address}</p>
           ) : null}
@@ -124,7 +132,7 @@ export default async function ArtistDetailPage({ params }: Props) {
             <div className="mt-6">
               <VenueMap
                 url={artist.studio.query}
-                title={artist.studio.address || `${artist.name}の工房`}
+                title={artist.studio.address || t.artists.studioOf(artist.name)}
               />
               <p className="mt-3 text-sm text-sumi-soft">
                 <a
@@ -133,20 +141,20 @@ export default async function ArtistDetailPage({ params }: Props) {
                   rel="noreferrer"
                   className="underline decoration-line underline-offset-4 hover:text-sugi"
                 >
-                  Google マップで開く
+                  {t.artists.openMaps}
                 </a>
               </p>
             </div>
           ) : null}
           <p className="mt-3 text-sm text-sumi-soft">
-            村の全体図は
+            {t.artists.mapHintBefore}
             <Link
               href="/map"
               className="mx-1 underline decoration-line underline-offset-4"
             >
-              地図
+              {t.nav.map}
             </Link>
-            からどうぞ。
+            {t.artists.mapHintAfter}
           </p>
         </section>
       ) : null}
@@ -160,7 +168,7 @@ export default async function ArtistDetailPage({ params }: Props) {
         </section>
       ) : null}
 
-      <ArtistEvents slug={artist.slug} initial={events} />
+      <ArtistEvents slug={artist.slug} initial={localizedEvents(events, locale)} />
     </article>
   );
 }

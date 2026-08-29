@@ -5,6 +5,8 @@ import { eventPhase } from "@/lib/calendar";
 import { loadPublicArtistNames } from "@/lib/content/public-artists";
 import { eventViewModel, loadPublicEvent, loadPublicEvents } from "@/lib/content/public-events";
 import { tokyoDateKey } from "@/lib/dates";
+import { localizedEvent } from "@/lib/i18n/content";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 import { getVillageForecast } from "@/lib/weather";
 
 type Props = {
@@ -21,8 +23,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const locale = await getLocale();
+  const t = await getMessages();
   const event = await loadPublicEvent(slug);
-  return { title: event?.title ?? "催し" };
+  return { title: event ? localizedEvent(event, locale).title : t.events.title };
 }
 
 export default async function EventDetailPage({ params }: Props) {

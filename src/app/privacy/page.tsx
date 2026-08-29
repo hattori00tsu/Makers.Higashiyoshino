@@ -1,98 +1,76 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { site } from "@/data/site";
+import { getMessages } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "プライバシーポリシー",
-  description: `${site.name}における個人情報の取り扱いについて。`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getMessages();
+  return {
+    title: t.privacy.title,
+    description: t.privacy.description(site.name),
+  };
+}
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const t = await getMessages();
   return (
     <div className="mx-auto max-w-3xl px-5 pt-24 pb-20 md:px-8 md:pt-28 md:pb-28">
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">PRIVACY</p>
       <h1 className="mt-3 font-serif text-3xl tracking-wide md:text-4xl">
-        プライバシーポリシー
+        {t.privacy.title}
       </h1>
       <p className="mt-4 text-sm leading-7 text-sumi-soft">
-        {site.name}（以下「本サイト」）は、催しの申込みと作家登録のために預かった情報を、次のとおり取り扱います。
+        {t.privacy.intro(site.name)}
       </p>
 
       <div className="mt-14 space-y-14 text-sm leading-7 text-sumi-soft">
         <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">取得する情報</h2>
-          <p className="mt-4">本サイトが取得するのは、次の情報です。</p>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">{t.privacy.collect}</h2>
+          <p className="mt-4">{t.privacy.collectLead}</p>
           <ul className="mt-4 list-disc space-y-2 pl-5">
-            <li>
-              催しの申込み：お名前、メールアドレス、人数、連絡事項、対象の催しと日程。申込みにはログインが必要です
-            </li>
-            <li>
-              来訪者・つくり手・運営のログイン：メールアドレス。Google
-              で入る場合は、Google が本サイトへ渡すアカウント情報。入口は分けていますが、認証は同じです
-            </li>
-            <li>
-              つくり手登録：氏名、よみ、紹介文、工房の所在と見学案内、作品画像、SNS
-              や店舗のURL
-            </li>
+            {t.privacy.collectItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
-          <p className="mt-4">
-            ページの閲覧だけであれば、氏名や連絡先の入力は不要です。アクセス解析の仕組みは入れていません。
-          </p>
+          <p className="mt-4">{t.privacy.collectNote}</p>
         </section>
 
         <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">利用目的</h2>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">{t.privacy.purpose}</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5">
-            <li>催しの受付、残席の管理、キャンセル、当日までの連絡</li>
-            <li>つくり手ページの公開</li>
-            <li>ログイン状態の維持</li>
-            <li>申込みの確認メールなど、運営上必要な連絡</li>
+            {t.privacy.purposeItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
-          <p className="mt-4">
-            目的の範囲を超えて使うことはありません。宣伝のための名簿にはしません。
-          </p>
+          <p className="mt-4">{t.privacy.purposeNote}</p>
         </section>
 
         <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">公開について</h2>
-          <p className="mt-4">
-            催しの申込み内容は公開しません。運営と、必要があれば当該催しの関係者が確認します。
-          </p>
-          <p className="mt-3">
-            つくり手プロフィール、作品、工房の位置は、登録した内容がサイトへ出ます。公開したくない項目は、空欄のままにしてください。
-          </p>
-        </section>
-
-
-        <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">Cookie</h2>
-          <p className="mt-4">
-            つくり手と運営がログインした状態を保つため、Cookie
-            を使います。閲覧や催しの申込みだけであれば、ログイン用の Cookie は不要です。
-          </p>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">{t.privacy.publish}</h2>
+          <p className="mt-4">{t.privacy.publish1}</p>
+          <p className="mt-3">{t.privacy.publish2}</p>
         </section>
 
         <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">保管と削除</h2>
-          <p className="mt-4">
-            申込みの記録は、催しの運営に必要な期間、保管します。つくり手アカウントの情報は、登録が続くあいだ保管します。
-          </p>
-          <p className="mt-3">
-            開示、訂正、利用停止、削除のご請求は、下記の運営までご連絡ください。本人確認のうえ、対応します。
-          </p>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">{t.privacy.cookie}</h2>
+          <p className="mt-4">{t.privacy.cookieBody}</p>
         </section>
 
         <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">改定</h2>
-          <p className="mt-4">
-            内容を改めるときは、このページを更新します。重要な変更がある場合は、お知らせでも知らせます。
-          </p>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">{t.privacy.keep}</h2>
+          <p className="mt-4">{t.privacy.keep1}</p>
+          <p className="mt-3">{t.privacy.keep2}</p>
         </section>
 
         <section>
-          <h2 className="font-serif text-xl tracking-wide text-sumi">運営</h2>
-          <p className="mt-4">お問い合わせは、info@makers-higashiyoshino.comまでお願いします。</p>
-          <p className="mt-6 text-[13px] tracking-wide">制定：2026年8月18日</p>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">{t.privacy.revise}</h2>
+          <p className="mt-4">{t.privacy.reviseBody}</p>
+        </section>
+
+        <section>
+          <h2 className="font-serif text-xl tracking-wide text-sumi">{t.privacy.ops}</h2>
+          <p className="mt-4">{t.privacy.opsBody}</p>
+          <p className="mt-6 text-[13px] tracking-wide">{t.privacy.enacted}</p>
         </section>
       </div>
     </div>

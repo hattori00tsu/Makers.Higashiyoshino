@@ -6,11 +6,14 @@ import { Intro } from "@/components/home/intro";
 import { VisitCta } from "@/components/home/visit";
 import { loadPublicHomeDisplay } from "@/lib/content/public-home-display";
 import { homeVillages } from "@/lib/content/home-display";
+import { localizedHomeDisplay } from "@/lib/i18n/content";
+import { getLocale } from "@/lib/i18n/server";
 
 export const revalidate = 120;
 
 export default async function Home() {
-  const display = await loadPublicHomeDisplay();
+  const locale = await getLocale();
+  const display = localizedHomeDisplay(await loadPublicHomeDisplay(), locale);
 
   return (
     <>
