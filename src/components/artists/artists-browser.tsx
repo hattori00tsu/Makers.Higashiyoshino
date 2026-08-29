@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArtistPhoto } from "@/components/media/artist-photo";
 import { shuffleItems } from "@/lib/content/home-display";
+import { localizedArtists } from "@/lib/i18n/content";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 import type { Artist } from "@/data/site";
 
 type Props = {
@@ -11,16 +13,19 @@ type Props = {
 };
 
 export function ArtistsBrowser({ artists }: Props) {
-  const [items, setItems] = useState(artists);
+  const locale = useLocale();
+  const t = useMessages();
+  const localized = useMemo(() => localizedArtists(artists, locale), [artists, locale]);
+  const [items, setItems] = useState(localized);
 
   useEffect(() => {
-    setItems(shuffleItems(artists));
-  }, [artists]);
+    setItems(shuffleItems(localized));
+  }, [localized]);
 
   if (artists.length === 0) {
     return (
       <p className="mt-12 max-w-xl text-sm leading-7 text-sumi-soft">
-        いま公開中のつくり手はいません。
+        {t.artists.empty}
       </p>
     );
   }

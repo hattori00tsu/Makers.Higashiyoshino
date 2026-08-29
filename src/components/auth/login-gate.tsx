@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LoginPanel } from "@/components/auth/login-panel";
+import { useMessages } from "@/lib/i18n/provider";
 
 type Intent = "visitor" | "artist";
 
@@ -27,18 +28,19 @@ function nextPathFor(intent: Intent, next: string) {
 
 export function LoginGate({ next, initialIntent = null }: Props) {
   const [intent, setIntent] = useState<Intent | null>(initialIntent);
+  const t = useMessages();
 
   if (!intent) {
     return (
       <div className="mt-10 space-y-3">
         <Choice
-          label="来訪者"
-          note="催しの申込みと、予約の確認・キャンセル"
+          label={t.login.visitor}
+          note={t.login.visitorNote}
           onClick={() => setIntent("visitor")}
         />
         <Choice
-          label="つくり手"
-          note="プロフィール、作品、催しの管理"
+          label={t.login.artist}
+          note={t.login.artistNote}
           onClick={() => setIntent("artist")}
         />
       </div>
@@ -48,9 +50,7 @@ export function LoginGate({ next, initialIntent = null }: Props) {
   return (
     <div className="mt-10">
       <p className="mb-8 text-sm leading-7 text-sumi-soft">
-        {intent === "artist"
-          ? "つくり手として入ります。入ったあと、未登録ならつくり手登録ができます。"
-          : "来訪者として入ります。催しの申込みと予約の確認ができます。"}
+        {intent === "artist" ? t.login.asArtist : t.login.asVisitor}
       </p>
       <LoginPanel intent={intent} nextPath={nextPathFor(intent, next)} />
       <p className="mt-10">
@@ -59,7 +59,7 @@ export function LoginGate({ next, initialIntent = null }: Props) {
           className="text-[13px] tracking-[0.14em] text-sumi-soft underline decoration-line underline-offset-4 hover:text-sugi"
           onClick={() => setIntent(null)}
         >
-          選び直す
+          {t.login.rechoose}
         </button>
       </p>
     </div>

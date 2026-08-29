@@ -10,9 +10,11 @@ import {
   eventDateKeys,
   eventsOnDate,
   monthCells,
-  weekdays,
 } from "@/lib/calendar";
 import { formatMonthTitle, shiftMonth, tokyoTodayKey } from "@/lib/dates";
+import { localizedEvents } from "@/lib/i18n/content";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
+import { weatherLabel } from "@/lib/weather";
 import type { DailyWeather } from "@/lib/weather";
 
 type View = "list" | "calendar";
@@ -25,7 +27,15 @@ type Props = {
 };
 
 export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Props) {
-  const events = useMemo(() => [...ongoing, ...upcoming], [ongoing, upcoming]);
+  const locale = useLocale();
+  const t = useMessages();
+  const events = useMemo(
+    () => localizedEvents([...ongoing, ...upcoming], locale),
+    [ongoing, upcoming, locale],
+  );
+  const localizedOngoing = useMemo(() => localizedEvents(ongoing, locale), [ongoing, locale]);
+  const localizedUpcoming = useMemo(() => localizedEvents(upcoming, locale), [upcoming, locale]);
+  const localizedPrograms = useMemo(() => localizedEvents(programs, locale), [programs, locale]);
   const initial = defaultMonth(events);
   const legend = useMemo(
     () => [...new Set(events.flatMap((event) => event.categories))],
@@ -72,7 +82,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
             onClick={() => setView("list")}
             className={`px-3 py-2 ${view === "list" ? "text-sumi" : "text-sumi-soft"}`}
           >
-            リスト
+            {t.events.list}
           </button>
           <span className="self-center text-line">/</span>
           <button
@@ -80,7 +90,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
             onClick={() => setView("calendar")}
             className={`px-3 py-2 ${view === "calendar" ? "text-sumi" : "text-sumi-soft"}`}
           >
-            カレンダー
+            {t.events.calendar}
           </button>
         </div>
         <ArchiveLink />
@@ -88,29 +98,29 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
 
       {empty ? (
         <p className="mt-10 text-sm leading-7 text-sumi-soft md:mt-12">
-          いま開催中・開催予定の催しはありません。終了したものは
-          <Link href="/archive" className="mx-1 underline decoration-line underline-offset-4">
-            アーカイブ
+          {t.events.empty}{" "}
+          <Link href="/archive" className="underline decoration-line underline-offset-4">
+            {t.events.emptyArchiveLink}
           </Link>
-          にあります。
+          {t.events.emptyAfter}
         </p>
       ) : view === "list" ? (
         <div className="mt-10 space-y-16 md:mt-12 md:space-y-20">
           {ongoing.length > 0 ? (
             <section>
               <p className="text-[11px] tracking-[0.28em] text-tsuchi">NOW</p>
-              <h2 className="mt-2 font-serif text-2xl tracking-wide">開催中</h2>
+              <h2 className="mt-2 font-serif text-2xl tracking-wide">{t.events.now}</h2>
               <div className="mt-8">
-                <EventList items={ongoing} programs={programs} />
+                <EventList items={localizedOngoing} programs={localizedPrograms} />
               </div>
             </section>
           ) : null}
           {upcoming.length > 0 ? (
             <section>
               <p className="text-[11px] tracking-[0.28em] text-tsuchi">UPCOMING</p>
-              <h2 className="mt-2 font-serif text-2xl tracking-wide">開催予定</h2>
+              <h2 className="mt-2 font-serif text-2xl tracking-wide">{t.events.upcoming}</h2>
               <div className="mt-8">
-                <EventList items={upcoming} programs={programs} />
+                <EventList items={localizedUpcoming} programs={localizedPrograms} />
               </div>
             </section>
           ) : null}
@@ -122,25 +132,25 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
               type="button"
               onClick={() => go(-1)}
               className="h-10 px-2 text-sumi-soft hover:text-sumi"
-              aria-label="前の月"
+              aria-label={t.events.prevMonth}
             >
               ‹
             </button>
-            <p className="font-serif text-xl tracking-wide">{formatMonthTitle(year, month)}</p>
+            <p className="font-serif text-xl tracking-wide">{formatMonthTitle(year, month, locale)}</p>
             <button
               type="button"
               onClick={() => go(1)}
               className="h-10 px-2 text-sumi-soft hover:text-sumi"
-              aria-label="次の月"
+              aria-label={t.events.nextMonth}
             >
               ›
             </button>
           </div>
 
           <div className="mt-6 grid grid-cols-7 border-t border-line">
-            {weekdays.map((day) => (
+            {t.events.weekdays.map((day, index) => (
               <p
-                key={day}
+                key={index}
                 className="py-2 text-center text-[11px] tracking-[0.16em] text-sumi-soft"
               >
                 {day}
@@ -202,16 +212,16 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
           <div className="mt-10">
             <p className="text-[11px] tracking-[0.2em] text-tsuchi">
               {selected.replaceAll("-", ".")}
-              {dayWeather ? (
+                  {dayWeather ? (
                 <span className="ml-3 text-sumi-soft">
-                  {dayWeather.label} {dayWeather.tempMax}° / {dayWeather.tempMin}°
+                  {weatherLabel(dayWeather.code, locale)} {dayWeather.tempMax}° / {dayWeather.tempMin}°
                 </span>
               ) : outdoor ? (
-                <span className="ml-3 text-sumi-soft">屋外 · 予報は開催が近づくと表示</span>
+                <span className="ml-3 text-sumi-soft">{t.weather.outdoorSoon}</span>
               ) : null}
             </p>
             <div className="mt-5">
-              <EventList items={dated} programs={programs} compact />
+              <EventList items={localizedEvents(dated, locale)} programs={localizedPrograms} compact />
             </div>
           </div>
         </div>
@@ -221,9 +231,10 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
 }
 
 function ArchiveLink() {
+  const t = useMessages();
   return (
     <Link href="/archive" className="text-[13px] tracking-[0.16em] text-sugi hover:opacity-70">
-      アーカイブ
+      {t.footer.archive}
     </Link>
   );
 }

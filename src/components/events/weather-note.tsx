@@ -1,4 +1,8 @@
+"use client";
+
 import type { DailyWeather } from "@/lib/weather";
+import { weatherLabel } from "@/lib/weather";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   weather?: DailyWeather;
@@ -6,20 +10,18 @@ type Props = {
 };
 
 export function WeatherNote({ weather, outdoor }: Props) {
+  const locale = useLocale();
+  const t = useMessages();
   if (!outdoor) return null;
 
   if (!weather) {
-    return (
-      <p className="text-sm leading-7 text-sumi-soft">
-        屋外の催しです。天気予報は、開催が近づくと表示します（Open-Meteo）。
-      </p>
-    );
+    return <p className="text-sm leading-7 text-sumi-soft">{t.weather.outdoorSoon}</p>;
   }
 
   return (
     <p className="text-sm leading-7 text-sumi-soft">
-      村の予報：{weather.label}　最高{weather.tempMax}° / 最低{weather.tempMin}°
-      <span className="ml-2 text-[11px] tracking-wide">東吉野村役場付近 · Open-Meteo</span>
+      {t.weather.forecast(weatherLabel(weather.code, locale), weather.tempMax, weather.tempMin)}
+      <span className="ml-2 text-[11px] tracking-wide">{t.weather.place}</span>
     </p>
   );
 }

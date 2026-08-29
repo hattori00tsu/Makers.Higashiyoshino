@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { useMessages } from "@/lib/i18n/provider";
 
 type NavItem = {
   href: string;
@@ -20,6 +22,7 @@ export function SiteHeader({
 }) {
   const pathname = usePathname();
   const overlay = pathname === "/";
+  const t = useMessages();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -73,12 +76,13 @@ export function SiteHeader({
               {item.label}
             </Link>
           ))}
+          <LocaleSwitcher light={light} />
         </nav>
 
         <button
           type="button"
           className="relative h-10 w-10 md:hidden"
-          aria-label={open ? "メニューを閉じる" : "メニューを開く"}
+          aria-label={open ? t.common.menuClose : t.common.menuOpen}
           onClick={() => setOpen((value) => !value)}
         >
           <span
@@ -106,6 +110,7 @@ export function SiteHeader({
                 {item.label}
               </Link>
             ))}
+            <LocaleSwitcher />
           </nav>
           <p className="mt-16 text-sm tracking-wide text-sumi-soft">{name}</p>
         </div>

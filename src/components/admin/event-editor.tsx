@@ -81,6 +81,12 @@ export function emptyEvent(kind: EventKind = "program"): EventItem {
     allDay: kind === "festival",
     kind,
     series: undefined,
+    i18nEnabled: false,
+    titleEn: "",
+    summaryEn: "",
+    descriptionEn: "",
+    accessEn: "",
+    priceEn: "",
   };
 }
 
@@ -123,6 +129,12 @@ export function EventEditor({
   const [artistSlugs, setArtistSlugs] = useState(source.artistSlugs);
   const [parentSlug, setParentSlug] = useState(source.parentSlug ?? "");
   const [series, setSeries] = useState(source.series ?? "");
+  const [i18nEnabled, setI18nEnabled] = useState(Boolean(source.i18nEnabled));
+  const [titleEn, setTitleEn] = useState(source.titleEn ?? "");
+  const [summaryEn, setSummaryEn] = useState(source.summaryEn ?? "");
+  const [descriptionEn, setDescriptionEn] = useState(source.descriptionEn ?? "");
+  const [accessEn, setAccessEn] = useState(source.accessEn ?? "");
+  const [priceEn, setPriceEn] = useState(source.priceEn ?? "");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -350,6 +362,12 @@ export function EventEditor({
           ownerArtistSlug: artistMode
             ? initial?.ownerArtistSlug || self || undefined
             : initial?.ownerArtistSlug,
+          i18nEnabled,
+          titleEn: titleEn.trim(),
+          summaryEn: summaryEn.trim(),
+          descriptionEn: descriptionEn.trim(),
+          accessEn: accessEn.trim(),
+          priceEn: priceEn.trim(),
         },
         initial?.slug,
       );
@@ -550,6 +568,41 @@ export function EventEditor({
         <TextArea value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
 
+      <div className="space-y-4 border-t border-line pt-6">
+        <label className="flex items-start gap-3 text-sm leading-7 text-sumi-soft">
+          <input
+            type="checkbox"
+            className="mt-1.5"
+            checked={i18nEnabled}
+            onChange={(e) => setI18nEnabled(e.target.checked)}
+          />
+          <span>
+            英語の文章を公開する
+            <span className="block text-xs leading-6">英語版に切り替えたときに出します。空の項目は日本語のままです。</span>
+          </span>
+        </label>
+        {i18nEnabled ? (
+          <div className="space-y-4">
+            <Field label="タイトル（英語）">
+              <TextInput value={titleEn} onChange={(e) => setTitleEn(e.target.value)} />
+            </Field>
+            <Field label="短い紹介（英語）">
+              <TextInput value={summaryEn} onChange={(e) => setSummaryEn(e.target.value)} />
+            </Field>
+            <Field label="料金（英語）">
+              <TextInput
+                value={priceEn}
+                onChange={(e) => setPriceEn(e.target.value)}
+                placeholder="Free, ¥2,000, materials at cost"
+              />
+            </Field>
+            <Field label="本文（英語）">
+              <TextArea value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} />
+            </Field>
+          </div>
+        ) : null}
+      </div>
+
       <div>
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
           <p className="text-[12px] tracking-[0.14em] text-sumi-soft">
@@ -716,6 +769,11 @@ export function EventEditor({
       <Field label="アクセス">
         <TextArea value={access} onChange={(e) => setAccess(e.target.value)} />
       </Field>
+      {i18nEnabled ? (
+        <Field label="アクセス（英語）">
+          <TextArea value={accessEn} onChange={(e) => setAccessEn(e.target.value)} />
+        </Field>
+      ) : null}
       {kind !== "program" ? (
         <PlaceChecklist
           label="駐車場（複数可）"

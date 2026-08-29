@@ -16,6 +16,7 @@ import {
   type EventItem,
 } from "@/data/site";
 import { formatSessionRange, isAllDayRange } from "@/lib/dates";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   heading: string;
@@ -98,6 +99,8 @@ function ProgramRow({
   allowApply: boolean;
   hideSessions: boolean;
 }) {
+  const locale = useLocale();
+  const t = useMessages();
   const people = program.artistSlugs
     .map((slug) => names[slug])
     .filter(Boolean)
@@ -144,7 +147,7 @@ function ProgramRow({
             ) : null}
             {eventCategoryLabel(program.categories)}
             <span className="mx-2 text-line">/</span>
-            {apply ? (allowApply && full ? "満席" : "要申込み") : "申込み不要"}
+            {apply ? (allowApply && full ? t.events.full : t.events.reservationRequired) : t.events.noReservation}
           </p>
           <p className="mt-1 font-serif text-lg tracking-wide">{program.title}</p>
           {program.summary ? <p className="mt-2 text-sm leading-7 text-sumi-soft">{program.summary}</p> : null}
@@ -160,8 +163,10 @@ function ProgramRow({
                 const left = seats[liveSeatKey(program.slug, session.startsAt)];
                 return (
                   <p key={session.startsAt}>
-                    {formatSessionRange(session.startsAt, session.endsAt)}
-                    {apply && cap ? ` · 定員${cap}名${left != null ? `（残${left}）` : ""}` : ""}
+                    {formatSessionRange(session.startsAt, session.endsAt, locale)}
+                    {apply && cap
+                      ? ` · ${t.common.capacity(cap)}${left != null ? `（${t.common.remaining(left)}）` : ""}`
+                      : ""}
                   </p>
                 );
               })}
@@ -169,7 +174,7 @@ function ProgramRow({
           ) : null}
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <Link href={`/events/${program.slug}`} className="text-[13px] tracking-[0.14em] text-sugi">
-              詳しく
+              {t.events.more}
             </Link>
             {allowApply && apply && !full ? <ApplyButton href={`/events/${program.slug}/apply`} /> : null}
           </div>
@@ -185,7 +190,7 @@ function ProgramRow({
                   {item.title}
                 </Link>
                 <span className="text-[12px] tracking-[0.12em] text-sumi-soft">
-                  {childApply ? "要申込み" : "申込み不要"}
+                  {childApply ? t.events.reservationRequired : t.events.noReservation}
                 </span>
               </li>
             );

@@ -224,6 +224,37 @@ export function ArtistForm({
         <TextArea value={draft.profile} onChange={(e) => set("profile", e.target.value)} />
       </Field>
 
+      <div className="space-y-4 border-t border-line pt-6">
+        <label className="flex items-start gap-3 text-sm leading-7 text-sumi-soft">
+          <input
+            type="checkbox"
+            className="mt-1.5"
+            checked={draft.i18nEnabled}
+            onChange={(e) => set("i18nEnabled", e.target.checked)}
+          />
+          <span>
+            英語の文章を公開する
+            <span className="block text-xs leading-6">英語版に切り替えたときに出します。空の項目は日本語のままです。</span>
+          </span>
+        </label>
+        {draft.i18nEnabled ? (
+          <div className="space-y-4">
+            <Field label="名前（英語）">
+              <TextInput value={draft.nameEn} onChange={(e) => set("nameEn", e.target.value)} />
+            </Field>
+            <Field label="地区（英語）">
+              <TextInput value={draft.areaEn} onChange={(e) => set("areaEn", e.target.value)} />
+            </Field>
+            <Field label="短い紹介（英語）">
+              <TextInput value={draft.bioEn} onChange={(e) => set("bioEn", e.target.value)} />
+            </Field>
+            <Field label="自己紹介（英語）">
+              <TextArea value={draft.profileEn} onChange={(e) => set("profileEn", e.target.value)} />
+            </Field>
+          </div>
+        ) : null}
+      </div>
+
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="工房の名前">
           <TextInput
@@ -232,17 +263,22 @@ export function ArtistForm({
             placeholder="工房の名前"
           />
         </Field>
-        <Field label="Google マップ">
+        <Field label="Google 地図">
           <TextInput
             value={draft.studioMapUrl}
             onChange={(e) => set("studioMapUrl", e.target.value)}
-            placeholder="Google マップのリンク"
+            placeholder="Google 地図のリンク"
           />
         </Field>
       </div>
       <Field label="見学について">
         <TextArea value={draft.studioVisit} onChange={(e) => set("studioVisit", e.target.value)} />
       </Field>
+      {draft.i18nEnabled ? (
+        <Field label="見学について（英語）">
+          <TextArea value={draft.studioVisitEn} onChange={(e) => set("studioVisitEn", e.target.value)} />
+        </Field>
+      ) : null}
 
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Instagram">

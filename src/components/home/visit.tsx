@@ -1,15 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { defaultVisitImage, resolveHomeImage } from "@/lib/content/home-display";
+import { getMessages } from "@/lib/i18n/server";
 
-export function VisitCta({ image }: { image?: string }) {
+export async function VisitCta({ image }: { image?: string }) {
+  const t = await getMessages();
   const src = resolveHomeImage(image, defaultVisitImage);
 
   return (
     <section className="relative min-h-[520px] overflow-hidden md:min-h-[560px]">
       <Image
         src={src}
-        alt="森の道"
+        alt={t.home.visitAlt}
         fill
         sizes="100vw"
         className="object-cover"
@@ -19,14 +21,14 @@ export function VisitCta({ image }: { image?: string }) {
       <div className="relative mx-auto flex min-h-[520px] max-w-6xl flex-col justify-end px-5 py-16 md:min-h-[560px] md:justify-center md:px-8">
         <p className="text-[11px] tracking-[0.28em] text-kami/70"> VISIT</p>
         <h2 className="mt-3 font-serif text-3xl tracking-wide text-kami md:text-4xl">
-          訪ねる
+          {t.home.visit}
         </h2>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/map"
             className="inline-flex w-fit border border-kami/50 px-6 py-3 text-[13px] tracking-[0.18em] text-kami transition-colors hover:bg-kami hover:text-sumi"
           >
-            村内マップ
+            {t.nav.map}
           </Link>
         </div>
       </div>

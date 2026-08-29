@@ -23,6 +23,9 @@ import {
 import { eventPhase } from "@/lib/calendar";
 import type { PublicArtistName } from "@/lib/content/public-artists";
 import { formatSessionRange } from "@/lib/dates";
+import { localizedEvent, localizedEvents } from "@/lib/i18n/content";
+import { getLocale, getMessages } from "@/lib/i18n/server";
+import { pickCopy } from "@/lib/i18n/locale";
 import type { DailyWeather } from "@/lib/weather";
 
 type Props = {
@@ -36,7 +39,7 @@ type Props = {
   artistNames?: Record<string, PublicArtistName>;
 };
 
-export function EventArticle({
+export async function EventArticle({
   event,
   weather,
   venues = [],
@@ -46,20 +49,37 @@ export function EventArticle({
   seriesPeers = [],
   artistNames = {},
 }: Props) {
-  const catalog = [...lineage, event, ...venues, ...programs];
-  const kind = inferEventKind(event, catalog);
-  const places = eventPlaces(event, catalog);
+  const locale = await getLocale();
+  const t = await getMessages();
+  const view = localizedEvent(event, locale);
+  const localizedVenues = localizedEvents(venues, locale);
+  const localizedPrograms = localizedEvents(programs, locale);
+  const localizedLineage = localizedEvents(lineage, locale);
+  const localizedPeers = localizedEvents(seriesPeers, locale);
+  const localizedNested = Object.fromEntries(
+    Object.entries(nestedByParent).map(([slug, items]) => [slug, localizedEvents(items, locale)]),
+  );
+  const catalog = [...localizedLineage, view, ...localizedVenues, ...localizedPrograms];
+  const kind = inferEventKind(event, [...lineage, event, ...venues, ...programs]);
+  const places = eventPlaces(view, catalog);
   const cover = eventCover(event.image);
   const archived = eventPhase(event) === "archive";
-  const nested = Object.values(nestedByParent).flat();
-  const seatEvents = [event, ...venues, ...programs, ...nested];
+  const seatEvents = [event, ...venues, ...programs, ...Object.values(nestedByParent).flat()];
   const nameBySlug = Object.fromEntries(
-    Object.entries(artistNames).map(([slug, artist]) => [slug, artist.name]),
+    Object.entries(artistNames).map(([slug, artist]) => [
+      slug,
+      pickCopy(locale, artist.name, artist.i18nEnabled ? artist.nameEn : ""),
+    ]),
   );
   const people = event.artistSlugs
     .map((slug) => {
       const artist = artistNames[slug];
-      return artist ? { slug, name: artist.name, genre: artist.genre } : null;
+      if (!artist) return null;
+      return {
+        slug,
+        name: pickCopy(locale, artist.name, artist.i18nEnabled ? artist.nameEn : ""),
+        genre: artist.genre,
+      };
     })
     .filter((item): item is { slug: string; name: string; genre: string } => Boolean(item));
 
@@ -67,7 +87,7 @@ export function EventArticle({
     <article className="pb-20 md:pb-28">
       {cover ? (
         <div className="relative h-[46vh] min-h-[280px] md:h-[56vh]">
-          <CoverImage src={cover} alt={event.title} sizes="100vw" className="object-cover" />
+          <CoverImage src={cover} alt={view.title} sizes="100vw" className="object-cover" />
           <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(44,36,22,0.55),transparent_45%)]" />
         </div>
       ) : null}
@@ -76,7 +96,7 @@ export function EventArticle({
         <p className="text-[11px] tracking-[0.18em] text-tsuchi">{eventCategoryLabel(event.categories)}</p>
         {lineage.length > 0 ? (
           <p className="mt-3 text-sm text-sumi-soft">
-            {lineage.map((item, index) => (
+            {localizedLineage.map((item, index) => (
               <span key={item.slug}>
                 {index > 0 ? <span className="mx-2 text-line">/</span> : null}
                 <Link href={`/events/${item.slug}`} className="underline decoration-line underline-offset-4">
@@ -86,25 +106,25 @@ export function EventArticle({
             ))}
           </p>
         ) : null}
-        <h1 className="mt-3 font-serif text-3xl tracking-wide md:text-4xl">{event.title}</h1>
+        <h1 className="mt-3 font-serif text-3xl tracking-wide md:text-4xl">{view.title}</h1>
 
         <dl className="mt-8 space-y-3 border-y border-line py-6 text-sm leading-7">
           <div className="grid grid-cols-[5rem_1fr] gap-4">
-            <dt className="text-sumi-soft">日時</dt>
+            <dt className="text-sumi-soft">{t.events.datetime}</dt>
             <dd>
-              {event.sessions.map((session) => {
-                const cap = sessionCapacity(session, event);
+              {view.sessions.map((session) => {
+                const cap = sessionCapacity(session, view);
                 return (
                   <p key={session.startsAt}>
-                    {formatSessionRange(session.startsAt, session.endsAt)}
-                    {needsReservation(event) && cap ? ` · 定員${cap}名` : ""}
+                    {formatSessionRange(session.startsAt, session.endsAt, locale)}
+                    {needsReservation(event) && cap ? ` · ${t.common.capacity(cap)}` : ""}
                   </p>
                 );
               })}
             </dd>
           </div>
           <div className="grid grid-cols-[5rem_1fr] gap-4">
-            <dt className="text-sumi-soft">会場</dt>
+            <dt className="text-sumi-soft">{t.events.venue}</dt>
             <dd>
               {places.venues.length
                 ? places.venues.map((place) => (
@@ -123,13 +143,13 @@ export function EventArticle({
                       )}
                     </p>
                   ))
-                : eventVenueLabel(places.venues) || "未設定"}
+                : eventVenueLabel(places.venues) || t.common.unset}
             </dd>
           </div>
-          {eventPriceLabel(event) ? (
+          {eventPriceLabel(view) ? (
             <div className="grid grid-cols-[5rem_1fr] gap-4">
-              <dt className="text-sumi-soft">料金</dt>
-              <dd>{eventPriceLabel(event)}</dd>
+              <dt className="text-sumi-soft">{t.events.price}</dt>
+              <dd>{eventPriceLabel(view)}</dd>
             </div>
           ) : null}
         </dl>
@@ -145,38 +165,34 @@ export function EventArticle({
             </div>
           )}
 
-          <p className="mt-8 whitespace-pre-wrap text-[15px] leading-8 text-sumi-soft">{event.description}</p>
+          <p className="mt-8 whitespace-pre-wrap text-[15px] leading-8 text-sumi-soft">{view.description}</p>
 
           <EventPrograms
-            heading="会場"
-            description="会場ごとの案内です。各会場のページから、そこで開く催しを見られます。"
-            programs={venues}
-            nestedByParent={nestedByParent}
+            heading={t.events.venuesHeading}
+            description={t.events.venuesDesc}
+            programs={localizedVenues}
+            nestedByParent={localizedNested}
             catalog={catalog}
             liveSeats={!archived}
             allowApply={!archived}
             artistNames={nameBySlug}
           />
           {kind === "festival" || kind === "venue" ? (
-            <EventScheduleCalendar programs={programs} catalog={catalog} currentSlug={event.slug} />
+            <EventScheduleCalendar programs={localizedPrograms} catalog={catalog} currentSlug={event.slug} />
           ) : null}
           {kind === "festival" || kind === "venue" || programs.length > 0 ? (
             <EventPrograms
-              heading="催し"
-              description={
-                kind === "venue"
-                  ? "この会場で開くワークショップや催しです。申込みと定員は各催しからどうぞ。"
-                  : "この総合開催で開くワークショップや催しです。申込みと定員は各催しからどうぞ。"
-              }
+              heading={t.events.programsHeading}
+              description={kind === "venue" ? t.events.programsDescVenue : t.events.programsDescFestival}
               hideSessions={kind === "festival" || kind === "venue"}
-              programs={programs}
+              programs={localizedPrograms}
               catalog={catalog}
               currentSlug={event.slug}
               emptyMessage={
                 kind === "festival" || kind === "venue"
                   ? archived
-                    ? "この開催の個別の催しはありません。"
-                    : "いま掲載中の個別の催しはありません。"
+                    ? t.events.noProgramsArchived
+                    : t.events.noPrograms
                   : undefined
               }
               liveSeats={!archived}
@@ -187,7 +203,7 @@ export function EventArticle({
         </LiveSeatsProvider>
 
         <section className="mt-12">
-          <h2 className="font-serif text-xl tracking-wide">会場とアクセス</h2>
+          <h2 className="font-serif text-xl tracking-wide">{t.events.access}</h2>
           {places.access ? (
             <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-sumi-soft">{places.access}</p>
           ) : null}
@@ -199,7 +215,7 @@ export function EventArticle({
 
         <EventGallery event={event} />
 
-        <EventSeriesNote event={event} peers={seriesPeers} />
+        <EventSeriesNote event={view} peers={localizedPeers} />
       </div>
     </article>
   );

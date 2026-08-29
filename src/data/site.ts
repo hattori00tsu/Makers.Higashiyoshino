@@ -69,6 +69,13 @@ export type EventItem = {
   series?: string;
   /** つくり手が作った個別催しの主催者 */
   ownerArtistSlug?: string;
+  /** 英語の文章を公開する */
+  i18nEnabled?: boolean;
+  titleEn?: string;
+  summaryEn?: string;
+  descriptionEn?: string;
+  accessEn?: string;
+  priceEn?: string;
 };
 
 export const defaultEventImage = "/images/event-fair.jpg";
@@ -252,8 +259,16 @@ export function parsePlaceList(value: unknown, fallbackUrl = ""): PlaceOption[] 
 export const village = {
   lat: 34.4036,
   lng: 135.9685,
-  name: "東吉野村役場",
-  mapsUrl: "https://maps.app.goo.gl/mUi4u1MgURvyJY1s7",
+  name: "東吉野村",
+  mapsUrl: "https://maps.app.goo.gl/yzYgyptexkrQUKtB6",
+};
+
+/** 村内マップ（/map）。maps.app.goo.gl は iframe にできないので、同じ場所の埋め込みURLを使う */
+export const villageMapPlace = {
+  name: "OKUYAMA HOUSE",
+  mapsUrl: "https://maps.app.goo.gl/yzYgyptexkrQUKtB6",
+  embedUrl:
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d400!2d136.0156155!3d34.3794352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f18!3m3!1m2!1s0x6006b9783c1815e1%3A0x5a07633e1fa5ee91!2z44GK44GP5bGx44OP44Km44K544O744Go6Zm25pq_44K544K_44K444KqLeODquODneOCug!5e0!3m2!1sja!2sjp",
 };
 
 export type ArtistWork = {
@@ -284,6 +299,12 @@ export type Artist = {
   links?: { name: string; url: string }[];
   x?: string;
   shop?: string;
+  i18nEnabled?: boolean;
+  nameEn?: string;
+  areaEn?: string;
+  bioEn?: string;
+  profileEn?: string;
+  studioVisitEn?: string;
 };
 
 export const artists: Artist[] = [];
@@ -368,6 +389,12 @@ export function normalizeEvent(raw: object): EventItem {
     kind: parseEventKind(data.kind),
     series: parseEventSeries(data.series),
     ownerArtistSlug: owner ? String(owner) : undefined,
+    i18nEnabled: Boolean(data.i18nEnabled ?? data.i18n_enabled),
+    titleEn: String(data.titleEn ?? data.title_en ?? ""),
+    summaryEn: String(data.summaryEn ?? data.summary_en ?? ""),
+    descriptionEn: String(data.descriptionEn ?? data.description_en ?? ""),
+    accessEn: String(data.accessEn ?? data.access_en ?? ""),
+    priceEn: String(data.priceEn ?? data.price_en ?? ""),
   };
 }
 

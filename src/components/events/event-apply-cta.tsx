@@ -4,25 +4,28 @@ import Link from "next/link";
 import { useLiveSeats } from "@/components/events/live-seats";
 import { liveSeatKey } from "@/lib/content/live";
 import { isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
+import { useMessages } from "@/lib/i18n/provider";
 
 export const applyButtonClass =
   "inline-flex items-center justify-center border border-sumi bg-sumi px-5 py-2.5 text-[13px] tracking-[0.16em] text-kami transition-opacity hover:opacity-90";
 
-export function ApplyButton({ href, children = "申し込む" }: { href: string; children?: string }) {
+export function ApplyButton({ href, children }: { href: string; children?: React.ReactNode }) {
+  const t = useMessages();
   return (
     <Link href={href} className={applyButtonClass}>
-      {children}
+      {children ?? t.events.apply}
     </Link>
   );
 }
 
 export function EventApplyCta({ event }: { event: EventItem }) {
   const seats = useLiveSeats() ?? {};
+  const t = useMessages();
 
   if ((event.status ?? "published") === "cancelled") {
     return (
       <p className="mt-8 border border-line bg-kami px-4 py-4 text-sm leading-7 text-sumi-soft">
-        この催しは中止になりました。
+        {t.events.cancelled}
       </p>
     );
   }
@@ -42,8 +45,8 @@ export function EventApplyCta({ event }: { event: EventItem }) {
     <div className="mt-8 border-y border-line py-6">
       <p className="text-sm leading-7 text-sumi-soft">
         {full
-          ? "ただいま定員に達しています。キャンセルが出た場合のみ、ご連絡します。"
-          : "事前の予約をお願いします。申込みにはログイン（登録）が必要です。定員は日程ごとに異なります。"}
+          ? t.events.fullWaitlist
+          : t.events.pleaseReserve}
       </p>
 
       {full ? null : (

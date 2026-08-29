@@ -1,3 +1,5 @@
+"use client";
+
 import { CoverImage } from "@/components/media/cover-image";
 import Link from "next/link";
 import {
@@ -11,6 +13,7 @@ import {
   type EventItem,
 } from "@/data/site";
 import { formatDateJa } from "@/lib/dates";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   items: EventItem[];
@@ -26,10 +29,13 @@ export function EventList({
   programs = [],
   compact = false,
   nestedPrograms: showPrograms = true,
-  emptyLabel = "この日の予定はありません。",
+  emptyLabel,
 }: Props) {
+  const locale = useLocale();
+  const t = useMessages();
+  const empty = emptyLabel ?? t.events.noPlans;
   if (items.length === 0) {
-    return <p className="text-sm leading-7 text-sumi-soft">{emptyLabel}</p>;
+    return <p className="text-sm leading-7 text-sumi-soft">{empty}</p>;
   }
 
   return (
@@ -80,16 +86,16 @@ export function EventList({
                 <p className="text-[11px] tracking-[0.18em] text-tsuchi">
                   {eventCategoryLabel(event.categories)}
                   <span className="mx-2 text-line">/</span>
-                  {formatDateJa(first?.startsAt ?? "")}
+                  {formatDateJa(first?.startsAt ?? "", locale)}
                   {nestedVenues.length > 0 ? (
                     <>
                       <span className="mx-2 text-line">/</span>
-                      会場 {nestedVenues.length}
+                      {t.events.venuesCount(nestedVenues.length)}
                     </>
                   ) : nestedPrograms.length > 0 ? (
                     <>
                       <span className="mx-2 text-line">/</span>
-                      催し {nestedPrograms.length}
+                      {t.events.programsCount(nestedPrograms.length)}
                     </>
                   ) : null}
                 </p>
@@ -116,10 +122,10 @@ export function EventList({
                         <span className="font-serif tracking-wide">{venue.title}</span>
                         <span className="text-[12px] tracking-[0.12em] text-sumi-soft">
                           {leaves.length > 0
-                            ? `催し ${leaves.length}`
+                            ? t.events.programsCount(leaves.length)
                             : needsReservation(venue)
-                              ? "要申込み"
-                              : "申込み不要"}
+                              ? t.events.reservationRequired
+                              : t.events.noReservation}
                         </span>
                       </Link>
                       {leaves.length > 0 ? (
@@ -129,7 +135,7 @@ export function EventList({
                               <Link href={`/events/${leaf.slug}`} className="flex flex-wrap items-baseline gap-x-3 text-sm">
                                 <span>{leaf.title}</span>
                                 <span className="text-[12px] tracking-[0.12em] text-sumi-soft">
-                                  {needsReservation(leaf) ? "要申込み" : "申込み不要"}
+                                  {needsReservation(leaf) ? t.events.reservationRequired : t.events.noReservation}
                                 </span>
                               </Link>
                             </li>
@@ -144,7 +150,7 @@ export function EventList({
                     <Link href={`/events/${program.slug}`} className="flex flex-wrap items-baseline gap-x-3 text-sm">
                       <span className="font-serif tracking-wide">{program.title}</span>
                       <span className="text-[12px] tracking-[0.12em] text-sumi-soft">
-                        {needsReservation(program) ? "要申込み" : "申込み不要"}
+                        {needsReservation(program) ? t.events.reservationRequired : t.events.noReservation}
                       </span>
                     </Link>
                   </li>

@@ -8,6 +8,7 @@ import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supaba
 import { ensureLocalSeed } from "@/lib/account/local";
 import { Field, PrimaryButton, TextInput } from "@/components/account/fields";
 import { useSession } from "@/lib/account/use-session";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   nextPath: string;
@@ -58,6 +59,8 @@ function authMessage(message: string) {
 export function LoginPanel({ nextPath, intent, denied = false }: Props) {
   const router = useRouter();
   const { user, loading, signOut } = useSession();
+  const locale = useLocale();
+  const t = useMessages();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [email, setEmail] = useState("");
@@ -144,11 +147,11 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
       const response = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed, nextPath }),
+        body: JSON.stringify({ email: trimmed, nextPath, locale }),
       });
       const payload = (await response.json().catch(() => ({}))) as { fallback?: boolean; error?: string };
       if (response.ok && !payload.fallback) {
-        setNotice("ログイン用のリンクを送りました。メールのリンクを開くと入れます。パスワードはありません。");
+        setNotice(t.login.sent);
         return;
       }
       if (!response.ok) {
@@ -166,7 +169,7 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
         setError(authMessage(authError.message));
         return;
       }
-      setNotice("ログイン用のリンクを送りました。メールのリンクを開くと入れます。パスワードはありません。");
+      setNotice(t.login.sent);
     } finally {
       setBusy(false);
     }
@@ -246,13 +249,13 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
         className="flex w-full items-center justify-center gap-3 border border-sumi bg-kami px-5 py-3 text-[13px] tracking-[0.16em]"
       >
         <GoogleMark />
-        Google でログイン
+        {t.login.google}
       </button>
 
-      <p className="text-center text-[11px] tracking-[0.18em] text-sumi-soft">またはメール</p>
+      <p className="text-center text-[11px] tracking-[0.18em] text-sumi-soft">{t.login.orEmail}</p>
 
       <form className="space-y-5" onSubmit={onEmail}>
-        <Field label="メール">
+        <Field label={t.login.email}>
           <TextInput
             type="email"
             value={email}
@@ -262,7 +265,7 @@ export function LoginPanel({ nextPath, intent, denied = false }: Props) {
           />
         </Field>
         <PrimaryButton type="submit" disabled={busy}>
-          ログイン用のリンクを送る
+          {t.login.sendLink}
         </PrimaryButton>
       </form>
 

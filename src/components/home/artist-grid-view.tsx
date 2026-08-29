@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { SectionHeading } from "@/components/section-heading";
 import { ArtistPhoto } from "@/components/media/artist-photo";
 import type { Artist } from "@/data/site";
 import { shuffleItems } from "@/lib/content/home-display";
+import { localizedArtists } from "@/lib/i18n/content";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 
 export function ArtistGridView({
   artists,
@@ -14,25 +16,28 @@ export function ArtistGridView({
   artists: Artist[];
   shuffleOnLoad?: boolean;
 }) {
-  const [items, setItems] = useState(artists);
+  const locale = useLocale();
+  const t = useMessages();
+  const localized = useMemo(() => localizedArtists(artists, locale), [artists, locale]);
+  const [items, setItems] = useState(localized);
 
   useEffect(() => {
-    setItems(shuffleOnLoad ? shuffleItems(artists) : artists);
-  }, [artists, shuffleOnLoad]);
+    setItems(shuffleOnLoad ? shuffleItems(localized) : localized);
+  }, [localized, shuffleOnLoad]);
 
   return (
     <section className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
       <SectionHeading
         index=""
-        eyebrow="ARTISTS"
-        title="つくり手"
+        eyebrow="A"
+          title={t.home.artistsTitle}
         action={
           items.length > 0 || artists.length > 0 ? (
             <Link
               href="/artists"
               className="hidden text-[13px] tracking-[0.16em] text-sugi md:inline hover:opacity-70"
             >
-             詳細 
+              {t.common.details}
             </Link>
           ) : null
         }
@@ -40,9 +45,9 @@ export function ArtistGridView({
 
       {artists.length === 0 ? (
         <p className="mt-10 max-w-xl text-sm leading-7 text-sumi-soft md:mt-12">
-          いま公開中のつくり手はいません。
+          {t.home.noArtists}
           <Link href="/artists" className="ml-2 underline decoration-line underline-offset-4">
-          詳細を見る
+            {t.common.details}
           </Link>
         </p>
       ) : (
@@ -69,7 +74,7 @@ export function ArtistGridView({
       {artists.length > 0 ? (
         <div className="mt-10 md:hidden">
           <Link href="/artists" className="text-[13px] tracking-[0.16em] text-sugi">
-          詳細
+          {t.common.details}
           </Link>
         </div>
       ) : null}

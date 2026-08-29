@@ -1,13 +1,15 @@
 import Link from "next/link";
+import { getMessages } from "@/lib/i18n/server";
 
 type Person = { slug: string; name: string; genre: string };
 
-export function EventPeople({ people }: { people: Person[] }) {
+export async function EventPeople({ people }: { people: Person[] }) {
+  const t = await getMessages();
   if (people.length === 0) return null;
 
   return (
     <section className="mt-12">
-      <h2 className="font-serif text-xl tracking-wide">参加する作家</h2>
+      <h2 className="font-serif text-xl tracking-wide">{t.events.people}</h2>
       <ul className="mt-5 divide-y divide-line border-y border-line">
         {people.map((artist) => (
           <li key={artist.slug}>

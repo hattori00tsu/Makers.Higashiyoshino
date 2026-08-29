@@ -25,7 +25,7 @@ function VillageSlide({ village, priority }: { village: HomeVillage; priority?: 
       <div className="relative aspect-[4/5] overflow-hidden md:col-span-5">
         <Image
           src={src}
-          alt={village.title || "山村の家並み"}
+          alt={village.title || ""}
           fill
           sizes="(max-width: 768px) 100vw, 40vw"
           className="pointer-events-none object-cover"

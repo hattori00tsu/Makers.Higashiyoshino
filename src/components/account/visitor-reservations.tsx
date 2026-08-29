@@ -7,13 +7,15 @@ import { cancelApplicationLive, loadEventsBySlugsLive, loadMyApplicationsLive } 
 import type { Application } from "@/lib/content/applications";
 import { eventPathTitle, type EventItem } from "@/data/site";
 import { formatDateJa, formatSessionRange } from "@/lib/dates";
+import { localizedEvent } from "@/lib/i18n/content";
+import { useLocale } from "@/lib/i18n/provider";
 import type { SessionUser } from "@/lib/account/types";
 
-function sessionOf(row: Application, events: EventItem[]) {
+function sessionOf(row: Application, events: EventItem[], locale: "ja" | "en" = "ja") {
   const event = events.find((item) => item.slug === row.eventSlug);
   const session = event?.sessions.find((item) => item.startsAt === row.sessionStartsAt);
-  if (session) return formatSessionRange(session.startsAt, session.endsAt);
-  return formatDateJa(row.sessionStartsAt);
+  if (session) return formatSessionRange(session.startsAt, session.endsAt, locale);
+  return formatDateJa(row.sessionStartsAt, locale);
 }
 
 function sessionEnd(row: Application, events: EventItem[]) {
@@ -27,6 +29,7 @@ function isUpcoming(row: Application, events: EventItem[]) {
 }
 
 export function VisitorReservations({ user }: { user: SessionUser }) {
+  const locale = useLocale();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [rows, setRows] = useState<Application[] | null>(null);
   const [message, setMessage] = useState("");
@@ -100,13 +103,14 @@ export function VisitorReservations({ user }: { user: SessionUser }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          eventTitle: event?.title ?? row.eventSlug,
+          eventTitle: event ? localizedEvent(event, locale).title : row.eventSlug,
           eventSlug: row.eventSlug,
           name: row.name,
           email: row.email,
           partySize: row.partySize,
-          sessionLabel: sessionOf(row, events),
+          sessionLabel: sessionOf(row, events, locale),
           reason: reasonText,
+          locale,
         }),
       });
       await refresh();
@@ -167,6 +171,7 @@ function ReservationGroup({
   onReasonChange?: (value: string) => void;
   onConfirmCancel?: (row: Application) => void;
 }) {
+  const locale = useLocale();
   const active = rows.filter((row) => row.status !== "cancelled");
   const cancelled = rows.filter((row) => row.status === "cancelled");
 
@@ -189,7 +194,7 @@ function ReservationGroup({
                 </p>
                 <p className="mt-1 font-serif text-lg tracking-wide">{event?.title ?? row.eventSlug}</p>
                 <p className="mt-1 text-sm text-sumi-soft">
-                  {row.partySize}名 · {sessionOf(row, events)}
+                  {row.partySize}名 · {sessionOf(row, events, locale)}
                 </p>
                 <div className="mt-3 flex gap-4 text-[13px] tracking-[0.14em]">
                   <Link href={`/events/${row.eventSlug}`} className="text-sumi-soft">
@@ -245,7 +250,7 @@ function ReservationGroup({
                 <li key={row.id} className="flex flex-wrap items-baseline gap-x-3 text-[12px] leading-6 text-sumi-soft">
                   <span>{event?.title ?? row.eventSlug}</span>
                   <span>
-                    {row.partySize}名 · {sessionOf(row, events)}
+                    {row.partySize}名 · {sessionOf(row, events, locale)}
                   </span>
                   <Link href={`/events/${row.eventSlug}`} className="underline decoration-line underline-offset-4">
                     催し

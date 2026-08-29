@@ -5,10 +5,14 @@ import { eventCategoryLabel, eventCover, isPublished } from "@/data/site";
 import { arrangeHomeEvents, type HomeDisplay } from "@/lib/content/home-display";
 import { loadPublicEvents } from "@/lib/content/public-events";
 import { formatMonthDaySpan } from "@/lib/dates";
+import { localizedEvents } from "@/lib/i18n/content";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 
 export async function EventHighlights({ display }: { display: HomeDisplay }) {
+  const locale = await getLocale();
+  const t = await getMessages();
   const all = await loadPublicEvents();
-  const items = arrangeHomeEvents(all.filter(isPublished), display);
+  const items = localizedEvents(arrangeHomeEvents(all.filter(isPublished), display), locale);
 
   return (
     <section className="border-y border-line bg-kami/60 py-20 md:py-28">
@@ -16,13 +20,13 @@ export async function EventHighlights({ display }: { display: HomeDisplay }) {
         <SectionHeading
           index=""
           eyebrow="EVENTS"
-          title="直近の催し"
+          title=""
           action={
             <Link
               href="/events"
               className="hidden text-[13px] tracking-[0.16em] text-sugi md:inline hover:opacity-70"
             >
-              詳細
+              {t.common.details}
             </Link>
           }
         />
@@ -30,9 +34,9 @@ export async function EventHighlights({ display }: { display: HomeDisplay }) {
 
       {items.length === 0 ? (
         <p className="mx-auto mt-10 max-w-6xl px-5 text-sm leading-7 text-sumi-soft md:mt-12 md:px-8">
-          いま公開中の催しはありません。
+          {t.home.noEvents}
           <Link href="/events" className="ml-2 underline decoration-line underline-offset-4">
-            詳細
+            {t.common.details}
           </Link>
         </p>
       ) : (
@@ -59,7 +63,7 @@ export async function EventHighlights({ display }: { display: HomeDisplay }) {
                   <p className={`text-[11px] tracking-[0.18em] text-tsuchi ${cover ? "mt-4" : ""}`}>
                     {eventCategoryLabel(event.categories)}
                     <span className="mx-2 text-line">/</span>
-                    {formatMonthDaySpan(event.sessions)}
+                    {formatMonthDaySpan(event.sessions, locale)}
                   </p>
                   <h3 className="mt-2 font-serif text-xl tracking-wide">{event.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-sumi-soft">{event.summary}</p>
@@ -73,7 +77,7 @@ export async function EventHighlights({ display }: { display: HomeDisplay }) {
       {items.length > 0 ? (
         <div className="mt-8 px-5 md:hidden">
           <Link href="/events" className="text-[13px] tracking-[0.16em] text-sugi">
-            詳細
+            {t.common.details}
           </Link>
         </div>
       ) : null}

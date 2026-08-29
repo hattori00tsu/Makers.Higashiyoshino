@@ -13,6 +13,8 @@ import {
 } from "@/lib/content/live";
 import { eventPriceLabel, isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
 import { formatSessionRange } from "@/lib/dates";
+import { localizedEvent, localizedEvents } from "@/lib/i18n/content";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 import { useSession } from "@/lib/account/use-session";
 
 type Props = {
@@ -23,6 +25,8 @@ type Props = {
 
 export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
   const { user, loading } = useSession();
+  const locale = useLocale();
+  const t = useMessages();
   const [fetchedEvent, setFetchedEvent] = useState<EventItem | null>(null);
   const [fetchedLineage, setFetchedLineage] = useState<EventItem[]>([]);
   const event = initial ?? fetchedEvent;
@@ -89,17 +93,20 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
   if (!event) {
     return (
       <div className="mx-auto max-w-xl px-5 pt-28 pb-20">
-        <p className="text-sm text-sumi-soft">催しが見つかりません。</p>
+        <p className="text-sm text-sumi-soft">{locale === "en" ? "Event not found." : "催しが見つかりません。"}</p>
       </div>
     );
   }
+
+  const view = localizedEvent(event, locale);
+  const viewLineage = localizedEvents(lineage, locale);
 
   if (!isPublished(event) || (event.status ?? "published") === "cancelled") {
     return (
       <div className="mx-auto max-w-xl px-5 pt-28 pb-20">
         <p className="text-sm text-sumi-soft">いまは申し込めません。</p>
         <Link href={`/events/${event.slug}`} className="mt-4 inline-block text-sm underline decoration-line underline-offset-4">
-          催しへ戻る
+          {t.apply.backToEvent}
         </Link>
       </div>
     );
@@ -112,7 +119,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
           この催しに事前の申込みは不要です。当日、直接お越しください。
         </p>
         <Link href={`/events/${event.slug}`} className="mt-4 inline-block text-sm underline decoration-line underline-offset-4">
-          催しへ戻る
+          {t.apply.backToEvent}
         </Link>
       </div>
     );
@@ -122,10 +129,10 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
     return (
       <div className="mx-auto max-w-xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
         <p className="text-[11px] tracking-[0.28em] text-tsuchi">APPLY</p>
-        <h1 className="mt-3 font-serif text-3xl tracking-wide">申し込む</h1>
-        <p className="mt-3 font-serif text-lg tracking-wide">{event.title}</p>
+        <h1 className="mt-3 font-serif text-3xl tracking-wide">{t.apply.title}</h1>
+        <p className="mt-3 font-serif text-lg tracking-wide">{view.title}</p>
         {loading ? (
-          <p className="mt-6 text-sm leading-7 text-sumi-soft">読み込み中です。</p>
+          <p className="mt-6 text-sm leading-7 text-sumi-soft">{t.common.loading}</p>
         ) : (
           <>
             <p className="mt-6 text-sm leading-7 text-sumi-soft">
@@ -138,7 +145,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         )}
         <div className="mt-10">
           <Link href={`/events/${event.slug}`} className="text-sm underline decoration-line underline-offset-4">
-            催しへ戻る
+            {t.apply.backToEvent}
           </Link>
         </div>
       </div>
@@ -159,7 +166,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         </Link>
         <span className="mx-3 text-line">/</span>
         <Link href={`/events/${event.slug}`} className="text-sm underline decoration-line underline-offset-4">
-          催しへ戻る
+          {t.apply.backToEvent}
         </Link>
         {event.sessions.length > 1 ? (
           <>
@@ -206,7 +213,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
       sessionStartsAt,
     );
     if (remaining !== null && size > remaining) {
-      setMessage(`残席は${remaining}名です。人数を減らしてください。`);
+        setMessage(t.apply.remainingSeats(remaining));
       setBusy(false);
       setConfirming(false);
       return;
@@ -226,7 +233,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         user.source === "preview",
       );
     } catch {
-      setMessage("受け付けできませんでした。残席を確認してもう一度どうぞ。");
+      setMessage(t.apply.failed);
       setBusy(false);
       return;
     }
@@ -236,15 +243,17 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          eventTitle: event.title,
+          eventTitle: view.title,
           eventSlug: event.slug,
           name: trimmedName,
           email: user.email,
           partySize: size,
           note: note.trim(),
+          locale,
           sessionLabel: formatSessionRange(
             sessionStartsAt,
             event.sessions.find((item) => item.startsAt === sessionStartsAt)?.endsAt ?? sessionStartsAt,
+            locale,
           ),
         }),
       });
@@ -253,11 +262,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
     } catch {
       emailed = false;
     }
-    setMessage(
-      emailed
-        ? "予約が確定しました。確認のメールをお送りしました。"
-        : "予約が確定しました。確認メールの設定がない場合は、この画面の表示をもって受付完了です。",
-    );
+    setMessage(emailed ? t.apply.doneMail : t.apply.doneNoMail);
     setDone(true);
     setBusy(false);
     setConfirming(false);
@@ -266,10 +271,10 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
   return (
     <div className="mx-auto max-w-xl px-5 pt-24 pb-20 md:pt-28 md:pb-28">
       <p className="text-[11px] tracking-[0.28em] text-tsuchi">APPLY</p>
-      <h1 className="mt-3 font-serif text-3xl tracking-wide">申し込む</h1>
-      {lineage.length > 0 ? (
+      <h1 className="mt-3 font-serif text-3xl tracking-wide">{t.apply.title}</h1>
+      {viewLineage.length > 0 ? (
         <p className="mt-3 text-sm text-sumi-soft">
-          {lineage.map((item, index) => (
+          {viewLineage.map((item, index) => (
             <span key={item.slug}>
               {index > 0 ? <span className="mx-2 text-line">/</span> : null}
               <Link href={`/events/${item.slug}`} className="underline decoration-line underline-offset-4">
@@ -279,27 +284,27 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
           ))}
         </p>
       ) : null}
-      <p className="mt-3 font-serif text-lg tracking-wide">{event.title}</p>
-      {eventPriceLabel(event) ? (
-        <p className="mt-2 text-sm text-sumi-soft">料金：{eventPriceLabel(event)}</p>
+      <p className="mt-3 font-serif text-lg tracking-wide">{view.title}</p>
+      {eventPriceLabel(view) ? (
+        <p className="mt-2 text-sm text-sumi-soft">{t.apply.price(eventPriceLabel(view))}</p>
       ) : null}
       <p className="mt-4 text-sm leading-7 text-sumi-soft">
-        申し込むと予約が確定します。定員になり次第しめます。
+        {t.apply.lead}
         {(() => {
           const session = event.sessions.find((item) => item.startsAt === sessionStartsAt) ?? event.sessions[0];
           const cap = session ? sessionCapacity(session, event) : null;
-          return cap ? ` この日程の定員は${cap}名、残席は${left ?? cap}名です。` : "";
+          return cap ? t.apply.sessionCapacity(cap, left ?? cap) : "";
         })()}
       </p>
 
       {full ? (
         <p className="mt-8 border border-line bg-kami px-4 py-4 text-sm leading-7 text-sumi-soft">
-          ただいま定員に達しています。
+          {t.events.full}
         </p>
       ) : (
         <form onSubmit={onSubmit} className="mt-10 space-y-5">
           {event.sessions.length > 1 ? (
-            <Field label="日程">
+            <Field label={t.apply.session}>
               <Select
                 value={sessionStartsAt}
                 onChange={(e) => {
@@ -312,8 +317,8 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
                   const cap = sessionCapacity(session, event);
                   return (
                     <option key={session.startsAt} value={session.startsAt}>
-                      {formatSessionRange(session.startsAt, session.endsAt)}
-                      {cap ? ` · 定員${cap}名` : ""}
+                      {formatSessionRange(session.startsAt, session.endsAt, locale)}
+                      {cap ? t.apply.sessionCapacityShort(cap) : ""}
                     </option>
                   );
                 })}
@@ -322,11 +327,11 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
           ) : (
             <p className="text-sm text-sumi-soft">
               {event.sessions[0]
-                ? formatSessionRange(event.sessions[0].startsAt, event.sessions[0].endsAt)
+                ? formatSessionRange(event.sessions[0].startsAt, event.sessions[0].endsAt, locale)
                 : null}
             </p>
           )}
-          <Field label="お名前">
+          <Field label={t.apply.name}>
             <TextInput
               value={name}
               onChange={(e) => {
@@ -341,7 +346,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
             <p className="border border-transparent py-2.5 text-sm text-sumi">{user.email}</p>
             <p className="text-xs leading-6 text-sumi-soft">登録したメールです。申込み先は変更できません。</p>
           </Field>
-          <Field label="人数">
+          <Field label={t.apply.party}>
             <TextInput
               type="number"
               min={1}
@@ -354,7 +359,7 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
               required
             />
           </Field>
-          <Field label="連絡事項（任意）">
+          <Field label={t.apply.note}>
             <TextArea
               value={note}
               onChange={(e) => {
@@ -365,22 +370,22 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
           </Field>
           {message ? <p className="text-sm text-sumi-soft">{message}</p> : null}
           <p className="text-xs leading-6 text-sumi-soft">
-            お名前と連絡先は、受付と当日までの連絡に使います。詳しくは
+            {t.apply.privacyBefore}
             <Link href="/privacy" className="mx-1 underline decoration-line underline-offset-4">
-              プライバシーポリシー
+              {t.footer.privacy}
             </Link>
-            をご確認ください。            キャンセルは
+            {t.apply.privacyAfter}
             <Link href="/visit" className="mx-1 underline decoration-line underline-offset-4">
-              来訪者
+              {t.apply.visit}
             </Link>
-            から申請できます。
+            {t.apply.privacyAfter2}
           </p>
           {confirming ? (
             <div className="space-y-4 border border-line bg-kami px-4 py-4">
-              <p className="text-sm leading-7 text-sumi-soft">確定しますか？</p>
+              <p className="text-sm leading-7 text-sumi-soft">{t.apply.confirm}</p>
               <div className="flex items-center gap-5">
                 <PrimaryButton type="submit" disabled={busy}>
-                  {busy ? "申し込んでいます" : "確定する"}
+                  {busy ? t.apply.applying : t.apply.confirmSubmit}
                 </PrimaryButton>
                 <button
                   type="button"
@@ -388,12 +393,12 @@ export function ApplyForm({ slug, initial, initialLineage = [] }: Props) {
                   className="text-[13px] tracking-[0.14em] text-sumi-soft"
                   onClick={() => setConfirming(false)}
                 >
-                  もどる
+                  {t.apply.back}
                 </button>
               </div>
             </div>
           ) : (
-            <PrimaryButton type="submit">申し込む</PrimaryButton>
+            <PrimaryButton type="submit">{t.apply.title}</PrimaryButton>
           )}
         </form>
       )}
