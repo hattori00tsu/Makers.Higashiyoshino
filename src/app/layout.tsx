@@ -3,6 +3,7 @@ import { Shippori_Mincho, Zen_Kaku_Gothic_New } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SessionProvider } from "@/lib/account/use-session";
+import { loadPublicEventOptions } from "@/lib/content/public-options";
 import { LocaleProvider } from "@/lib/i18n/provider";
 import { getLocale } from "@/lib/i18n/server";
 import { messages } from "@/lib/i18n/messages";
@@ -42,6 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
+  const options = await loadPublicEventOptions();
   const t = messages[locale];
   const items = [
     { href: "/events", label: t.nav.events },
@@ -57,7 +59,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${mincho.variable} ${gothic.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-washi font-sans text-sumi">
-        <LocaleProvider locale={locale}>
+        <LocaleProvider locale={locale} options={options}>
           <SessionProvider>
             <SiteHeader items={items} shortName={site.shortName} name={site.name} />
             <main className="flex-1">{children}</main>

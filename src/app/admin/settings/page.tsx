@@ -503,7 +503,7 @@ export default function AdminSettingsPage() {
               value="upcoming"
               current={home.eventsMode === "manual" ? "manual" : "upcoming"}
               label="開催中 / 開催予定"
-              hint="開催中があれば開催中を、なければ開催予定を出します。並びは毎回ランダムです。"
+              hint="開催中があれば開催中を、なければ開催予定を出します。総合開催や会場の配下の個別催しも対象です。並びは毎回ランダムです。"
               onChange={setEventsMode}
             />
             <RadioRow

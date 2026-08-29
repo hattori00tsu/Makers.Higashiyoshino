@@ -30,6 +30,7 @@ export type NamedLink = {
 export type PlaceOption = {
   id: string;
   title: string;
+  titleEn?: string;
   url: string;
 };
 
@@ -150,7 +151,7 @@ export function emptyNamedLink(): NamedLink {
 }
 
 export function emptyPlace(title = ""): PlaceOption {
-  return { id: "", title, url: "" };
+  return { id: "", title, titleEn: "", url: "" };
 }
 
 export function newPlaceId() {
@@ -209,13 +210,23 @@ export function parseNamedLink(value: unknown, fallbackTitle = ""): NamedLink {
 
 export function parsePlace(value: unknown, fallbackUrl = ""): PlaceOption | null {
   if (value && typeof value === "object") {
-    const item = value as { id?: unknown; title?: unknown; url?: unknown; name?: unknown; query?: unknown };
+    const item = value as {
+      id?: unknown;
+      title?: unknown;
+      titleEn?: unknown;
+      title_en?: unknown;
+      url?: unknown;
+      name?: unknown;
+      query?: unknown;
+    };
     const title = String(item.title || item.name || item.query || "").trim();
+    const titleEn = String(item.titleEn ?? item.title_en ?? "").trim();
     const url = String(item.url || fallbackUrl);
     if (!title && !url) return null;
     return {
       id: String(item.id || title),
       title: title || "場所",
+      titleEn,
       url,
     };
   }

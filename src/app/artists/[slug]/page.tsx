@@ -7,6 +7,7 @@ import { ArtistEvents } from "@/components/artists/artist-events";
 import { ArtistPhoto } from "@/components/media/artist-photo";
 import { loadPublicArtist, loadPublicArtists } from "@/lib/content/public-artists";
 import { loadPublicEventsForArtist } from "@/lib/content/public-events";
+import { loadPublicEventOptions } from "@/lib/content/public-options";
 import { instagramEmbedPermalink } from "@/lib/social/instagram";
 import { localizedArtist, localizedEvents } from "@/lib/i18n/content";
 import { getLocale, getMessages } from "@/lib/i18n/server";
@@ -45,9 +46,13 @@ export default async function ArtistDetailPage({ params }: Props) {
   const { slug } = await params;
   const locale = await getLocale();
   const t = await getMessages();
-  const [rawArtist, events] = await Promise.all([loadPublicArtist(slug), loadPublicEventsForArtist(slug)]);
+  const [rawArtist, events, options] = await Promise.all([
+    loadPublicArtist(slug),
+    loadPublicEventsForArtist(slug),
+    loadPublicEventOptions(),
+  ]);
   if (!rawArtist) notFound();
-  const artist = localizedArtist(rawArtist, locale);
+  const artist = localizedArtist(rawArtist, locale, options);
 
   const extraLinks = [
     ...(artist.x ? [{ href: artist.x, label: "X" }] : []),
@@ -168,7 +173,7 @@ export default async function ArtistDetailPage({ params }: Props) {
         </section>
       ) : null}
 
-      <ArtistEvents slug={artist.slug} initial={localizedEvents(events, locale)} />
+      <ArtistEvents slug={artist.slug} initial={localizedEvents(events, locale, options)} />
     </article>
   );
 }

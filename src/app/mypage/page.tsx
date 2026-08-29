@@ -8,10 +8,12 @@ import { PrimaryButton } from "@/components/account/fields";
 import { artistSlugForUser } from "@/lib/account/local";
 import { artistEntryPath } from "@/lib/account/paths";
 import { partitionArtistEvents } from "@/lib/calendar";
-import { eventAncestorTitle, eventCategoryLabel, eventsForArtist } from "@/data/site";
+import { eventAncestorTitle, eventsForArtist } from "@/data/site";
 import { loadEventsForArtistLive } from "@/lib/content/live";
 import { useSession } from "@/lib/account/use-session";
 import { formatDateJa } from "@/lib/dates";
+import { localizedCategoryLabel } from "@/lib/i18n/content";
+import { useCatalog, useLocale } from "@/lib/i18n/provider";
 import type { EventItem } from "@/data/site";
 
 export default function MypagePage() {
@@ -131,6 +133,8 @@ function JoinedGroup({
   items: EventItem[];
   catalog: EventItem[];
 }) {
+  const locale = useLocale();
+  const options = useCatalog();
   if (items.length === 0) return null;
 
   return (
@@ -143,9 +147,9 @@ function JoinedGroup({
             <li key={event.slug} className="py-4">
               <Link href={`/events/${event.slug}`} className="block">
                 <p className="text-[11px] tracking-[0.16em] text-tsuchi">
-                  {ancestor || eventCategoryLabel(event.categories)}
+                  {ancestor || localizedCategoryLabel(event.categories, locale, options.categories)}
                   <span className="mx-2 text-line">/</span>
-                  {formatDateJa(event.sessions[0]?.startsAt ?? "")}
+                  {formatDateJa(event.sessions[0]?.startsAt ?? "", locale)}
                 </p>
                 <p className="mt-1 font-serif text-lg tracking-wide">{event.title}</p>
               </Link>
