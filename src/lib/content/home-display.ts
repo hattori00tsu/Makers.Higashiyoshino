@@ -1,6 +1,6 @@
 import type { Artist, EventItem } from "@/data/site";
 import { isPublished } from "@/data/site";
-import { publicEventLists } from "@/lib/calendar";
+import { homeEventLists } from "@/lib/calendar";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -236,7 +236,7 @@ export function arrangeHomeEvents(items: EventItem[], display: HomeDisplay) {
   if (display.eventsMode === "manual") {
     return pickBySlug(published, display.eventSlugs).slice(0, homeEventLimit);
   }
-  const { ongoing, upcoming } = publicEventLists(published);
+  const { ongoing, upcoming } = homeEventLists(published);
   const pool = ongoing.length > 0 ? ongoing : upcoming;
   return shuffleItems(pool).slice(0, homeEventLimit);
 }

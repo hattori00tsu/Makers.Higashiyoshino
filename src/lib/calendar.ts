@@ -268,6 +268,15 @@ export function publicEventLists(items: EventItem[], now = Date.now()) {
   return { ongoing, upcoming, archive: archiveItems };
 }
 
+/** LP用。親のない催しに加え、総合開催・会場の配下の個別催しも候補にする。会場枠は親がある限り出さない。 */
+export function homeEventLists(items: EventItem[], now = Date.now()) {
+  const published = items.filter(isPublished);
+  const candidates = published.filter(
+    (event) => isTopLevel(event) || inferEventKind(event, published) === "program",
+  );
+  return partitionEventPhases(candidates, now);
+}
+
 export function eventSeriesName(event: Pick<EventItem, "series">) {
   return event.series?.trim() ?? "";
 }

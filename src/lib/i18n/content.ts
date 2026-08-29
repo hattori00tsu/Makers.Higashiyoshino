@@ -1,10 +1,12 @@
-import type { Artist, EventItem } from "@/data/site";
+import type { Artist, EventItem, PlaceOption } from "@/data/site";
+import { parseArtistGenres } from "@/lib/account/types";
 import type {
   AboutConcept,
   HomeDisplay,
   HomeHero,
   HomeVillage,
 } from "@/lib/content/home-display";
+import type { EventOptions, NamedOption } from "@/lib/content/options";
 import { pickCopy, type Locale } from "@/lib/i18n/locale";
 
 export function localizedHero(hero: HomeHero, locale: Locale): HomeHero {
@@ -44,10 +46,55 @@ export function localizedHomeDisplay(display: HomeDisplay, locale: Locale): Home
   };
 }
 
-export function localizedEvent(event: EventItem, locale: Locale): EventItem {
-  if (locale !== "en" || !event.i18nEnabled) return event;
+export function namedLabel(name: string, items: NamedOption[] | undefined, locale: Locale) {
+  if (!name) return "";
+  const found = items?.find((item) => item.name === name);
+  return pickCopy(locale, name, found?.nameEn);
+}
+
+export function localizedCategoryLabel(
+  categories: string[] | undefined,
+  locale: Locale,
+  catalog?: NamedOption[],
+) {
+  const names = (categories ?? []).map((name) => namedLabel(name, catalog, locale)).filter(Boolean);
+  return names.length ? names.join(" · ") : locale === "en" ? "Event" : "催し";
+}
+
+export function localizedGenreLabel(genre: string, locale: Locale, catalog?: NamedOption[]) {
+  const names = parseArtistGenres(genre).map((name) => namedLabel(name, catalog, locale));
+  if (!names.length) return "";
+  return locale === "en" ? names.join(" · ") : names.join("、");
+}
+
+export function localizePlace(place: PlaceOption, locale: Locale, catalog?: PlaceOption[]): PlaceOption {
+  const fromCatalog = catalog?.find(
+    (item) => item.id === place.id || (!!place.title && item.title === place.title),
+  );
+  const titleEn = place.titleEn || fromCatalog?.titleEn;
+  return {
+    ...place,
+    title: pickCopy(locale, place.title, titleEn),
+    titleEn: titleEn || place.titleEn,
+  };
+}
+
+export function localizePlaces(places: PlaceOption[] | undefined, locale: Locale, catalog?: PlaceOption[]) {
+  return (places ?? []).map((place) => localizePlace(place, locale, catalog));
+}
+
+export function localizedEvent(event: EventItem, locale: Locale, options?: EventOptions): EventItem {
+  if (locale !== "en") return event;
+  const places = {
+    venues: localizePlaces(event.venues, locale, options?.venues),
+    parkings: localizePlaces(event.parkings, locale, options?.parkings),
+  };
+  if (!event.i18nEnabled) {
+    return { ...event, ...places };
+  }
   return {
     ...event,
+    ...places,
     title: pickCopy(locale, event.title, event.titleEn),
     summary: pickCopy(locale, event.summary, event.summaryEn),
     description: pickCopy(locale, event.description, event.descriptionEn),
@@ -56,14 +103,19 @@ export function localizedEvent(event: EventItem, locale: Locale): EventItem {
   };
 }
 
-export function localizedEvents(items: EventItem[], locale: Locale) {
-  return locale === "en" ? items.map((item) => localizedEvent(item, locale)) : items;
+export function localizedEvents(items: EventItem[], locale: Locale, options?: EventOptions) {
+  return locale === "en" ? items.map((item) => localizedEvent(item, locale, options)) : items;
 }
 
-export function localizedArtist(artist: Artist, locale: Locale): Artist {
-  if (locale !== "en" || !artist.i18nEnabled) return artist;
+export function localizedArtist(artist: Artist, locale: Locale, options?: EventOptions): Artist {
+  if (locale !== "en") return artist;
+  const genre = localizedGenreLabel(artist.genre, locale, options?.genres) || artist.genre;
+  if (!artist.i18nEnabled) {
+    return genre === artist.genre ? artist : { ...artist, genre };
+  }
   return {
     ...artist,
+    genre,
     name: pickCopy(locale, artist.name, artist.nameEn),
     area: pickCopy(locale, artist.area, artist.areaEn),
     bio: pickCopy(locale, artist.bio, artist.bioEn),
@@ -75,6 +127,6 @@ export function localizedArtist(artist: Artist, locale: Locale): Artist {
   };
 }
 
-export function localizedArtists(items: Artist[], locale: Locale) {
-  return locale === "en" ? items.map((item) => localizedArtist(item, locale)) : items;
+export function localizedArtists(items: Artist[], locale: Locale, options?: EventOptions) {
+  return locale === "en" ? items.map((item) => localizedArtist(item, locale, options)) : items;
 }
