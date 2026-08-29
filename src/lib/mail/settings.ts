@@ -1,6 +1,12 @@
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { defaultMailTemplates, mergeMailTemplates, type MailTemplates } from "@/lib/mail/templates";
+import {
+  defaultMailTemplates,
+  defaultMailTemplatesEn,
+  mergeMailTemplates,
+  type MailTemplates,
+} from "@/lib/mail/templates";
+import type { Locale } from "@/lib/i18n/locale";
 
 export type MailSettings = {
   notifyEmail: string;
@@ -9,6 +15,7 @@ export type MailSettings = {
   mailAdminPending: boolean;
   mailArtistApplications: boolean;
   copy: MailTemplates;
+  copyEn: MailTemplates;
 };
 
 export const defaultMailSettings = (): MailSettings => ({
@@ -18,6 +25,7 @@ export const defaultMailSettings = (): MailSettings => ({
   mailAdminPending: true,
   mailArtistApplications: true,
   copy: defaultMailTemplates(),
+  copyEn: defaultMailTemplatesEn(),
 });
 
 const KEY = "hy-mail-settings-v1";
@@ -32,6 +40,7 @@ export function loadLocalMailSettings(): MailSettings {
       ...defaultMailSettings(),
       ...parsed,
       copy: mergeMailTemplates(parsed.copy),
+      copyEn: mergeMailTemplates(parsed.copyEn, defaultMailTemplatesEn()),
     };
   } catch {
     return defaultMailSettings();
@@ -51,6 +60,7 @@ export function mapMailSettings(row: Record<string, unknown> | null): MailSettin
     mailAdminPending: row.mail_admin_pending !== false && row.mailAdminPending !== false,
     mailArtistApplications: row.mail_artist_applications !== false && row.mailArtistApplications !== false,
     copy: mergeMailTemplates(row.mail_copy ?? row.copy),
+    copyEn: mergeMailTemplates(row.mail_copy_en ?? row.copyEn, defaultMailTemplatesEn()),
   };
 }
 
@@ -61,7 +71,7 @@ export async function loadMailSettings(preview?: boolean): Promise<MailSettings>
   const { data, error } = await supabase
     .from("site_settings")
     .select(
-      "notify_email, mail_applications, mail_artist_decision, mail_admin_pending, mail_artist_applications, mail_copy",
+      "notify_email, mail_applications, mail_artist_decision, mail_admin_pending, mail_artist_applications, mail_copy, mail_copy_en",
     )
     .eq("id", 1)
     .maybeSingle();
@@ -88,11 +98,27 @@ export async function saveMailSettings(settings: MailSettings, preview?: boolean
       mail_admin_pending: settings.mailAdminPending,
       mail_artist_applications: settings.mailArtistApplications,
       mail_copy: settings.copy,
+      mail_copy_en: settings.copyEn,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "id" },
   );
-  if (error) throw error;
+  if (error) {
+    const { error: fallback } = await supabase.from("site_settings").upsert(
+      {
+        id: 1,
+        notify_email: settings.notifyEmail.trim() || null,
+        mail_applications: settings.mailApplications,
+        mail_artist_decision: settings.mailArtistDecision,
+        mail_admin_pending: settings.mailAdminPending,
+        mail_artist_applications: settings.mailArtistApplications,
+        mail_copy: settings.copy,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (fallback) throw fallback;
+  }
 }
 
 export async function loadMailFlags() {
@@ -103,4 +129,8 @@ export async function loadMailFlags() {
   if (!supabase) return defaultMailSettings();
   const { data } = await supabase.rpc("mail_flags");
   return mapMailSettings((data as Record<string, unknown> | null) ?? null);
+}
+
+export function mailCopyFor(settings: MailSettings, locale: Locale) {
+  return locale === "en" ? settings.copyEn : settings.copy;
 }

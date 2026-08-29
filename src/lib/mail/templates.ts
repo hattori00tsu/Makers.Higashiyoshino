@@ -1,3 +1,4 @@
+import type { Locale } from "@/lib/i18n/locale";
 import { site } from "@/data/site";
 
 export type MailCopy = {
@@ -32,6 +33,7 @@ export type ReservationMailVars = {
   sessionLabel?: string;
   origin: string;
   eventSlug?: string;
+  locale?: Locale;
 };
 
 export const MAIL_TEMPLATE_GROUPS: { title: string; keys: MailTemplateKey[] }[] = [
@@ -135,8 +137,49 @@ export function defaultMailTemplates(): MailTemplates {
   };
 }
 
-export function mergeMailTemplates(raw?: unknown): MailTemplates {
-  const defaults = defaultMailTemplates();
+export function defaultMailTemplatesEn(): MailTemplates {
+  const prefix = `[{{siteShortName}}] `;
+  return {
+    signInLink: {
+      subject: `${prefix}Your sign-in link`,
+      text: `Here is your sign-in link. Open it to enter this site. There is no password.\n\n{{signInUrl}}\n\nThis link expires soon and can be used only once. If you did not request it, ignore this email.\n{{siteName}}\n`,
+    },
+    reservationConfirmed: {
+      subject: `${prefix}Your reservation for {{eventTitle}} is confirmed`,
+      text: `Dear {{visitorName}},\n\nYour reservation for {{eventTitle}} is confirmed.\n{{session}}\n{{party}}\n\nYou can check or cancel it here:\n{{visitUrl}}\n\nPlease keep this email until the day.\n{{siteName}}\n`,
+    },
+    reservationArtist: {
+      subject: `${prefix}A reservation for {{eventTitle}}`,
+      text: `Dear {{artistName}},\n\nSomeone reserved a place in {{eventTitle}}.\n\nName: {{visitorName}}\nEmail: {{visitorEmail}}\n{{phone}}\n{{session}}\n{{party}}\n{{note}}\n\nGuest list:\n{{listUrl}}\n`,
+    },
+    cancelConfirmed: {
+      subject: `${prefix}We received your cancellation for {{eventTitle}}`,
+      text: `Dear {{visitorName}},\n\nWe received your cancellation for {{eventTitle}}.\n{{session}}\n{{party}}\n\n{{siteName}}\n`,
+    },
+    cancelArtist: {
+      subject: `${prefix}A cancellation for {{eventTitle}}`,
+      text: `Dear {{artistName}},\n\nA reservation for {{eventTitle}} was cancelled.\n\nName: {{visitorName}}\nEmail: {{visitorEmail}}\n{{session}}\n{{party}}\n{{reason}}\n\nGuest list:\n{{listUrl}}\n`,
+    },
+    artistApproved: {
+      subject: `${prefix}Your maker profile is approved`,
+      text: `Dear {{visitorName}},\n\nYour maker registration on {{siteName}} is approved. You can edit your profile and works from My page.\n{{mypageUrl}}\n`,
+    },
+    artistRejected: {
+      subject: `${prefix}Your maker registration`,
+      text: `Dear {{visitorName}},\n\nWe could not approve this application. Please revise it and apply again.\n{{registerUrl}}\n`,
+    },
+    artistPending: {
+      subject: `${prefix}A maker registered ({{visitorName}})`,
+      text: `{{visitorName}} registered as a maker. The profile is unpublished. You can publish it from the makers list.\n{{artistsUrl}}\n`,
+    },
+    eventPending: {
+      subject: `${prefix}A program was submitted ({{eventTitle}})`,
+      text: `{{visitorName}} submitted a program. It is waiting to be published.\n\nProgram: {{eventTitle}}\n{{eventAdminUrl}}\n`,
+    },
+  };
+}
+
+export function mergeMailTemplates(raw?: unknown, defaults: MailTemplates = defaultMailTemplates()): MailTemplates {
   let value = raw;
   if (typeof value === "string") {
     try {
@@ -184,16 +227,29 @@ export function renderMail(templates: MailTemplates, key: MailTemplateKey, vars:
 }
 
 export function reservationMailVars(input: ReservationMailVars): Record<string, string> {
+  const en = input.locale === "en";
   return {
     eventTitle: input.eventTitle,
     visitorName: input.visitorName,
     visitorEmail: input.visitorEmail,
-    artistName: input.artistName?.trim() || "つくり手",
-    session: input.sessionLabel?.trim() ? `日程：${input.sessionLabel.trim()}` : "",
-    party: input.partySize ? `人数：${input.partySize}名` : "",
-    phone: input.phone?.trim() ? `電話：${input.phone.trim()}` : "",
-    note: input.note?.trim() ? `連絡事項：${input.note.trim()}` : "",
-    reason: input.reason?.trim() ? `キャンセル理由：${input.reason.trim()}` : "",
+    artistName: input.artistName?.trim() || (en ? "Maker" : "つくり手"),
+    session: input.sessionLabel?.trim()
+      ? en
+        ? `Date: ${input.sessionLabel.trim()}`
+        : `日程：${input.sessionLabel.trim()}`
+      : "",
+    party: input.partySize
+      ? en
+        ? `Party size: ${input.partySize}`
+        : `人数：${input.partySize}名`
+      : "",
+    phone: input.phone?.trim() ? (en ? `Phone: ${input.phone.trim()}` : `電話：${input.phone.trim()}`) : "",
+    note: input.note?.trim() ? (en ? `Note: ${input.note.trim()}` : `連絡事項：${input.note.trim()}`) : "",
+    reason: input.reason?.trim()
+      ? en
+        ? `Reason: ${input.reason.trim()}`
+        : `キャンセル理由：${input.reason.trim()}`
+      : "",
     listUrl: `${input.origin}/mypage/applications`,
     mypageUrl: `${input.origin}/mypage`,
     visitUrl: `${input.origin}/visit`,

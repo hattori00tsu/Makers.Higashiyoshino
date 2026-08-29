@@ -39,9 +39,9 @@ function rowToDraft(row: Record<string, unknown>): ArtistDraft {
   });
 }
 
-export const artistListColumns = "id, profile_id, slug, name, genre, area, status";
+export const artistListColumns = "id, profile_id, slug, name, genre, area, status, i18n_enabled, name_en, area_en";
 export const artistDetailColumns =
-  "id, profile_id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
+  "id, profile_id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status, i18n_enabled, name_en, area_en, bio_en, profile_en, studio_visit_en";
 export const artistWorkColumns = "id, artist_id, image_path, title, sort_order";
 
 export async function fetchRemoteArtist(userId: string) {
@@ -120,16 +120,35 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
     facebook: draft.facebook,
     x_url: null,
     shop: extra.length ? JSON.stringify(extra) : null,
+    i18n_enabled: Boolean(draft.i18nEnabled),
+    name_en: draft.nameEn.trim() || null,
+    area_en: draft.areaEn.trim() || null,
+    bio_en: draft.bioEn.trim() || null,
+    profile_en: draft.profileEn.trim() || null,
+    studio_visit_en: draft.studioVisitEn.trim() || null,
   };
   const existing = await supabase.from("artists").select("id").eq("profile_id", userId).maybeSingle();
-  const { error } = existing.data
-    ? await supabase.from("artists").update(payload).eq("profile_id", userId)
-    : await supabase.from("artists").insert({ ...payload, status: "rejected" as const });
-  if (!error) {
-    forget(`artist:${userId}`);
-    return;
+  const withoutI18n = (({
+    i18n_enabled: _a,
+    name_en: _b,
+    area_en: _c,
+    bio_en: _d,
+    profile_en: _e,
+    studio_visit_en: _f,
+    ...rest
+  }) => rest)(payload);
+  let lastError: { message?: string; details?: string; hint?: string } | null = null;
+  for (const row of [payload, withoutI18n]) {
+    const { error } = existing.data
+      ? await supabase.from("artists").update(row).eq("profile_id", userId)
+      : await supabase.from("artists").insert({ ...row, status: "rejected" as const });
+    if (!error) {
+      forget(`artist:${userId}`);
+      return;
+    }
+    lastError = error;
   }
-  throw new Error(formatRemoteError(error));
+  throw new Error(formatRemoteError(lastError ?? { message: "supabase" }));
 }
 
 export type AdminArtistRecord = {
@@ -170,7 +189,10 @@ async function withAdminEmails(artists: AdminArtistRecord[]): Promise<AdminArtis
 export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]> {
   const supabase = createBrowserSupabase();
   if (!supabase) return [];
-  const { data, error } = await supabase.from("artists").select(artistListColumns).order("name");
+  let { data, error } = await supabase.from("artists").select(artistListColumns).order("name");
+  if (error) {
+    ({ data, error } = await supabase.from("artists").select("id, profile_id, slug, name, genre, area, status").order("name"));
+  }
   if (error) throw error;
   return withAdminEmails((data ?? []).map((row: Record<string, unknown>) => rowToAdminArtist(row)));
 }
@@ -210,6 +232,12 @@ function artistWritePayload(draft: ArtistDraft, coverPath: string) {
     x_url: null,
     shop: extra.length ? JSON.stringify(extra) : null,
     status: draft.status,
+    i18n_enabled: Boolean(draft.i18nEnabled),
+    name_en: draft.nameEn.trim() || null,
+    area_en: draft.areaEn.trim() || null,
+    bio_en: draft.bioEn.trim() || null,
+    profile_en: draft.profileEn.trim() || null,
+    studio_visit_en: draft.studioVisitEn.trim() || null,
   };
 }
 

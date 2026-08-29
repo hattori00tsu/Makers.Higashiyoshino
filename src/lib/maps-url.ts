@@ -30,7 +30,7 @@ function pair(lat: string | number, lng: string | number): MapCoords | null {
   return { lat: la, lng: ln };
 }
 
-/** Google マップ URL から緯度経度を取る。場所名だけの検索や cid は対象外。 */
+/** Google 地図 URL から緯度経度を取る。場所名だけの検索や cid は対象外。 */
 export function coordsFromMapsUrl(url: string): MapCoords | null {
   const value = String(url ?? "").trim();
   if (!value) return null;

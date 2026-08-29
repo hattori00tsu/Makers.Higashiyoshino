@@ -32,6 +32,12 @@ export type EventRow = {
   owner_artist_slug?: string | null;
   event_sessions?: { starts_at: string; ends_at: string; capacity?: number | null }[];
   event_artists?: { artist_slug: string }[];
+  i18n_enabled?: boolean | null;
+  title_en?: string | null;
+  summary_en?: string | null;
+  description_en?: string | null;
+  access_en?: string | null;
+  price_en?: string | null;
 };
 
 export function mapEvent(row: EventRow): EventItem {
@@ -66,16 +72,25 @@ export function mapEvent(row: EventRow): EventItem {
     kind: row.kind ?? undefined,
     series: row.series ?? undefined,
     ownerArtistSlug: row.owner_artist_slug ?? undefined,
+    i18nEnabled: Boolean(row.i18n_enabled),
+    titleEn: row.title_en ?? "",
+    summaryEn: row.summary_en ?? "",
+    descriptionEn: row.description_en ?? "",
+    accessEn: row.access_en ?? "",
+    priceEn: row.price_en ?? "",
   });
 }
 
 const eventColumns =
   "id, slug, title, category, summary, description, venue, access, parking, image_path, is_outdoor, capacity, requires_reservation, status, map_lat, map_lng, map_query, parent_slug";
 
-export const eventSelect = `${eventColumns}, price, gallery_paths, kind, owner_artist_slug, series, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`;
+const eventI18nColumns = "i18n_enabled, title_en, summary_en, description_en, access_en, price_en";
+
+export const eventSelect = `${eventColumns}, price, gallery_paths, kind, owner_artist_slug, series, ${eventI18nColumns}, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`;
 
 const eventSelectFallbacks = [
   eventSelect,
+  `${eventColumns}, price, gallery_paths, kind, owner_artist_slug, series, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`,
   `${eventColumns}, price, gallery_paths, kind, owner_artist_slug, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`,
   `${eventColumns}, gallery_paths, kind, owner_artist_slug, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`,
   `${eventColumns}, kind, owner_artist_slug, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`,
@@ -241,17 +256,33 @@ export async function upsertRemoteEvent(next: EventItem, previousSlug?: string) 
     kind: next.kind ?? "program",
     series: next.series?.trim() || null,
     owner_artist_slug: next.ownerArtistSlug || null,
+    i18n_enabled: Boolean(next.i18nEnabled),
+    title_en: next.titleEn?.trim() || null,
+    summary_en: next.summaryEn?.trim() || null,
+    description_en: next.descriptionEn?.trim() || null,
+    access_en: next.accessEn?.trim() || null,
+    price_en: next.priceEn?.trim() || null,
     updated_at: new Date().toISOString(),
   };
 
   const auth = await getAuthIdentity(supabase);
   let eventId = existing?.id as string | undefined;
+  const withoutI18n = (({
+    i18n_enabled: _a,
+    title_en: _b,
+    summary_en: _c,
+    description_en: _d,
+    access_en: _e,
+    price_en: _f,
+    ...rest
+  }) => rest)(payload);
   const payloads = [
     payload,
-    (({ series: _series, ...rest }) => rest)(payload),
-    (({ series: _series, price: _price, ...rest }) => rest)(payload),
-    (({ series: _series, price: _price, gallery_paths: _gallery, ...rest }) => rest)(payload),
-    (({ series: _series, price: _price, gallery_paths: _gallery, kind: _kind, owner_artist_slug: _owner, ...rest }) => rest)(payload),
+    withoutI18n,
+    (({ series: _series, ...rest }) => rest)(withoutI18n),
+    (({ series: _series, price: _price, ...rest }) => rest)(withoutI18n),
+    (({ series: _series, price: _price, gallery_paths: _gallery, ...rest }) => rest)(withoutI18n),
+    (({ series: _series, price: _price, gallery_paths: _gallery, kind: _kind, owner_artist_slug: _owner, ...rest }) => rest)(withoutI18n),
   ];
   if (eventId) {
     let lastError: { message?: string } | null = null;

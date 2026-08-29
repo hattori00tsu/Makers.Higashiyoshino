@@ -1,4 +1,14 @@
+import type { Locale } from "@/lib/i18n/locale";
+
 const dateFmt = new Intl.DateTimeFormat("ja-JP", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "short",
+  timeZone: "Asia/Tokyo",
+});
+
+const dateFmtEn = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "long",
   day: "numeric",
@@ -26,6 +36,12 @@ const monthTitleFmt = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
 });
 
+const monthTitleFmtEn = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  timeZone: "Asia/Tokyo",
+});
+
 const ymdFmt = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Asia/Tokyo",
   year: "numeric",
@@ -33,10 +49,10 @@ const ymdFmt = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
-export function formatDateJa(iso: string) {
+export function formatDateJa(iso: string, locale: Locale = "ja") {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return dateFmt.format(date);
+  return (locale === "en" ? dateFmtEn : dateFmt).format(date);
 }
 
 export function formatTimeJa(iso: string) {
@@ -65,7 +81,7 @@ export function formatMonthDaySlash(iso: string) {
   return `${Number(month)}/${Number(day)}`;
 }
 
-export function formatMonthDaySpan(sessions: { startsAt: string; endsAt: string }[]) {
+export function formatMonthDaySpan(sessions: { startsAt: string; endsAt: string }[], locale: Locale = "ja") {
   const dated = sessions.filter((session) => session.startsAt);
   if (dated.length === 0) return "";
   const start = dated[0].startsAt;
@@ -74,19 +90,20 @@ export function formatMonthDaySpan(sessions: { startsAt: string; endsAt: string 
   const startLabel = formatMonthDaySlash(start);
   const endLabel = formatMonthDaySlash(end);
   if (!startLabel) return "";
+  const sep = locale === "en" ? "–" : "～";
   if (!endLabel || tokyoDateKey(start) === tokyoDateKey(end)) return startLabel;
-  return `${startLabel}～${endLabel}`;
+  return `${startLabel}${sep}${endLabel}`;
 }
 
-export function formatSessionRange(startsAt: string, endsAt: string) {
+export function formatSessionRange(startsAt: string, endsAt: string, locale: Locale = "ja") {
   if (!startsAt) return "";
   if (isAllDayRange(startsAt, endsAt)) {
-    const startDate = formatDateJa(startsAt);
-    const endDate = formatDateJa(endsAt);
+    const startDate = formatDateJa(startsAt, locale);
+    const endDate = formatDateJa(endsAt, locale);
     if (tokyoDateKey(startsAt) === tokyoDateKey(endsAt)) return startDate;
     return `${startDate} – ${endDate}`;
   }
-  return `${formatDateJa(startsAt)} ${formatTimeJa(startsAt)} – ${formatTimeJa(endsAt)}`;
+  return `${formatDateJa(startsAt, locale)} ${formatTimeJa(startsAt)} – ${formatTimeJa(endsAt)}`;
 }
 
 export function tokyoDateKey(input: string | Date) {
@@ -104,10 +121,10 @@ export function parseDateKey(key: string) {
   return { year, month: month - 1, day };
 }
 
-export function formatMonthTitle(year: number, monthIndex: number) {
+export function formatMonthTitle(year: number, monthIndex: number, locale: Locale = "ja") {
   const date = new Date(Date.UTC(year, monthIndex, 1));
   if (Number.isNaN(date.getTime())) return "";
-  return monthTitleFmt.format(date);
+  return (locale === "en" ? monthTitleFmtEn : monthTitleFmt).format(date);
 }
 
 export function shiftMonth(year: number, monthIndex: number, delta: number) {

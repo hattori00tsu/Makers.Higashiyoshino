@@ -1,3 +1,4 @@
+import type { Locale } from "@/lib/i18n/locale";
 import { village } from "@/data/site";
 
 export type DailyWeather = {
@@ -17,16 +18,17 @@ type ForecastResponse = {
   };
 };
 
-export function weatherLabel(code: number) {
-  if (code === 0) return "快晴";
-  if (code <= 3) return "晴れ";
-  if (code <= 48) return "霧";
-  if (code <= 57) return "霧雨";
-  if (code <= 67) return "雨";
-  if (code <= 77) return "雪";
-  if (code <= 82) return "にわか雨";
-  if (code <= 86) return "雪";
-  return "雷雨";
+export function weatherLabel(code: number, locale: Locale = "ja") {
+  const en = locale === "en";
+  if (code === 0) return en ? "Clear" : "快晴";
+  if (code <= 3) return en ? "Fair" : "晴れ";
+  if (code <= 48) return en ? "Fog" : "霧";
+  if (code <= 57) return en ? "Drizzle" : "霧雨";
+  if (code <= 67) return en ? "Rain" : "雨";
+  if (code <= 77) return en ? "Snow" : "雪";
+  if (code <= 82) return en ? "Showers" : "にわか雨";
+  if (code <= 86) return en ? "Snow" : "雪";
+  return en ? "Thunderstorm" : "雷雨";
 }
 
 function finiteNumber(value: unknown) {

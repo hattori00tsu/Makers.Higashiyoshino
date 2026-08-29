@@ -75,6 +75,12 @@ export type ArtistDraft = {
   links: ArtistLink[];
   image: string;
   status: Exclude<ArtistStatus, "none">;
+  i18nEnabled: boolean;
+  nameEn: string;
+  areaEn: string;
+  bioEn: string;
+  profileEn: string;
+  studioVisitEn: string;
 };
 
 export type WorkDraft = {
@@ -139,6 +145,12 @@ export const emptyDraft = (): ArtistDraft => ({
   links: [],
   image: "",
   status: "approved",
+  i18nEnabled: false,
+  nameEn: "",
+  areaEn: "",
+  bioEn: "",
+  profileEn: "",
+  studioVisitEn: "",
 });
 
 export function newArtistLink(): ArtistLink {
@@ -221,5 +233,11 @@ export function normalizeArtistDraft(raw: Record<string, unknown>): ArtistDraft 
       ],
     ),
     status: (raw.status as ArtistDraft["status"]) ?? base.status,
+    i18nEnabled: Boolean(raw.i18nEnabled ?? raw.i18n_enabled),
+    nameEn: String(raw.nameEn ?? raw.name_en ?? ""),
+    areaEn: String(raw.areaEn ?? raw.area_en ?? ""),
+    bioEn: String(raw.bioEn ?? raw.bio_en ?? ""),
+    profileEn: String(raw.profileEn ?? raw.profile_en ?? ""),
+    studioVisitEn: String(raw.studioVisitEn ?? raw.studio_visit_en ?? ""),
   };
 }

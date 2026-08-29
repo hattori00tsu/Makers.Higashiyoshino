@@ -13,7 +13,7 @@ import {
 } from "react";
 import type { SessionUser } from "@/lib/account/types";
 import { ensureLocalSeed, getLocalAccount } from "@/lib/account/local";
-import { sessionFromParts, type SessionSnapshot } from "@/lib/account/session-user";
+import { loadSessionFromSupabase } from "@/lib/account/session-user";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAuthIdentity } from "@/lib/supabase/identity";
@@ -39,11 +39,7 @@ async function loadSupabaseSession(): Promise<SessionUser | null> {
   if (!supabase) return null;
   const identity = await getAuthIdentity(supabase);
   if (!identity) return null;
-  const { data: snapshot, error } = await supabase.rpc("session_snapshot");
-  if (!error && snapshot && typeof snapshot === "object") {
-    return sessionFromParts(identity, snapshot as SessionSnapshot);
-  }
-  return sessionFromParts(identity, {});
+  return loadSessionFromSupabase(supabase, identity);
 }
 
 function withLocalPreview(session: SessionUser | null) {

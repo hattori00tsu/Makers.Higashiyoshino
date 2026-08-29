@@ -21,6 +21,9 @@ export type HomeHero = {
   eyebrow: string;
   title: string;
   lead: string;
+  sideLabelEn: string;
+  titleEn: string;
+  leadEn: string;
 };
 
 export type HomeVillage = {
@@ -29,6 +32,9 @@ export type HomeVillage = {
   title: string;
   schedule: string;
   summary: string;
+  titleEn: string;
+  scheduleEn: string;
+  summaryEn: string;
 };
 
 export type AboutConcept = {
@@ -36,6 +42,9 @@ export type AboutConcept = {
   heading: string;
   title: string;
   body: string;
+  headingEn: string;
+  titleEn: string;
+  bodyEn: string;
 };
 
 export type HomeDisplay = {
@@ -55,6 +64,9 @@ export const defaultHomeHero = (): HomeHero => ({
   eyebrow: "NARA HIGASHIYOSHINO",
   title: "奥山に根ざす、\nつくり手たちの記録。",
   lead: "Deep in the mountains, far from the noise.\nMakers rooted in Higashiyoshino, Nara. Curated by Okuyama House.",
+  sideLabelEn: "Higashiyoshino, Nara",
+  titleEn: "Records of makers\nrooted in the mountains.",
+  leadEn: "Deep in the mountains, far from the noise.\nMakers rooted in Higashiyoshino, Nara. Curated by Okuyama House.",
 });
 
 export const defaultHomeVillage = (): HomeVillage => ({
@@ -62,6 +74,9 @@ export const defaultHomeVillage = (): HomeVillage => ({
   title: "",
   schedule: "",
   summary: "",
+  titleEn: "",
+  scheduleEn: "",
+  summaryEn: "",
 });
 
 export function newHomeVillage(): HomeVillage {
@@ -73,6 +88,9 @@ export const defaultAboutConcept = (): AboutConcept => ({
   heading: "コンセプト",
   title: "空の器",
   body: "催しや作家などの情報を掲載します。",
+  headingEn: "Concept",
+  titleEn: "An empty vessel",
+  bodyEn: "We share events, makers, and notes from the village.",
 });
 
 export const defaultHomeDisplay = (): HomeDisplay => ({
@@ -137,6 +155,9 @@ function normalizeHero(value: unknown, legacyImage?: unknown): HomeHero {
     eyebrow: asCopy(row.eyebrow, fallback.eyebrow),
     title: asCopy(row.title, fallback.title),
     lead: asCopy(row.lead, fallback.lead),
+    sideLabelEn: asText(row.sideLabelEn) || fallback.sideLabelEn,
+    titleEn: asText(row.titleEn) || fallback.titleEn,
+    leadEn: typeof row.leadEn === "string" ? row.leadEn.trim() : fallback.leadEn,
   };
 }
 
@@ -150,6 +171,9 @@ function normalizeVillage(value: unknown): HomeVillage {
     title: asText(row.title),
     schedule: asText(row.schedule),
     summary: typeof row.summary === "string" ? row.summary.trim() : "",
+    titleEn: asText(row.titleEn),
+    scheduleEn: asText(row.scheduleEn),
+    summaryEn: typeof row.summaryEn === "string" ? row.summaryEn.trim() : "",
   };
 }
 
@@ -170,6 +194,9 @@ function normalizeAbout(value: unknown): AboutConcept {
     heading: asCopy(row.heading, fallback.heading),
     title: asCopy(row.title, fallback.title),
     body: asCopy(row.body, fallback.body),
+    headingEn: asCopy(row.headingEn, fallback.headingEn),
+    titleEn: asCopy(row.titleEn, fallback.titleEn),
+    bodyEn: asCopy(row.bodyEn, fallback.bodyEn),
   };
 }
 

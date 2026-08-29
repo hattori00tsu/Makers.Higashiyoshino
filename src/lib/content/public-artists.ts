@@ -35,6 +35,12 @@ function publicArtistFromRow(row: Record<string, unknown>, works: WorkRow[]): Ar
     x: row.x_url,
     shop: row.shop,
     status: row.status,
+    i18nEnabled: row.i18n_enabled,
+    nameEn: row.name_en,
+    areaEn: row.area_en,
+    bioEn: row.bio_en,
+    profileEn: row.profile_en,
+    studioVisitEn: row.studio_visit_en,
   });
   const lat = Number(draft.studioLat);
   const lng = Number(draft.studioLng);
@@ -62,13 +68,19 @@ function publicArtistFromRow(row: Record<string, unknown>, works: WorkRow[]): Ar
     instagramPermalink: draft.instagramPermalink || undefined,
     facebook: draft.facebook || undefined,
     links: serializeArtistLinks(draft.links),
+    i18nEnabled: draft.i18nEnabled,
+    nameEn: draft.nameEn,
+    areaEn: draft.areaEn,
+    bioEn: draft.bioEn,
+    profileEn: draft.profileEn,
+    studioVisitEn: draft.studioVisitEn,
   };
 }
 
 const artistListColumns =
-  "id, slug, name, genre, area, cover_path, status, studio_lat, studio_lng, studio_address, studio_query";
+  "id, slug, name, genre, area, cover_path, status, studio_lat, studio_lng, studio_address, studio_query, i18n_enabled, name_en, area_en, bio_en";
 const artistDetailColumns =
-  "id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
+  "id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status, i18n_enabled, name_en, area_en, bio_en, profile_en, studio_visit_en";
 const artistWorkColumns = "artist_id, image_path, title, sort_order";
 
 async function fetchPublicArtists(): Promise<Artist[]> {
@@ -76,7 +88,14 @@ async function fetchPublicArtists(): Promise<Artist[]> {
   try {
     const supabase = createPublicSupabase();
     if (!supabase) return [];
-    const { data, error } = await supabase.from("artists").select(artistListColumns).eq("status", "approved");
+    let { data, error } = await supabase.from("artists").select(artistListColumns).eq("status", "approved");
+    if (error) {
+      const fallback =
+        "id, slug, name, genre, area, cover_path, status, studio_lat, studio_lng, studio_address, studio_query";
+      const retry = await supabase.from("artists").select(fallback).eq("status", "approved");
+      data = retry.data as typeof data;
+      error = retry.error;
+    }
     if (error || !data) return [];
     return data.filter((row) => row.slug).map((row) => publicArtistFromRow(row, []));
   } catch (error) {
@@ -90,21 +109,31 @@ export const loadPublicArtists = unstable_cache(fetchPublicArtists, ["public-art
   tags: ["public-artists"],
 });
 
-export type PublicArtistName = { name: string; genre: string };
+export type PublicArtistName = { name: string; genre: string; i18nEnabled?: boolean; nameEn?: string };
 
 async function fetchPublicArtistNames(): Promise<Record<string, PublicArtistName>> {
   if (!isSupabaseConfigured()) return {};
   try {
     const supabase = createPublicSupabase();
     if (!supabase) return {};
-    const { data, error } = await supabase.from("artists").select("slug, name, genre").eq("status", "approved");
+    let { data, error } = await supabase.from("artists").select("slug, name, genre, i18n_enabled, name_en").eq("status", "approved");
+    if (error) {
+      const retry = await supabase.from("artists").select("slug, name, genre").eq("status", "approved");
+      data = retry.data as typeof data;
+      error = retry.error;
+    }
     if (error || !data) return {};
     return Object.fromEntries(
       data
         .filter((row) => row.slug)
         .map((row) => [
           String(row.slug),
-          { name: String(row.name ?? ""), genre: String(row.genre ?? "") },
+          {
+            name: String(row.name ?? ""),
+            genre: String(row.genre ?? ""),
+            i18nEnabled: Boolean(row.i18n_enabled),
+            nameEn: String(row.name_en ?? ""),
+          },
         ]),
     );
   } catch (error) {
@@ -127,12 +156,22 @@ async function fetchPublicArtist(slug: string): Promise<Artist | undefined> {
   try {
     const supabase = createPublicSupabase();
     if (!supabase) return undefined;
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("artists")
       .select(artistDetailColumns)
       .eq("status", "approved")
       .eq("slug", slug)
       .maybeSingle();
+    if (error) {
+      const fallback =
+        "id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
+      ({ data, error } = await supabase
+        .from("artists")
+        .select(fallback)
+        .eq("status", "approved")
+        .eq("slug", slug)
+        .maybeSingle());
+    }
     if (error || !data) return undefined;
     const { data: works } = await supabase
       .from("artist_works")
