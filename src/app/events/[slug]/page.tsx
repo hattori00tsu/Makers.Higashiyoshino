@@ -31,8 +31,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventDetailPage({ params }: Props) {
   const { slug } = await params;
-  const [all, artistNames] = await Promise.all([loadPublicEvents(), loadPublicArtistNames()]);
-  const event = all.find((item) => item.slug === slug) ?? null;
+  const [event, all, artistNames] = await Promise.all([
+    loadPublicEvent(slug),
+    loadPublicEvents(),
+    loadPublicArtistNames(),
+  ]);
   if (!event) notFound();
 
   const archived = eventPhase(event) === "archive";

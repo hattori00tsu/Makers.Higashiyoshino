@@ -25,8 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ApplyPage({ params }: Props) {
   const { slug } = await params;
-  const all = await loadPublicEvents();
-  const event = all.find((item) => item.slug === slug) ?? null;
+  const [event, all] = await Promise.all([loadPublicEvent(slug), loadPublicEvents()]);
   const { lineage } = eventViewModel(event, all);
   return <ApplyForm slug={slug} initial={event} initialLineage={lineage} />;
 }

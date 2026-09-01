@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { VillageMap } from "@/components/map/village-map";
 import { getMessages } from "@/lib/i18n/server";
 
+export const revalidate = 120;
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages();
   return { title: t.map.title };

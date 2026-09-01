@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { VenueMap, isGoogleMapsUrl } from "@/components/events/venue-map";
+import { VenueMap } from "@/components/events/venue-map";
 import { InstagramEmbed } from "@/components/social/instagram-embed";
 import { ArtistEvents } from "@/components/artists/artist-events";
 import { ArtistPhoto } from "@/components/media/artist-photo";
+import { isGoogleMapsUrl } from "@/lib/maps-url";
 import { loadPublicArtist, loadPublicArtists } from "@/lib/content/public-artists";
 import { loadPublicEventsForArtist } from "@/lib/content/public-events";
 import { loadPublicEventOptions } from "@/lib/content/public-options";
