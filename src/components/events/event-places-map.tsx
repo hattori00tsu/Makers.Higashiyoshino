@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PlaceMap, PlaceMapLegend, type PlaceMarker } from "@/components/map/place-map";
-import { isGoogleMapsUrl } from "@/lib/maps-url";
+import { PlaceMap, PlaceMapLegend, placeMarkerId, placesToMarkers, type PlaceMarker } from "@/components/map/place-map";
 import type { PlaceOption } from "@/data/site";
 import { useMessages } from "@/lib/i18n/provider";
 
@@ -11,22 +10,11 @@ type Props = {
   parkings: PlaceOption[];
 };
 
-function toMarkers(places: PlaceOption[], kind: PlaceMarker["kind"]): PlaceMarker[] {
-  return places
-    .filter((place) => place.url && isGoogleMapsUrl(place.url))
-    .map((place) => ({
-      id: `${kind}:${place.id || place.title || place.url}`,
-      title: place.title,
-      kind,
-      url: place.url,
-    }));
-}
-
 export function EventPlacesMap({ venues, parkings }: Props) {
   const t = useMessages();
   const [activeId, setActiveId] = useState("");
   const markers = useMemo(
-    () => [...toMarkers(venues, "venue"), ...toMarkers(parkings, "parking")],
+    () => [...placesToMarkers(venues, "venue"), ...placesToMarkers(parkings, "parking")],
     [venues, parkings],
   );
 
@@ -69,7 +57,7 @@ function PlaceList({
       <p className="text-[11px] tracking-[0.22em] text-tsuchi">{label}</p>
       <ul className="mt-3 space-y-1 text-sm leading-7 text-sumi-soft">
         {places.map((place) => {
-          const id = `${markerKind}:${place.id || place.title || place.url}`;
+          const id = placeMarkerId(markerKind, place);
           return (
             <li key={place.id || place.title}>
               {place.url ? (

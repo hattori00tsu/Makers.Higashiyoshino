@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLiveSeats } from "@/components/events/live-seats";
-import { liveSeatKey } from "@/lib/content/live";
+import { liveSeatKey } from "@/lib/content/live-public";
 import { isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
 import { useMessages } from "@/lib/i18n/provider";
 

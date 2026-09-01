@@ -14,6 +14,7 @@ import {
   newArtistLink,
   parseArtistGenres,
   type ArtistDraft,
+  type ArtistLink,
 } from "@/lib/account/types";
 import { useSession } from "@/lib/account/use-session";
 import { loadEventOptions } from "@/lib/content/live";
@@ -57,7 +58,7 @@ export function ArtistForm({
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
-  function patchLink(id: string, patch: { name?: string; url?: string }) {
+  function patchLink(id: string, patch: Partial<Omit<ArtistLink, "id">>) {
     setDraft((current) => ({
       ...current,
       links: current.links.map((item) => (item.id === id ? { ...item, ...patch } : item)),
@@ -312,33 +313,44 @@ export function ArtistForm({
         <p className="mb-3 text-[12px] tracking-[0.14em] text-sumi-soft">その他のリンク</p>
         <div className="space-y-4">
           {draft.links.map((link) => (
-            <div key={link.id} className="grid gap-3 border border-line px-3 py-3 md:grid-cols-[1fr_1fr_auto]">
-              <Field label="名前">
-                <TextInput
-                  value={link.name}
-                  onChange={(e) => patchLink(link.id, { name: e.target.value })}
-                  placeholder="Shop、X など"
-                />
-              </Field>
-              <Field label="リンク">
-                <TextInput
-                  value={link.url}
-                  onChange={(e) => patchLink(link.id, { url: e.target.value })}
-                  placeholder="https://"
-                />
-              </Field>
-              <button
-                type="button"
-                className="self-end pb-2.5 text-left text-sm text-sumi-soft"
-                onClick={() =>
-                  setDraft((current) => ({
-                    ...current,
-                    links: current.links.filter((item) => item.id !== link.id),
-                  }))
-                }
-              >
-                削除
-              </button>
+            <div key={link.id} className="space-y-3 border border-line px-3 py-3">
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                <Field label="名前">
+                  <TextInput
+                    value={link.name}
+                    onChange={(e) => patchLink(link.id, { name: e.target.value })}
+                    placeholder="Shop、X など"
+                  />
+                </Field>
+                <Field label="リンク">
+                  <TextInput
+                    value={link.url}
+                    onChange={(e) => patchLink(link.id, { url: e.target.value })}
+                    placeholder="https://"
+                  />
+                </Field>
+                <button
+                  type="button"
+                  className="self-end pb-2.5 text-left text-sm text-sumi-soft"
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      links: current.links.filter((item) => item.id !== link.id),
+                    }))
+                  }
+                >
+                  削除
+                </button>
+              </div>
+              {draft.i18nEnabled ? (
+                <Field label="名前（英語）">
+                  <TextInput
+                    value={link.nameEn ?? ""}
+                    onChange={(e) => patchLink(link.id, { nameEn: e.target.value })}
+                    placeholder="Shop, website"
+                  />
+                </Field>
+              ) : null}
             </div>
           ))}
         </div>

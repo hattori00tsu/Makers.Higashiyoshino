@@ -165,6 +165,8 @@ export const messages = {
     },
     map: {
       title: "地図",
+      venues: "会場",
+      parking: "駐車場",
       note: "村内の飲食店・宿泊施設などについては、東吉野村観光協会の情報をご覧ください。",
       association: "東吉野村観光協会",
     },
@@ -421,6 +423,8 @@ export const messages = {
     },
     map: {
       title: "Map",
+      venues: "Venues",
+      parking: "Parking",
       note: "For restaurants and lodging in the village, see the Higashiyoshino Tourism Association.",
       association: "Higashiyoshino Tourism Association",
     },

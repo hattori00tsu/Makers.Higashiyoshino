@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { eventAncestorTitle, eventsForArtist } from "@/data/site";
 import { partitionArtistEvents } from "@/lib/calendar";
-import { publishedEventsLive } from "@/lib/content/live";
+import { publishedEventsLive } from "@/lib/content/live-public";
 import { formatDateJa } from "@/lib/dates";
 import { localizedCategoryLabel } from "@/lib/i18n/content";
 import { useCatalog, useLocale } from "@/lib/i18n/provider";

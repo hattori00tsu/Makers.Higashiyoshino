@@ -44,6 +44,9 @@ export function coordsFromMapsUrl(url: string): MapCoords | null {
   const at = value.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (at) return pair(at[1], at[2]);
 
+  const search = value.match(/\/maps\/(?:search|place)\/(-?\d+\.\d+)\s*,\s*\+?(-?\d+\.\d+)/);
+  if (search) return pair(search[1], search[2]);
+
   try {
     const parsed = new URL(value);
     const q = parsed.searchParams.get("q") || parsed.searchParams.get("query") || parsed.searchParams.get("ll");

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ApplyButton } from "@/components/events/event-apply-cta";
 import { CoverImage } from "@/components/media/cover-image";
 import { useLiveSeats } from "@/components/events/live-seats";
-import { liveSeatKey } from "@/lib/content/live";
+import { liveSeatKey } from "@/lib/content/live-public";
 import {
   eventCover,
   eventPlaces,

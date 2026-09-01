@@ -36,6 +36,12 @@ function rowToDraft(row: Record<string, unknown>): ArtistDraft {
     x: String(row.x_url ?? ""),
     shop: String(row.shop ?? ""),
     status: (row.status as ArtistDraft["status"]) ?? "pending",
+    i18nEnabled: row.i18n_enabled,
+    nameEn: row.name_en,
+    areaEn: row.area_en,
+    bioEn: row.bio_en,
+    profileEn: row.profile_en,
+    studioVisitEn: row.studio_visit_en,
   });
 }
 
@@ -119,6 +125,7 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
     instagram_permalink: draft.instagramPermalink,
     facebook: draft.facebook,
     x_url: null,
+    links: extra,
     shop: extra.length ? JSON.stringify(extra) : null,
     i18n_enabled: Boolean(draft.i18nEnabled),
     name_en: draft.nameEn.trim() || null,
@@ -137,8 +144,9 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
     studio_visit_en: _f,
     ...rest
   }) => rest)(payload);
+  const withoutLinks = (({ links: _g, ...rest }) => rest)(payload);
   let lastError: { message?: string; details?: string; hint?: string } | null = null;
-  for (const row of [payload, withoutI18n]) {
+  for (const row of [payload, withoutI18n, withoutLinks]) {
     const { error } = existing.data
       ? await supabase.from("artists").update(row).eq("profile_id", userId)
       : await supabase.from("artists").insert({ ...row, status: "rejected" as const });
@@ -230,6 +238,7 @@ function artistWritePayload(draft: ArtistDraft, coverPath: string) {
     instagram_permalink: draft.instagramPermalink,
     facebook: draft.facebook,
     x_url: null,
+    links: extra,
     shop: extra.length ? JSON.stringify(extra) : null,
     status: draft.status,
     i18n_enabled: Boolean(draft.i18nEnabled),

@@ -6,7 +6,7 @@ import {
   isGoogleMapsUrl,
   type MapCoords,
 } from "@/lib/maps-url";
-import { village } from "@/data/site";
+import { village, type PlaceOption } from "@/data/site";
 import type { Map as MapLibreMap, Marker, Popup, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -28,7 +28,24 @@ type Props = {
   onSelect?: (id: string) => void;
   className?: string;
   cooperativeGestures?: boolean;
+  /** ピンがなくても村の全体図を出す */
+  showWhenEmpty?: boolean;
 };
+
+export function placeMarkerId(kind: PlaceMarkerKind, place: Pick<PlaceOption, "id" | "title" | "url">) {
+  return `${kind}:${place.id || place.title || place.url}`;
+}
+
+export function placesToMarkers(places: PlaceOption[], kind: PlaceMarkerKind): PlaceMarker[] {
+  return places
+    .filter((place) => place.url && isGoogleMapsUrl(place.url))
+    .map((place) => ({
+      id: placeMarkerId(kind, place),
+      title: place.title,
+      kind,
+      url: place.url,
+    }));
+}
 
 const kindLabel: Record<PlaceMarkerKind, string> = {
   venue: "会場",
@@ -103,6 +120,7 @@ export function PlaceMap({
   onSelect,
   className,
   cooperativeGestures = true,
+  showWhenEmpty = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -131,7 +149,7 @@ export function PlaceMap({
 
   const pins = useMemo(() => resolved.filter(hasCoords), [resolved]);
   const pinKey = pins.map((pin) => pin.id).join("|");
-  const showMap = pins.length > 0;
+  const showMap = pins.length > 0 || showWhenEmpty;
 
   useEffect(() => {
     if (!showMap) return;

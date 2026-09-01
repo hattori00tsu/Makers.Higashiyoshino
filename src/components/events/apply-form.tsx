@@ -10,7 +10,7 @@ import {
   liveSeatKey,
   remainingSeatsLive,
   remainingSeatsMapLive,
-} from "@/lib/content/live";
+} from "@/lib/content/live-public";
 import { eventPriceLabel, isPublished, needsReservation, sessionCapacity, type EventItem } from "@/data/site";
 import { formatSessionRange } from "@/lib/dates";
 import { localizedEvent, localizedEvents } from "@/lib/i18n/content";

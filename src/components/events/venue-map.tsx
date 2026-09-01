@@ -1,9 +1,6 @@
 "use client";
 
 import { PlaceMap, type PlaceMarker } from "@/components/map/place-map";
-import { isGoogleMapsUrl } from "@/lib/maps-url";
-
-export { isGoogleMapsUrl };
 
 type Props = {
   title: string;

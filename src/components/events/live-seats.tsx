@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { EventItem } from "@/data/site";
-import { remainingSeatsMapLive } from "@/lib/content/live";
+import { remainingSeatsMapLive } from "@/lib/content/live-public";
 
 const LiveSeatsContext = createContext<Record<string, number | null> | null>(null);
 

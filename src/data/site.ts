@@ -274,13 +274,15 @@ export const village = {
   mapsUrl: "https://maps.app.goo.gl/yzYgyptexkrQUKtB6",
 };
 
-/** 村内マップ（/map）。maps.app.goo.gl は iframe にできないので、同じ場所の埋め込みURLを使う */
+/** /map に出す既定の会場。管理画面の会場が空のときの控え */
 export const villageMapPlace = {
   name: "OKUYAMA HOUSE",
   mapsUrl: "https://maps.app.goo.gl/yzYgyptexkrQUKtB6",
-  embedUrl:
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d400!2d136.0156155!3d34.3794352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f18!3m3!1m2!1s0x6006b9783c1815e1%3A0x5a07633e1fa5ee91!2z44GK44GP5bGx44OP44Km44K544O744Go6Zm25pq_44K544K_44K444KqLeODquODneOCug!5e0!3m2!1sja!2sjp",
 };
+
+export function villageVenueOption(): PlaceOption {
+  return { id: "village-venue", title: villageMapPlace.name, url: villageMapPlace.mapsUrl };
+}
 
 export type ArtistWork = {
   src: string;
@@ -307,7 +309,7 @@ export type Artist = {
   instagram?: string;
   instagramPermalink?: string;
   facebook?: string;
-  links?: { name: string; url: string }[];
+  links?: { name: string; url: string; nameEn?: string }[];
   x?: string;
   shop?: string;
   i18nEnabled?: boolean;

@@ -124,6 +124,10 @@ export function localizedArtist(artist: Artist, locale: Locale, options?: EventO
       ...artist.studio,
       visit: pickCopy(locale, artist.studio.visit, artist.studioVisitEn),
     },
+    links: (artist.links ?? []).map((link) => ({
+      ...link,
+      name: pickCopy(locale, link.name, link.nameEn),
+    })),
   };
 }
 

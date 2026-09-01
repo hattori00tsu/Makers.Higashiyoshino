@@ -53,6 +53,7 @@ export type SessionUser = {
 export type ArtistLink = {
   id: string;
   name: string;
+  nameEn: string;
   url: string;
 };
 
@@ -157,6 +158,7 @@ export function newArtistLink(): ArtistLink {
   return {
     id: `link-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     name: "",
+    nameEn: "",
     url: "",
   };
 }
@@ -165,29 +167,38 @@ function linkKey(name: string, url: string) {
   return `${name.trim()}|${url.trim()}`;
 }
 
-export function parseArtistLinks(value: unknown, extras: { name: string; url: string }[] = []): ArtistLink[] {
-  const rows: { name: string; url: string }[] = [];
+export function parseArtistLinks(
+  value: unknown,
+  extras: { name: string; url: string; nameEn?: string }[] = [],
+): ArtistLink[] {
+  const rows: { name: string; nameEn: string; url: string }[] = [];
   if (Array.isArray(value)) {
     for (const item of value) {
       if (!item || typeof item !== "object") continue;
       const record = item as Record<string, unknown>;
       const name = String(record.name ?? record.title ?? "");
+      const nameEn = String(record.nameEn ?? record.name_en ?? record.titleEn ?? record.title_en ?? "");
       const url = String(record.url ?? record.href ?? "");
-      if (name.trim() || url.trim()) rows.push({ name, url });
+      if (name.trim() || url.trim()) rows.push({ name, nameEn, url });
     }
   }
   const seen = new Set(rows.map((row) => linkKey(row.name, row.url)));
   for (const extra of extras) {
     if (!extra.url.trim() || seen.has(linkKey(extra.name, extra.url))) continue;
-    rows.push(extra);
+    rows.push({ name: extra.name, nameEn: extra.nameEn ?? "", url: extra.url });
     seen.add(linkKey(extra.name, extra.url));
   }
-  return rows.map((row) => ({ ...newArtistLink(), name: row.name, url: row.url }));
+  return rows.map((row) => ({ ...newArtistLink(), name: row.name, nameEn: row.nameEn, url: row.url }));
 }
 
 export function serializeArtistLinks(links: ArtistLink[]) {
   return links
-    .map((link) => ({ name: link.name.trim(), url: link.url.trim() }))
+    .map((link) => {
+      const name = link.name.trim();
+      const url = link.url.trim();
+      const nameEn = (link.nameEn ?? "").trim();
+      return nameEn ? { name, url, nameEn } : { name, url };
+    })
     .filter((link) => link.name || link.url);
 }
 
