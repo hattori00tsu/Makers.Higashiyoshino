@@ -10,6 +10,8 @@ import { messages } from "@/lib/i18n/messages";
 import { site } from "@/data/site";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 const mincho = Shippori_Mincho({
   weight: ["400", "600"],
   subsets: ["latin"],

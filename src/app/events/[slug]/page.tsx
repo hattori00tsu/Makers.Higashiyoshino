@@ -13,13 +13,7 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
-export const revalidate = 120;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  const items = await loadPublicEvents();
-  return items.map((event) => ({ slug: event.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

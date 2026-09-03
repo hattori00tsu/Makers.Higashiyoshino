@@ -6,7 +6,7 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { useAdmin } from "@/components/admin/use-admin";
 import { loadEventsLive } from "@/lib/content/live";
 import { formatDateJa } from "@/lib/dates";
-import { eventKindLabel, inferEventKind, type EventItem } from "@/data/site";
+import { eventAncestorTitle, eventKindLabel, inferEventKind, type EventItem } from "@/data/site";
 
 const statusLabel: Record<string, string> = {
   draft: "公開待ち",
@@ -25,10 +25,12 @@ function EventRow({
   event,
   kind,
   childCount,
+  parentLabel,
 }: {
   event: EventItem;
   kind: "festival" | "venue" | "program";
   childCount?: number;
+  parentLabel?: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -39,6 +41,12 @@ function EventRow({
           {statusLabel[event.status ?? "published"]}
           <span className="mx-2 text-line">/</span>
           {event.sessions[0] ? formatDateJa(event.sessions[0].startsAt) : "日程未設定"}
+          {parentLabel ? (
+            <>
+              <span className="mx-2 text-line">/</span>
+              {parentLabel}
+            </>
+          ) : null}
           {childCount ? (
             <>
               <span className="mx-2 text-line">/</span>
@@ -76,35 +84,17 @@ export default function AdminEventsPage() {
 
   const grouped = useMemo(() => {
     const kindOf = (event: EventItem) => inferEventKind(event, items);
-    const byParent = (slug: string, kind: "venue" | "program") =>
-      items.filter((event) => event.parentSlug === slug && kindOf(event) === kind).sort(byDate);
     const festivals = items.filter((event) => kindOf(event) === "festival").sort(byDate);
-    const standaloneVenues = items
-      .filter((event) => kindOf(event) === "venue" && !event.parentSlug)
-      .sort(byDate)
-      .map((venue) => ({
-        venue,
-        programs: byParent(venue.slug, "program"),
-      }));
-    const standalone = items
-      .filter((event) => kindOf(event) === "program" && !event.parentSlug && event.status === "published")
+    const venues = items.filter((event) => kindOf(event) === "venue").sort(byDate);
+    const programs = items
+      .filter((event) => kindOf(event) === "program" && (event.status ?? "draft") !== "draft")
       .sort(byDate);
     const pending = items
       .filter((event) => kindOf(event) === "program" && (event.status ?? "draft") === "draft")
       .sort(byDate);
-    return {
-      trees: festivals.map((festival) => ({
-        festival,
-        venues: byParent(festival.slug, "venue").map((venue) => ({
-          venue,
-          programs: byParent(venue.slug, "program"),
-        })),
-        programs: byParent(festival.slug, "program"),
-      })),
-      standaloneVenues,
-      standalone,
-      pending,
-    };
+    const childCount = (slug: string, kind: "venue" | "program") =>
+      items.filter((event) => event.parentSlug === slug && kindOf(event) === kind).length;
+    return { festivals, venues, programs, pending, childCount };
   }, [items]);
 
   if (!ready) return <p className="px-5 pt-28 text-sm text-sumi-soft">読み込み中です。</p>;
@@ -166,64 +156,49 @@ export default function AdminEventsPage() {
           </ul>
         </section>
       ) : null}
-      <ul className={`${grouped.pending.length > 0 ? "mt-6" : "mt-10"} divide-y divide-line border-y border-line`}>
-        {grouped.trees.map(({ festival, venues, programs }) => (
-          <li key={festival.slug} className="py-4">
-            <EventRow event={festival} kind="festival" childCount={venues.length} />
-            {venues.length > 0 || programs.length > 0 ? (
-              <ul className="mt-3 space-y-3 border-l border-line pl-4">
-                {venues.map(({ venue, programs: venuePrograms }) => (
-                  <li key={venue.slug}>
-                    <EventRow event={venue} kind="venue" childCount={venuePrograms.length} />
-                    {venuePrograms.length > 0 ? (
-                      <ul className="mt-2 space-y-2 border-l border-line pl-4">
-                        {venuePrograms.map((program) => (
-                          <li key={program.slug}>
-                            <EventRow event={program} kind="program" />
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </li>
-                ))}
-                {programs.map((program) => (
-                  <li key={program.slug}>
-                    <EventRow event={program} kind="program" />
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </li>
-        ))}
-        {grouped.standaloneVenues.map(({ venue, programs: venuePrograms }) => (
-          <li key={venue.slug} className="py-4">
-            <EventRow event={venue} kind="venue" childCount={venuePrograms.length} />
-            {venuePrograms.length > 0 ? (
-              <ul className="mt-3 space-y-2 border-l border-line pl-4">
-                {venuePrograms.map((program) => (
-                  <li key={program.slug}>
-                    <EventRow event={program} kind="program" />
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </li>
-        ))}
-        {grouped.standalone.length > 0 ? (
-          <>
-            {grouped.trees.length > 0 || grouped.standaloneVenues.length > 0 ? (
-              <li className="py-4">
-                <p className="text-[11px] tracking-[0.14em] text-tsuchi">個別の催し</p>
-              </li>
-            ) : null}
-            {grouped.standalone.map((program) => (
-              <li key={program.slug} className="py-4">
-                <EventRow event={program} kind="program" />
-              </li>
-            ))}
-          </>
+      <div className={`${grouped.pending.length > 0 ? "mt-6" : "mt-10"} space-y-12`}>
+        {grouped.festivals.length > 0 ? (
+          <section>
+            <h2 className="font-serif text-xl tracking-wide">総合開催</h2>
+            <ul className="mt-4 divide-y divide-line border-y border-line">
+              {grouped.festivals.map((festival) => (
+                <li key={festival.slug} className="py-4">
+                  <EventRow event={festival} kind="festival" childCount={grouped.childCount(festival.slug, "venue")} />
+                </li>
+              ))}
+            </ul>
+          </section>
         ) : null}
-      </ul>
+        {grouped.venues.length > 0 ? (
+          <section>
+            <h2 className="font-serif text-xl tracking-wide">会場</h2>
+            <ul className="mt-4 divide-y divide-line border-y border-line">
+              {grouped.venues.map((venue) => (
+                <li key={venue.slug} className="py-4">
+                  <EventRow
+                    event={venue}
+                    kind="venue"
+                    parentLabel={eventAncestorTitle(venue, items)}
+                    childCount={grouped.childCount(venue.slug, "program")}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+        {grouped.programs.length > 0 ? (
+          <section>
+            <h2 className="font-serif text-xl tracking-wide">個別の催し</h2>
+            <ul className="mt-4 divide-y divide-line border-y border-line">
+              {grouped.programs.map((program) => (
+                <li key={program.slug} className="py-4">
+                  <EventRow event={program} kind="program" parentLabel={eventAncestorTitle(program, items)} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }

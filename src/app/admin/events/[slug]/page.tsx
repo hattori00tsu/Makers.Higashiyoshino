@@ -52,6 +52,7 @@ export default function EditEventPage() {
         <h2 className="mb-6 border-t border-line pt-10 font-serif text-xl tracking-wide">この催しの内容</h2>
       ) : null}
       <EventEditor
+        key={event.slug}
         initial={{ ...event, kind: inferEventKind(event, catalog) }}
         catalog={catalog}
         localOnly={localOnly}

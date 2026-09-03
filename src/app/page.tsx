@@ -9,7 +9,7 @@ import { homeVillages } from "@/lib/content/home-display";
 import { localizedHomeDisplay } from "@/lib/i18n/content";
 import { getLocale } from "@/lib/i18n/server";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const locale = await getLocale();

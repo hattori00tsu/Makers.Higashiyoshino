@@ -62,7 +62,7 @@ export default function AdminManualPage() {
           <p className="mt-3">
             つくり手はマイページの
             <Link href="/mypage/events" className="mx-1 underline decoration-line underline-offset-4">催し</Link>
-            から個別の催しを作れます。公開状態と、総合開催・会場への所属はつくり手側では扱えません。運営が所属先のページへ入れ、公開を承認すると、トップ・催し一覧・地図に載ります。終了した総合開催と会場は
+            から個別の催しを作れます。公開状態と、総合開催・会場への所属はつくり手側では扱えません。運営が所属先のページへ入れ、公開を承認すると、トップ・催し一覧・地図に載ります。終了した催しは
             <Link href="/archive" className="mx-1 underline decoration-line underline-offset-4">アーカイブ</Link>
             へ移ります。
           </p>
@@ -89,7 +89,7 @@ export default function AdminManualPage() {
             <Link href="/admin/settings" className="mx-1 underline decoration-line underline-offset-4">
               設定
             </Link>
-            のトップから変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、過去の総合開催と会場はアーカイブです。冒頭の写真と文言、01 VILLAGE（複数可。複数あるときは約20秒ごとにスライドします）、「このサイトについて」のコンセプト、村を訪ねるの写真も同じ画面から直せます。
+            のトップから変えられます。直近の催しは、開催中があれば開催中を、なければ開催予定を出し、並びは毎回ランダムです。指定した順にも切り替えられます。催しの一覧は開催中・開催予定に分かれ、総合開催、会場、個別の催しの順で出ます。過去の催しはアーカイブです。冒頭の写真と文言、01 VILLAGE（複数可。複数あるときは約20秒ごとにスライドします）、「このサイトについて」のコンセプト、村を訪ねるの写真も同じ画面から直せます。
           </p>
         </section>
 

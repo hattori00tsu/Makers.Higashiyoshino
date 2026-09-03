@@ -5,7 +5,7 @@ import { loadPublicEvents } from "@/lib/content/public-events";
 import { getVillageForecast } from "@/lib/weather";
 import { getMessages } from "@/lib/i18n/server";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages();

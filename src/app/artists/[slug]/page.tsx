@@ -6,7 +6,7 @@ import { InstagramEmbed } from "@/components/social/instagram-embed";
 import { ArtistEvents } from "@/components/artists/artist-events";
 import { ArtistPhoto } from "@/components/media/artist-photo";
 import { isGoogleMapsUrl } from "@/lib/maps-url";
-import { loadPublicArtist, loadPublicArtists } from "@/lib/content/public-artists";
+import { loadPublicArtist } from "@/lib/content/public-artists";
 import { loadPublicEventsForArtist } from "@/lib/content/public-events";
 import { loadPublicEventOptions } from "@/lib/content/public-options";
 import { instagramEmbedPermalink } from "@/lib/social/instagram";
@@ -18,13 +18,7 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
-export const revalidate = 120;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  const artists = await loadPublicArtists();
-  return artists.map((artist) => ({ slug: artist.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

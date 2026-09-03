@@ -64,6 +64,7 @@ export default function MypageEditEventPage() {
       <h1 className="mt-3 font-serif text-3xl tracking-wide">催しを編集</h1>
       <MypageNav />
       <EventEditor
+        key={event.slug}
         initial={event}
         mode="artist"
         ownerArtistSlug={artistSlug}
