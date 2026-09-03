@@ -3,6 +3,7 @@ import { normalizeEvent } from "@/data/site";
 import type { NewsItem } from "@/lib/content/catalog";
 import type { Application, ApplicationStatus } from "@/lib/content/applications";
 import { notifyMapFromRows } from "@/lib/content/application-notify";
+import { i18nWriteColumns, isI18nColumnError, omitI18nColumns } from "@/lib/i18n/write";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { getAuthIdentity } from "@/lib/supabase/identity";
 
@@ -86,10 +87,7 @@ const eventColumns =
 
 const eventI18nColumns = "i18n_enabled, title_en, summary_en, description_en, access_en, price_en";
 
-export const eventSelect = `${eventColumns}, price, gallery_paths, kind, owner_artist_slug, series, ${eventI18nColumns}, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`;
-
-const eventSelectFallbacks = [
-  eventSelect,
+const eventSelectShapes = [
   `${eventColumns}, price, gallery_paths, kind, owner_artist_slug, series, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`,
   `${eventColumns}, price, gallery_paths, kind, owner_artist_slug, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`,
   `${eventColumns}, gallery_paths, kind, owner_artist_slug, event_sessions ( starts_at, ends_at, capacity ), event_artists ( artist_slug )`,
@@ -98,6 +96,14 @@ const eventSelectFallbacks = [
   `${eventColumns}, event_sessions ( starts_at, ends_at ), event_artists ( artist_slug )`,
   `${eventColumns}, event_sessions ( starts_at, ends_at )`,
 ];
+
+function attachEventI18n(select: string) {
+  const nested = select.indexOf(", event_sessions");
+  if (nested === -1) return `${select}, ${eventI18nColumns}`;
+  return `${select.slice(0, nested)}, ${eventI18nColumns}${select.slice(nested)}`;
+}
+
+export const eventSelect = attachEventI18n(eventSelectShapes[0]);
 
 export type LoadEventRowOptions = {
   slug?: string;
@@ -116,18 +122,28 @@ export async function loadEventRows(
   if (options?.slugs && options.slugs.length === 0) return [];
   if (options?.ids && options.ids.length === 0) return [];
 
-  let lastError: { message?: string } | null = null;
-  for (const select of eventSelectFallbacks) {
+  const run = async (select: string) => {
     let query = supabase.from("events").select(select);
     if (options?.publishedOnly) query = query.eq("status", "published");
     if (options?.ownerArtistSlug) query = query.eq("owner_artist_slug", options.ownerArtistSlug);
     if (options?.slugs?.length) query = query.in("slug", options.slugs);
     if (options?.ids?.length) query = query.in("id", options.ids);
-    const result = options?.slug ? await query.eq("slug", options.slug).maybeSingle() : await query;
-    if (!result.error) {
-      if (!result.data) return [];
-      return (Array.isArray(result.data) ? result.data : [result.data]) as EventRow[];
-    }
+    return options?.slug ? await query.eq("slug", options.slug).maybeSingle() : await query;
+  };
+  const asRows = (data: unknown): EventRow[] => {
+    if (!data) return [];
+    return (Array.isArray(data) ? data : [data]) as EventRow[];
+  };
+
+  let lastError: { message?: string } | null = null;
+  for (const shape of eventSelectShapes) {
+    const withI18n = attachEventI18n(shape);
+    let result = await run(withI18n);
+    if (!result.error) return asRows(result.data);
+    lastError = result.error;
+    if (!isI18nColumnError(result.error)) continue;
+    result = await run(shape);
+    if (!result.error) return asRows(result.data);
     lastError = result.error;
   }
   if (lastError) throw lastError;
@@ -256,26 +272,19 @@ export async function upsertRemoteEvent(next: EventItem, previousSlug?: string) 
     kind: next.kind ?? "program",
     series: next.series?.trim() || null,
     owner_artist_slug: next.ownerArtistSlug || null,
-    i18n_enabled: Boolean(next.i18nEnabled),
-    title_en: next.titleEn?.trim() || null,
-    summary_en: next.summaryEn?.trim() || null,
-    description_en: next.descriptionEn?.trim() || null,
-    access_en: next.accessEn?.trim() || null,
-    price_en: next.priceEn?.trim() || null,
+    ...i18nWriteColumns(Boolean(next.i18nEnabled), {
+      title_en: next.titleEn,
+      summary_en: next.summaryEn,
+      description_en: next.descriptionEn,
+      access_en: next.accessEn,
+      price_en: next.priceEn,
+    }),
     updated_at: new Date().toISOString(),
   };
 
   const auth = await getAuthIdentity(supabase);
   let eventId = existing?.id as string | undefined;
-  const withoutI18n = (({
-    i18n_enabled: _a,
-    title_en: _b,
-    summary_en: _c,
-    description_en: _d,
-    access_en: _e,
-    price_en: _f,
-    ...rest
-  }) => rest)(payload);
+  const withoutI18n = omitI18nColumns(payload);
   const payloads = [
     payload,
     withoutI18n,

@@ -3,6 +3,7 @@ import { unstable_rethrow } from "next/navigation";
 import { village, type Artist } from "@/data/site";
 import { normalizeArtistDraft, serializeArtistLinks } from "@/lib/account/types";
 import { PUBLIC_REVALIDATE_SECONDS } from "@/lib/content/public-cache";
+import { isI18nColumnError } from "@/lib/i18n/write";
 import { createPublicSupabase } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -89,7 +90,7 @@ async function fetchPublicArtists(): Promise<Artist[]> {
     const supabase = createPublicSupabase();
     if (!supabase) return [];
     let { data, error } = await supabase.from("artists").select(artistListColumns).eq("status", "approved");
-    if (error) {
+    if (error && isI18nColumnError(error)) {
       const fallback =
         "id, slug, name, genre, area, cover_path, status, studio_lat, studio_lng, studio_address, studio_query";
       const retry = await supabase.from("artists").select(fallback).eq("status", "approved");
@@ -117,7 +118,7 @@ async function fetchPublicArtistNames(): Promise<Record<string, PublicArtistName
     const supabase = createPublicSupabase();
     if (!supabase) return {};
     let { data, error } = await supabase.from("artists").select("slug, name, genre, i18n_enabled, name_en").eq("status", "approved");
-    if (error) {
+    if (error && isI18nColumnError(error)) {
       const retry = await supabase.from("artists").select("slug, name, genre").eq("status", "approved");
       data = retry.data as typeof data;
       error = retry.error;
@@ -162,7 +163,7 @@ async function fetchPublicArtist(slug: string): Promise<Artist | undefined> {
       .eq("status", "approved")
       .eq("slug", slug)
       .maybeSingle();
-    if (error) {
+    if (error && isI18nColumnError(error)) {
       const fallback =
         "id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
       ({ data, error } = await supabase

@@ -118,6 +118,16 @@ export function ArtistForm({
   }
 
   const preview = draft.image.trim();
+  const showEnglish =
+    draft.i18nEnabled ||
+    Boolean(
+      draft.nameEn.trim() ||
+        draft.areaEn.trim() ||
+        draft.bioEn.trim() ||
+        draft.profileEn.trim() ||
+        draft.studioVisitEn.trim() ||
+        draft.links.some((link) => (link.nameEn ?? "").trim()),
+    );
   const selectedGenres = parseArtistGenres(draft.genre);
   const listedGenres = [
     ...genreOptions,
@@ -236,10 +246,12 @@ export function ArtistForm({
           />
           <span>
             英語の文章を公開する
-            <span className="block text-xs leading-6">英語版に切り替えたときに出します。空の項目は日本語のままです。</span>
+            <span className="block text-xs leading-6">
+              英語版に切り替えたときに出します。空の項目は日本語のままです。チェックを外しても、入っている英訳は消えません。
+            </span>
           </span>
         </label>
-        {draft.i18nEnabled ? (
+        {showEnglish ? (
           <div className="space-y-4">
             <Field label="名前（英語）">
               <TextInput value={draft.nameEn} onChange={(e) => set("nameEn", e.target.value)} />
@@ -276,7 +288,7 @@ export function ArtistForm({
       <Field label="見学について">
         <TextArea value={draft.studioVisit} onChange={(e) => set("studioVisit", e.target.value)} />
       </Field>
-      {draft.i18nEnabled ? (
+      {showEnglish ? (
         <Field label="見学について（英語）">
           <TextArea value={draft.studioVisitEn} onChange={(e) => set("studioVisitEn", e.target.value)} />
         </Field>
@@ -342,7 +354,7 @@ export function ArtistForm({
                   削除
                 </button>
               </div>
-              {draft.i18nEnabled ? (
+              {showEnglish ? (
                 <Field label="名前（英語）">
                   <TextInput
                     value={link.nameEn ?? ""}

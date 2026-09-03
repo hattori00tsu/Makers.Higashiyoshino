@@ -57,7 +57,7 @@ export const messages = {
         {
           href: "/archive",
           label: "アーカイブ",
-          note: "終了した総合開催と会場。個別の催しは、それぞれのページから辿れます。",
+          note: "終了した総合開催、会場、個別の催し。",
         },
         {
           href: "/artists",
@@ -91,6 +91,9 @@ export const messages = {
       calendar: "カレンダー",
       now: "開催中",
       upcoming: "開催予定",
+      kindFestival: "総合開催",
+      kindVenue: "会場",
+      kindProgram: "個別の催し",
       empty: "いま開催中・開催予定の催しはありません。終了したものは",
       emptyAfter: "にあります。",
       emptyArchiveLink: "アーカイブ",
@@ -177,8 +180,8 @@ export const messages = {
     },
     archive: {
       title: "アーカイブ",
-      lead: "終了した総合開催と会場です。個別の催しは、それぞれのページからご覧ください。",
-      seriesLead: "このシリーズの、終了した総合開催と会場です。",
+      lead: "終了した総合開催、会場、個別の催しです。",
+      seriesLead: "このシリーズの、終了した総合開催、会場、個別の催しです。",
       back: "催しへ戻る",
       all: "アーカイブ一覧",
       empty: "過去の催しはまだありません。",
@@ -315,7 +318,7 @@ export const messages = {
         {
           href: "/archive",
           label: "Archive",
-          note: "Past festivals and venues. Individual programs are linked from each page.",
+          note: "Past festivals, venues, and programs.",
         },
         {
           href: "/artists",
@@ -349,6 +352,9 @@ export const messages = {
       calendar: "Calendar",
       now: "Now",
       upcoming: "Upcoming",
+      kindFestival: "Festivals",
+      kindVenue: "Venues",
+      kindProgram: "Programs",
       empty: "No events are on or upcoming. Past events are in the",
       emptyAfter: ".",
       emptyArchiveLink: "Archive",
@@ -435,8 +441,8 @@ export const messages = {
     },
     archive: {
       title: "Archive",
-      lead: "Past festivals and venues. Individual programs are linked from each page.",
-      seriesLead: "Past festivals and venues in this series.",
+      lead: "Past festivals, venues, and programs.",
+      seriesLead: "Past festivals, venues, and programs in this series.",
       back: "Back to events",
       all: "All archives",
       empty: "No past events yet.",

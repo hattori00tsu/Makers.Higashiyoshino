@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { EventExplorer } from "@/components/events/event-explorer";
-import { shuffleItems } from "@/lib/content/home-display";
 import type { EventItem } from "@/data/site";
 import type { DailyWeather } from "@/lib/weather";
 
@@ -19,18 +17,10 @@ export function EventsBrowser({
   initialPrograms = [],
   weather,
 }: Props) {
-  const [ongoing, setOngoing] = useState(initialOngoing);
-  const [upcoming, setUpcoming] = useState(initialUpcoming);
-
-  useEffect(() => {
-    setOngoing(shuffleItems(initialOngoing));
-    setUpcoming(shuffleItems(initialUpcoming));
-  }, [initialOngoing, initialUpcoming]);
-
   return (
     <EventExplorer
-      ongoing={ongoing}
-      upcoming={upcoming}
+      ongoing={initialOngoing}
+      upcoming={initialUpcoming}
       programs={initialPrograms}
       weather={weather}
     />

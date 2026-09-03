@@ -1,4 +1,4 @@
-import { inferEventKind, isPublished, isTopLevel, type EventItem } from "@/data/site";
+import { inferEventKind, isPublished, isTopLevel, type EventItem, type EventKind } from "@/data/site";
 import { addDaysToDateKey, eachDateKey, isAllDayRange, parseDateKey, tokyoDateKey, tokyoHour } from "@/lib/dates";
 
 export const weekdays = ["日", "月", "火", "水", "木", "金", "土"] as const;
@@ -258,14 +258,41 @@ export function isFestivalOrVenue(event: EventItem, catalog: EventItem[]) {
   return kind === "festival" || kind === "venue";
 }
 
-/** 公開ページ用。開催中・開催予定は親のない催し、アーカイブは終了した総合開催・会場だけ。 */
+const kindRank: Record<EventKind, number> = { festival: 0, venue: 1, program: 2 };
+
+export function sortEventsByKind(items: EventItem[], catalog: EventItem[]) {
+  return items.slice().sort((a, b) => {
+    const rank = kindRank[inferEventKind(a, catalog)] - kindRank[inferEventKind(b, catalog)];
+    if (rank) return rank;
+    return eventStartTime(a) - eventStartTime(b);
+  });
+}
+
+export function groupEventsByKind(items: EventItem[], catalog: EventItem[]) {
+  const groups: Record<EventKind, EventItem[]> = { festival: [], venue: [], program: [] };
+  for (const event of sortEventsByKind(items, catalog)) {
+    groups[inferEventKind(event, catalog)].push(event);
+  }
+  return (["festival", "venue", "program"] as const)
+    .map((kind) => ({ kind, items: groups[kind] }))
+    .filter((group) => group.items.length > 0);
+}
+
+/** 公開ページ用。開催中・開催予定・アーカイブとも、総合開催→会場→個別の催しの順で全部出す。 */
 export function publicEventLists(items: EventItem[], now = Date.now()) {
   const published = items.filter(isPublished);
-  const { ongoing, upcoming, archive } = partitionEventPhases(published.filter(isTopLevel), now);
-  const archiveItems = archive
-    .filter((event) => isFestivalOrVenue(event, published))
-    .sort((a, b) => eventEndTime(b) - eventEndTime(a));
-  return { ongoing, upcoming, archive: archiveItems };
+  const { ongoing, upcoming, archive } = partitionEventPhases(published, now);
+  return {
+    ongoing: sortEventsByKind(ongoing, published),
+    upcoming: sortEventsByKind(upcoming, published),
+    archive: archive
+      .slice()
+      .sort((a, b) => {
+        const rank = kindRank[inferEventKind(a, published)] - kindRank[inferEventKind(b, published)];
+        if (rank) return rank;
+        return eventEndTime(b) - eventEndTime(a);
+      }),
+  };
 }
 
 /** LP用。親のない催しに加え、総合開催・会場の配下の個別催しも候補にする。会場枠は親がある限り出さない。 */

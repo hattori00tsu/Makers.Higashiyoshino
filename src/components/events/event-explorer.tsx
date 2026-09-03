@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { EventItem } from "@/data/site";
-import { EventList } from "@/components/events/event-list";
+import { KindGroupedEventList } from "@/components/events/event-list";
 import {
   categoryMark,
   defaultMonth,
@@ -112,7 +112,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
               <p className="text-[11px] tracking-[0.28em] text-tsuchi">NOW</p>
               <h2 className="mt-2 font-serif text-2xl tracking-wide">{t.events.now}</h2>
               <div className="mt-8">
-                <EventList items={localizedOngoing} programs={localizedPrograms} />
+                <KindGroupedEventList items={localizedOngoing} programs={localizedPrograms} />
               </div>
             </section>
           ) : null}
@@ -121,7 +121,7 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
               <p className="text-[11px] tracking-[0.28em] text-tsuchi">UPCOMING</p>
               <h2 className="mt-2 font-serif text-2xl tracking-wide">{t.events.upcoming}</h2>
               <div className="mt-8">
-                <EventList items={localizedUpcoming} programs={localizedPrograms} />
+                <KindGroupedEventList items={localizedUpcoming} programs={localizedPrograms} />
               </div>
             </section>
           ) : null}
@@ -222,7 +222,11 @@ export function EventExplorer({ ongoing, upcoming, programs = [], weather }: Pro
               ) : null}
             </p>
             <div className="mt-5">
-              <EventList items={localizedEvents(dated, locale, options)} programs={localizedPrograms} compact />
+              <KindGroupedEventList
+                items={localizedEvents(dated, locale, options)}
+                programs={localizedPrograms}
+                compact
+              />
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { i18nWriteColumns, isI18nColumnError, omitI18nColumns } from "@/lib/i18n/write";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { forget, remember } from "@/lib/content/client-cache";
 import {
@@ -57,8 +58,13 @@ export async function fetchRemoteArtist(userId: string) {
 async function loadRemoteArtist(userId: string) {
   const supabase = createBrowserSupabase();
   if (!supabase) return { artist: null as ArtistDraft | null, works: [] as WorkDraft[], artistId: null as string | null };
-  const { data } = await supabase.from("artists").select(artistDetailColumns).eq("profile_id", userId).maybeSingle();
-  if (!data) return { artist: null, works: [], artistId: null };
+  let { data, error } = await supabase.from("artists").select(artistDetailColumns).eq("profile_id", userId).maybeSingle();
+  if (error && isI18nColumnError(error)) {
+    const fallback =
+      "id, profile_id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
+    ({ data, error } = await supabase.from("artists").select(fallback).eq("profile_id", userId).maybeSingle());
+  }
+  if (error || !data) return { artist: null, works: [], artistId: null };
   const { data: works } = await supabase
     .from("artist_works")
     .select(artistWorkColumns)
@@ -127,23 +133,16 @@ export async function upsertRemoteArtist(userId: string, draft: ArtistDraft) {
     x_url: null,
     links: extra,
     shop: extra.length ? JSON.stringify(extra) : null,
-    i18n_enabled: Boolean(draft.i18nEnabled),
-    name_en: draft.nameEn.trim() || null,
-    area_en: draft.areaEn.trim() || null,
-    bio_en: draft.bioEn.trim() || null,
-    profile_en: draft.profileEn.trim() || null,
-    studio_visit_en: draft.studioVisitEn.trim() || null,
+    ...i18nWriteColumns(Boolean(draft.i18nEnabled), {
+      name_en: draft.nameEn,
+      area_en: draft.areaEn,
+      bio_en: draft.bioEn,
+      profile_en: draft.profileEn,
+      studio_visit_en: draft.studioVisitEn,
+    }),
   };
   const existing = await supabase.from("artists").select("id").eq("profile_id", userId).maybeSingle();
-  const withoutI18n = (({
-    i18n_enabled: _a,
-    name_en: _b,
-    area_en: _c,
-    bio_en: _d,
-    profile_en: _e,
-    studio_visit_en: _f,
-    ...rest
-  }) => rest)(payload);
+  const withoutI18n = omitI18nColumns(payload);
   const withoutLinks = (({ links: _g, ...rest }) => rest)(payload);
   let lastError: { message?: string; details?: string; hint?: string } | null = null;
   for (const row of [payload, withoutI18n, withoutLinks]) {
@@ -198,7 +197,7 @@ export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]>
   const supabase = createBrowserSupabase();
   if (!supabase) return [];
   let { data, error } = await supabase.from("artists").select(artistListColumns).order("name");
-  if (error) {
+  if (error && isI18nColumnError(error)) {
     ({ data, error } = await supabase.from("artists").select("id, profile_id, slug, name, genre, area, status").order("name"));
   }
   if (error) throw error;
@@ -208,11 +207,16 @@ export async function fetchRemoteArtistsForAdmin(): Promise<AdminArtistRecord[]>
 export async function fetchRemoteArtistForAdmin(slugOrId: string): Promise<AdminArtistRecord | null> {
   const supabase = createBrowserSupabase();
   if (!supabase) return null;
-  const bySlug = await supabase.from("artists").select(artistDetailColumns).eq("slug", slugOrId).maybeSingle();
-  const row = (bySlug.data ??
-    (await supabase.from("artists").select(artistDetailColumns).eq("id", slugOrId).maybeSingle()).data) as
-    | Record<string, unknown>
-    | null;
+  const load = async (column: "slug" | "id", value: string) => {
+    const first = await supabase.from("artists").select(artistDetailColumns).eq(column, value).maybeSingle();
+    if (!first.error) return first.data as Record<string, unknown> | null;
+    if (!isI18nColumnError(first.error)) return null;
+    const fallback =
+      "id, profile_id, slug, name, reading, genre, area, bio, profile, cover_path, studio_address, studio_query, studio_visit, studio_lat, studio_lng, instagram, instagram_permalink, facebook, links, x_url, shop, status";
+    const retry = await supabase.from("artists").select(fallback).eq(column, value).maybeSingle();
+    return retry.error ? null : (retry.data as Record<string, unknown> | null);
+  };
+  const row = (await load("slug", slugOrId)) ?? (await load("id", slugOrId));
   if (!row) return null;
   const [artist] = await withAdminEmails([rowToAdminArtist(row)]);
   return artist;
@@ -241,12 +245,13 @@ function artistWritePayload(draft: ArtistDraft, coverPath: string) {
     links: extra,
     shop: extra.length ? JSON.stringify(extra) : null,
     status: draft.status,
-    i18n_enabled: Boolean(draft.i18nEnabled),
-    name_en: draft.nameEn.trim() || null,
-    area_en: draft.areaEn.trim() || null,
-    bio_en: draft.bioEn.trim() || null,
-    profile_en: draft.profileEn.trim() || null,
-    studio_visit_en: draft.studioVisitEn.trim() || null,
+    ...i18nWriteColumns(Boolean(draft.i18nEnabled), {
+      name_en: draft.nameEn,
+      area_en: draft.areaEn,
+      bio_en: draft.bioEn,
+      profile_en: draft.profileEn,
+      studio_visit_en: draft.studioVisitEn,
+    }),
   };
 }
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { EventList } from "@/components/events/event-list";
+import { KindGroupedEventList } from "@/components/events/event-list";
 import { archiveBySeries, publicEventLists } from "@/lib/calendar";
 import { localizedEvents } from "@/lib/i18n/content";
 import { useCatalog, useLocale, useMessages, useSeriesLabel } from "@/lib/i18n/provider";
@@ -40,7 +40,7 @@ export function ArchiveView({ all }: { all: EventItem[] }) {
             {series ? t.archive.emptySeries : t.archive.empty}
           </p>
         ) : (
-          <EventList items={items} programs={localizedEvents(all, locale, options)} nestedPrograms={false} />
+          <KindGroupedEventList items={items} programs={localizedEvents(all, locale, options)} />
         )}
       </div>
     </div>

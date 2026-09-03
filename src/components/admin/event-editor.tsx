@@ -384,6 +384,9 @@ export function EventEditor({
   }
 
   const preview = image.trim() && image !== defaultEventImage ? image : "";
+  const showEnglish =
+    i18nEnabled ||
+    Boolean(titleEn.trim() || summaryEn.trim() || descriptionEn.trim() || accessEn.trim() || priceEn.trim());
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -578,10 +581,12 @@ export function EventEditor({
           />
           <span>
             英語の文章を公開する
-            <span className="block text-xs leading-6">英語版に切り替えたときに出します。空の項目は日本語のままです。</span>
+            <span className="block text-xs leading-6">
+              英語版に切り替えたときに出します。空の項目は日本語のままです。チェックを外しても、入っている英訳は消えません。
+            </span>
           </span>
         </label>
-        {i18nEnabled ? (
+        {showEnglish ? (
           <div className="space-y-4">
             <Field label="タイトル（英語）">
               <TextInput value={titleEn} onChange={(e) => setTitleEn(e.target.value)} />
@@ -769,7 +774,7 @@ export function EventEditor({
       <Field label="アクセス">
         <TextArea value={access} onChange={(e) => setAccess(e.target.value)} />
       </Field>
-      {i18nEnabled ? (
+      {showEnglish ? (
         <Field label="アクセス（英語）">
           <TextArea value={accessEn} onChange={(e) => setAccessEn(e.target.value)} />
         </Field>
