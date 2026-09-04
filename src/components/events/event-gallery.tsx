@@ -22,7 +22,7 @@ export function EventGallery({ event }: Props) {
   }
 
   return (
-    <section className="mt-10 -mx-5 md:-mx-8">
+    <section className="mt-10">
       <div className="relative aspect-square overflow-hidden bg-kami">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

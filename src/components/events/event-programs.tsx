@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ApplyButton } from "@/components/events/event-apply-cta";
 import { CoverImage } from "@/components/media/cover-image";
@@ -30,6 +31,8 @@ type Props = {
   allowApply?: boolean;
   artistNames?: Record<string, string>;
   hideSessions?: boolean;
+  kicker?: string;
+  separated?: boolean;
 };
 
 export function EventPrograms({
@@ -44,22 +47,22 @@ export function EventPrograms({
   allowApply = true,
   artistNames = {},
   hideSessions = false,
+  kicker,
+  separated = false,
 }: Props) {
   const seats = useLiveSeats() ?? {};
 
   if (programs.length === 0) {
     if (!emptyMessage) return null;
     return (
-      <section className="mt-12">
-        <h2 className="font-serif text-xl tracking-wide">{heading}</h2>
+      <ProgramsShell kicker={kicker} heading={heading} separated={separated}>
         <p className="mt-3 text-sm leading-7 text-sumi-soft">{emptyMessage}</p>
-      </section>
+      </ProgramsShell>
     );
   }
 
   return (
-    <section className="mt-12">
-      <h2 className="font-serif text-xl tracking-wide">{heading}</h2>
+    <ProgramsShell kicker={kicker} heading={heading} separated={separated}>
       <p className="mt-3 text-sm leading-7 text-sumi-soft">{description}</p>
       <ul className="mt-6 divide-y divide-line border-y border-line">
         {programs.map((program) => (
@@ -76,6 +79,32 @@ export function EventPrograms({
           />
         ))}
       </ul>
+    </ProgramsShell>
+  );
+}
+
+function ProgramsShell({
+  kicker,
+  heading,
+  separated,
+  children,
+}: {
+  kicker?: string;
+  heading: string;
+  separated: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className={
+        separated
+          ? "mt-16 -mx-5 border-y border-line bg-kami px-5 py-10 md:-mx-8 md:px-8"
+          : "mt-12"
+      }
+    >
+      {kicker ? <p className="text-[11px] tracking-[0.2em] text-tsuchi">{kicker}</p> : null}
+      <h2 className={`${kicker ? "mt-2 " : ""}font-serif text-xl tracking-wide`}>{heading}</h2>
+      {children}
     </section>
   );
 }

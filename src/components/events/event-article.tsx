@@ -181,10 +181,37 @@ export async function EventArticle({
           {kind === "festival" || kind === "venue" ? (
             <EventScheduleCalendar programs={localizedPrograms} catalog={catalog} currentSlug={event.slug} />
           ) : null}
+
+          <EventGallery event={event} />
+
+          <section className="mt-12">
+            <h2 className="font-serif text-xl tracking-wide">{t.events.access}</h2>
+            {places.access ? (
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-sumi-soft">{places.access}</p>
+            ) : null}
+
+            <EventAccessSection archived={archived} venues={places.venues} parkings={places.parkings} />
+          </section>
+
+          <EventPeople people={people} />
+
           {kind === "festival" || kind === "venue" || programs.length > 0 ? (
             <EventPrograms
-              heading={t.events.programsHeading}
-              description={kind === "venue" ? t.events.programsDescVenue : t.events.programsDescFestival}
+              kicker={
+                kind === "program"
+                  ? t.events.programsRelatedKicker
+                  : kind === "venue"
+                    ? t.events.programsVenueKicker
+                    : t.events.programsHostKicker
+              }
+              heading={kind === "program" ? t.events.programsRelatedHeading : t.events.programsHeading}
+              description={
+                kind === "venue"
+                  ? t.events.programsDescVenue
+                  : kind === "festival"
+                    ? t.events.programsDescFestival
+                    : t.events.programsDescRelated
+              }
               hideSessions={kind === "festival" || kind === "venue"}
               programs={localizedPrograms}
               catalog={catalog}
@@ -199,22 +226,10 @@ export async function EventArticle({
               liveSeats={!archived}
               allowApply={!archived}
               artistNames={nameBySlug}
+              separated
             />
           ) : null}
         </LiveSeatsProvider>
-
-        <section className="mt-12">
-          <h2 className="font-serif text-xl tracking-wide">{t.events.access}</h2>
-          {places.access ? (
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-sumi-soft">{places.access}</p>
-          ) : null}
-
-          <EventAccessSection archived={archived} venues={places.venues} parkings={places.parkings} />
-        </section>
-
-        <EventPeople people={people} />
-
-        <EventGallery event={event} />
 
         <EventSeriesNote event={view} peers={localizedPeers} />
       </div>
