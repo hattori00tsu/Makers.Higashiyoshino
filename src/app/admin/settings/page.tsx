@@ -503,7 +503,7 @@ export default function AdminSettingsPage() {
               value="upcoming"
               current={home.eventsMode === "manual" ? "manual" : "upcoming"}
               label="開催中 / 開催予定"
-              hint="開催中があれば開催中を、なければ開催予定を出します。総合開催や会場の配下の個別催しも対象です。並びは毎回ランダムです。"
+              hint="開催中があれば開催中を、なければ開催予定を出します。上段は会場、下段は個別の催しです。並びは毎回ランダムです。"
               onChange={setEventsMode}
             />
             <RadioRow
@@ -511,7 +511,7 @@ export default function AdminSettingsPage() {
               value="manual"
               current={home.eventsMode === "manual" ? "manual" : "upcoming"}
               label="指定した順"
-              hint={`公開中の催しを、最大${homeEventLimit}件まで並べます。`}
+              hint={`公開中の催しを、最大${homeEventLimit}件まで並べます。会場は上段、個別の催しは下段に分かれます。`}
               onChange={setEventsMode}
             />
             {home.eventsMode === "manual" ? (
