@@ -29,8 +29,8 @@ export function ArtistGridView({
   return (
     <section className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
       <SectionHeading
-        index=""
-        eyebrow="A"
+        index="CREATORS"
+        eyebrow="CREATORS"
           title={t.home.artistsTitle}
         action={
           items.length > 0 || artists.length > 0 ? (
