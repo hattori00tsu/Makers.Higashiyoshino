@@ -1,4 +1,4 @@
-import { inferEventKind, isPublished, isTopLevel, type EventItem, type EventKind } from "@/data/site";
+import { inferEventKind, isPublished, type EventItem, type EventKind } from "@/data/site";
 import { addDaysToDateKey, eachDateKey, isAllDayRange, parseDateKey, tokyoDateKey, tokyoHour } from "@/lib/dates";
 
 export const weekdays = ["日", "月", "火", "水", "木", "金", "土"] as const;
@@ -295,12 +295,17 @@ export function publicEventLists(items: EventItem[], now = Date.now()) {
   };
 }
 
-/** LP用。親のない催しに加え、総合開催・会場の配下の個別催しも候補にする。会場枠は親がある限り出さない。 */
+/** LP下段用。個別の催しだけ。 */
 export function homeEventLists(items: EventItem[], now = Date.now()) {
   const published = items.filter(isPublished);
-  const candidates = published.filter(
-    (event) => isTopLevel(event) || inferEventKind(event, published) === "program",
-  );
+  const candidates = published.filter((event) => inferEventKind(event, published) === "program");
+  return partitionEventPhases(candidates, now);
+}
+
+/** LP上段用。会場だけ。 */
+export function homeVenueLists(items: EventItem[], now = Date.now()) {
+  const published = items.filter(isPublished);
+  const candidates = published.filter((event) => inferEventKind(event, published) === "venue");
   return partitionEventPhases(candidates, now);
 }
 

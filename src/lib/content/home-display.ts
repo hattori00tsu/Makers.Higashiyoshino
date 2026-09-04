@@ -1,6 +1,6 @@
-import type { Artist, EventItem } from "@/data/site";
-import { isPublished } from "@/data/site";
-import { homeEventLists } from "@/lib/calendar";
+import type { Artist, EventItem, EventKind } from "@/data/site";
+import { inferEventKind, isPublished } from "@/data/site";
+import { homeEventLists, homeVenueLists } from "@/lib/calendar";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -231,14 +231,24 @@ function pickBySlug<T extends { slug: string }>(items: T[], slugs: string[]) {
   return slugs.map((slug) => bySlug.get(slug)).filter((item): item is T => Boolean(item));
 }
 
-export function arrangeHomeEvents(items: EventItem[], display: HomeDisplay) {
+function arrangeHomeLayer(items: EventItem[], display: HomeDisplay, kind: EventKind) {
   const published = items.filter(isPublished);
+  const ofKind = (event: EventItem) => inferEventKind(event, published) === kind;
   if (display.eventsMode === "manual") {
-    return pickBySlug(published, display.eventSlugs).slice(0, homeEventLimit);
+    const picked = pickBySlug(published, display.eventSlugs).filter(ofKind);
+    if (picked.length > 0) return picked.slice(0, homeEventLimit);
   }
-  const { ongoing, upcoming } = homeEventLists(published);
+  const { ongoing, upcoming } = kind === "venue" ? homeVenueLists(published) : homeEventLists(published);
   const pool = ongoing.length > 0 ? ongoing : upcoming;
   return shuffleItems(pool).slice(0, homeEventLimit);
+}
+
+export function arrangeHomeEvents(items: EventItem[], display: HomeDisplay) {
+  return arrangeHomeLayer(items, display, "program");
+}
+
+export function arrangeHomeVenues(items: EventItem[], display: HomeDisplay) {
+  return arrangeHomeLayer(items, display, "venue");
 }
 
 export function arrangeHomeArtists(items: Artist[], display: HomeDisplay) {
