@@ -2,9 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { EventItem } from "@/data/site";
-import { rangeWeekCells, slotsOnDate, timedSlots, weekdays, type TimedSlot } from "@/lib/calendar";
-import { formatDateJa, formatMonthDay, formatTimeJa, parseDateKey, tokyoTodayKey } from "@/lib/dates";
+import { needsReservation, type EventItem } from "@/data/site";
+import {
+  layoutSlotsForDay,
+  slotsOnDate,
+  timedSlots,
+  timetableHourRange,
+  weekdayOfDateKey,
+  type LaidOutSlot,
+  type TimedSlot,
+} from "@/lib/calendar";
+import { formatTimeJa, parseDateKey, tokyoTodayKey } from "@/lib/dates";
+import { useLocale, useMessages } from "@/lib/i18n/provider";
 
 type Props = {
   programs: EventItem[];
@@ -28,20 +37,21 @@ const tones: Tone[] = [
   { bar: "bg-sumi", fill: "bg-sumi/10", ink: "text-sumi", dot: "bg-sumi" },
 ];
 
-const visibleChips = 3;
+const hourPx = 80;
+const gutterRem = 3;
 
 export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: Props) {
+  const locale = useLocale();
+  const t = useMessages();
   const slots = useMemo(() => timedSlots(programs), [programs]);
   const dateKeys = useMemo(() => [...new Set(slots.map((slot) => slot.dateKey))].sort(), [slots]);
-  const spanStart = dateKeys[0] ?? "";
-  const spanEnd = dateKeys[dateKeys.length - 1] ?? "";
-  const cells = useMemo(
-    () => (spanStart ? rangeWeekCells(spanStart, spanEnd) : []),
-    [spanStart, spanEnd],
-  );
   const groups = useMemo(() => collectGroups(slots, catalog, currentSlug), [slots, catalog, currentSlug]);
   const legend = groups.filter((group) => group.key.startsWith("parent:"));
-  const [openDay, setOpenDay] = useState<string | null>(null);
+  const laidByDate = useMemo(() => {
+    const map = new Map<string, LaidOutSlot[]>();
+    for (const key of dateKeys) map.set(key, layoutSlotsForDay(slotsOnDate(slots, key)));
+    return map;
+  }, [slots, dateKeys]);
   const [todayKey, setTodayKey] = useState("");
 
   useEffect(() => {
@@ -50,14 +60,10 @@ export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: P
 
   if (slots.length === 0) return null;
 
-  const openSlots = openDay ? slotsOnDate(slots, openDay) : [];
-
   return (
     <section className="mt-12">
-      <h2 className="font-serif text-xl tracking-wide">日程</h2>
-      <p className="mt-3 text-sm leading-7 text-sumi-soft">
-        同じ色は同じ会場、または同じ催しの繰り返しです。名前で各ページへ、日を押すとその日だけ開きます。
-      </p>
+      <h2 className="font-serif text-xl tracking-wide">{t.events.schedule}</h2>
+      <p className="mt-3 text-sm leading-7 text-sumi-soft">{t.events.scheduleDesc}</p>
 
       {legend.length > 1 ? (
         <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
@@ -70,130 +76,184 @@ export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: P
         </ul>
       ) : null}
 
-      <div className="mt-6">
-        <p className="font-serif text-lg tracking-wide">{formatSpanTitle(spanStart, spanEnd)}</p>
-
-        <div className="-mx-5 mt-4 overflow-x-auto px-5 md:mx-0 md:px-0">
-          <div className="min-w-[56rem] md:min-w-0">
-            <div className="grid grid-cols-7 border-t border-line">
-              {weekdays.map((day) => (
-                <p key={day} className="py-1.5 text-center text-[10px] tracking-[0.16em] text-sumi-soft">
-                  {day}
-                </p>
-              ))}
-              {cells.map((cell) => {
-                const daySlots = slotsOnDate(slots, cell.key);
-                const isToday = Boolean(todayKey) && cell.key === todayKey;
-                const isOpen = openDay === cell.key;
-                const hidden = Math.max(0, daySlots.length - visibleChips);
-                const shown = hidden > 0 ? daySlots.slice(0, visibleChips - 1) : daySlots;
-
-                return (
-                  <div
-                    key={cell.key}
-                    className={`flex min-h-[5.5rem] flex-col border-b border-line ${
-                      daySlots.length ? "min-h-[11rem] md:min-h-[13rem]" : ""
-                    } ${isOpen ? "bg-kami" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setOpenDay((current) => (current === cell.key ? null : cell.key))}
-                      disabled={daySlots.length === 0}
-                      className="flex items-center justify-start px-1 pt-1.5 disabled:cursor-default md:px-1.5 md:pt-2"
-                      aria-label={
-                        daySlots.length
-                          ? `${cell.day}日、催し${daySlots.length}件`
-                          : `${cell.day}日`
-                      }
-                      aria-expanded={isOpen}
-                    >
-                      <span
-                        className={`inline-flex h-6 w-6 items-center justify-center text-[12px] md:h-7 md:w-7 md:text-[13px] ${
-                          isToday ? "rounded-full bg-tsuchi font-medium text-kami" : ""
-                        } ${!cell.inMonth && !isToday ? "text-sumi-soft/40" : ""}`}
-                      >
-                        {cell.day}
-                      </span>
-                    </button>
-                    {daySlots.length ? (
-                      <ul className="mt-1 flex min-w-0 flex-1 flex-col gap-1 px-0.5 pb-1.5 md:px-1">
-                        {shown.map((slot) => {
-                          const group = groupOf(slot, catalog, currentSlug);
-                          return (
-                            <li key={`${slot.event.slug}-${slot.startsAt}`}>
-                              <EventChip slot={slot} tone={group.tone} />
-                            </li>
-                          );
-                        })}
-                        {hidden > 0 ? (
-                          <li>
-                            <button
-                              type="button"
-                              onClick={() => setOpenDay(cell.key)}
-                              className="w-full px-1 py-0.5 text-left text-[11px] leading-4 text-sumi-soft hover:text-sumi"
-                            >
-                              +{daySlots.length - shown.length} 件
-                            </button>
-                          </li>
-                        ) : null}
-                      </ul>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+      <div className="mt-8 space-y-10">
+        {dateKeys.map((key) => {
+          const daySlots = laidByDate.get(key) ?? [];
+          if (daySlots.length === 0) return null;
+          return (
+            <DaySection
+              key={key}
+              dateKey={key}
+              slots={daySlots}
+              catalog={catalog}
+              currentSlug={currentSlug}
+              today={Boolean(todayKey) && key === todayKey}
+              locale={locale}
+              weekdayLabel={t.events.weekdays[weekdayOfDateKey(key)] ?? ""}
+              reserveLabel={t.events.reservationRequired}
+            />
+          );
+        })}
       </div>
-
-      {openDay && openSlots.length > 0 ? (
-        <div className="mt-6 border border-line bg-kami px-4 py-4">
-          <p className="text-[11px] tracking-[0.16em] text-tsuchi">{formatDateJa(dateKeyIso(openDay))}</p>
-          <ul className="mt-3 divide-y divide-line border-y border-line">
-            {openSlots.map((slot) => {
-              const group = groupOf(slot, catalog, currentSlug);
-              const sameTitle = group.key.startsWith("event:");
-              return (
-                <li key={`${slot.event.slug}-${slot.startsAt}`} className="flex gap-3 py-3">
-                  <span className={`mt-1 h-8 w-1 shrink-0 rounded-full ${group.tone.bar}`} />
-                  <div className="min-w-0">
-                    <p className="text-[12px] leading-5 text-sumi-soft">
-                      <TimeRange startsAt={slot.startsAt} endsAt={slot.endsAt} />
-                    </p>
-                    <Link
-                      href={`/events/${slot.event.slug}`}
-                      className="mt-0.5 block break-words font-serif text-[15px] leading-6 tracking-wide"
-                    >
-                      {slot.event.title}
-                    </Link>
-                    {!sameTitle ? (
-                      <p className="mt-1 text-[12px] leading-5 text-sumi-soft">{group.label}</p>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
     </section>
   );
 }
 
-function EventChip({ slot, tone }: { slot: TimedSlot; tone: Tone }) {
+function DaySection({
+  dateKey,
+  slots,
+  catalog,
+  currentSlug,
+  today,
+  locale,
+  weekdayLabel,
+  reserveLabel,
+}: {
+  dateKey: string;
+  slots: LaidOutSlot[];
+  catalog: EventItem[];
+  currentSlug?: string;
+  today: boolean;
+  locale: string;
+  weekdayLabel: string;
+  reserveLabel: string;
+}) {
+  const hours = timetableHourRange(slots);
+  const hourCount = hours.endHour - hours.startHour;
+  const hourLabels = Array.from({ length: hourCount }, (_, index) => hours.startHour + index);
+  const height = hourCount * hourPx;
+  const lanes = Math.max(1, ...slots.map((slot) => slot.lanes));
+
+  return (
+    <section>
+      <h3 className="font-serif text-lg tracking-wide">
+        {formatDayHeader(dateKey, locale)}
+        <span className={`ml-2 text-[12px] tracking-[0.14em] ${today ? "text-tsuchi" : "text-sumi-soft"}`}>
+          {weekdayLabel}
+        </span>
+      </h3>
+      <div className="-mx-5 mt-4 overflow-x-auto px-5 md:mx-0 md:px-0">
+        <div
+          className="grid border-t border-line"
+          style={{
+            gridTemplateColumns: `${gutterRem}rem minmax(${Math.max(10, lanes * 6.5)}rem, 1fr)`,
+            minWidth: `${gutterRem + Math.max(10, lanes * 6.5)}rem`,
+          }}
+        >
+          <div className="sticky left-0 z-10 border-b border-line bg-washi">
+            <div className="relative" style={{ height }}>
+              {hourLabels.map((hour, index) => (
+                <p
+                  key={hour}
+                  className="absolute right-2 pt-0.5 text-[10px] tracking-[0.08em] text-sumi-soft"
+                  style={{ top: index * hourPx }}
+                >
+                  {formatHourLabel(hour)}
+                </p>
+              ))}
+            </div>
+          </div>
+          <DayColumn
+            slots={slots}
+            catalog={catalog}
+            currentSlug={currentSlug}
+            startHour={hours.startHour}
+            height={height}
+            today={today}
+            reserveLabel={reserveLabel}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DayColumn({
+  slots,
+  catalog,
+  currentSlug,
+  startHour,
+  height,
+  today,
+  reserveLabel,
+}: {
+  slots: LaidOutSlot[];
+  catalog: EventItem[];
+  currentSlug?: string;
+  startHour: number;
+  height: number;
+  today: boolean;
+  reserveLabel: string;
+}) {
+  return (
+    <div
+      className={`relative border-b border-l border-line ${today ? "bg-kami/80" : ""}`}
+      style={{
+        height,
+        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent ${hourPx - 1}px, var(--line) ${hourPx - 1}px, var(--line) ${hourPx}px)`,
+      }}
+    >
+      {slots.map((slot) => (
+        <EventBlock
+          key={`${slot.event.slug}-${slot.startsAt}`}
+          slot={slot}
+          tone={groupOf(slot, catalog, currentSlug).tone}
+          hostLabel={hostLabelOf(slot, catalog, currentSlug)}
+          startHour={startHour}
+          columnHeight={height}
+          reserveLabel={needsReservation(slot.event) ? reserveLabel : ""}
+        />
+      ))}
+    </div>
+  );
+}
+
+function EventBlock({
+  slot,
+  tone,
+  hostLabel,
+  startHour,
+  columnHeight,
+  reserveLabel,
+}: {
+  slot: LaidOutSlot;
+  tone: Tone;
+  hostLabel: string;
+  startHour: number;
+  columnHeight: number;
+  reserveLabel: string;
+}) {
+  const top = ((slot.startMin - startHour * 60) / 60) * hourPx;
+  const rawHeight = Math.max(((slot.endMin - slot.startMin) / 60) * hourPx, 48);
+  const height = Math.min(rawHeight, Math.max(columnHeight - top, 48));
+  const width = `calc(${100 / slot.lanes}% - 4px)`;
+  const left = `calc(${(slot.lane * 100) / slot.lanes}% + 2px)`;
+  const title = reserveLabel
+    ? `${formatTimeRange(slot.startsAt, slot.endsAt)} ${slot.event.title} ${reserveLabel}`
+    : `${formatTimeRange(slot.startsAt, slot.endsAt)} ${slot.event.title}`;
+
   return (
     <Link
       href={`/events/${slot.event.slug}`}
-      title={`${formatTimeRange(slot.startsAt, slot.endsAt)} ${slot.event.title}`}
-      className={`flex min-w-0 gap-1 rounded-sm px-1 py-1 ${tone.fill}`}
+      title={title}
+      className={`absolute z-[1] overflow-hidden rounded-sm px-1.5 py-1 ${tone.fill}`}
+      style={{ top, height, left, width }}
     >
-      <span className={`mt-0.5 h-auto w-[3px] shrink-0 self-stretch rounded-full ${tone.bar}`} />
-      <span className="min-w-0">
-        <span className={`block text-[10px] leading-3 md:text-[11px] md:leading-4 ${tone.ink}`}>
-          <TimeRange startsAt={slot.startsAt} endsAt={slot.endsAt} />
-        </span>
-        <span className="mt-0.5 block break-words text-[11px] leading-4 text-sumi md:text-[12px] md:leading-[1.35] line-clamp-2">
-          {slot.event.title}
+      <span className="flex h-full min-h-0 gap-1">
+        <span className={`w-[3px] shrink-0 self-stretch rounded-full ${tone.bar}`} />
+        <span className="min-w-0">
+          <span className={`block text-[10px] leading-3 md:text-[11px] md:leading-4 ${tone.ink}`}>
+            <TimeRange startsAt={slot.startsAt} endsAt={slot.endsAt} />
+          </span>
+          <span className="mt-0.5 block break-words font-serif text-[12px] leading-4 tracking-wide text-sumi md:text-[13px] md:leading-5">
+            {slot.event.title}
+          </span>
+          {reserveLabel ? (
+            <span className="mt-0.5 block text-[10px] tracking-[0.12em] text-sumi-soft">{reserveLabel}</span>
+          ) : null}
+          {hostLabel ? (
+            <span className="mt-0.5 block break-words text-[10px] leading-3 text-sumi-soft">{hostLabel}</span>
+          ) : null}
         </span>
       </span>
     </Link>
@@ -223,6 +283,10 @@ function formatTimeRange(startsAt: string, endsAt: string) {
   return `${start}–${end}`;
 }
 
+function formatHourLabel(hour: number) {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
 function toneOf(key: string) {
   let hash = 0;
   for (let i = 0; i < key.length; i += 1) hash += key.charCodeAt(i) * (i + 1);
@@ -239,6 +303,11 @@ function groupOf(slot: TimedSlot, catalog: EventItem[], currentSlug?: string) {
   return { key, label: slot.event.title, tone: toneOf(key) };
 }
 
+function hostLabelOf(slot: TimedSlot, catalog: EventItem[], currentSlug?: string) {
+  const group = groupOf(slot, catalog, currentSlug);
+  return group.key.startsWith("parent:") ? group.label : "";
+}
+
 function collectGroups(slots: TimedSlot[], catalog: EventItem[], currentSlug?: string) {
   const groups: { key: string; label: string; tone: Tone }[] = [];
   const seen = new Set<string>();
@@ -251,20 +320,8 @@ function collectGroups(slots: TimedSlot[], catalog: EventItem[], currentSlug?: s
   return groups;
 }
 
-function dateKeyIso(key: string) {
-  return `${key}T12:00:00+09:00`;
-}
-
-function formatSpanTitle(startKey: string, endKey: string) {
-  if (!startKey) return "";
-  const start = parseDateKey(startKey);
-  const startLabel = formatMonthDay(dateKeyIso(startKey));
-  if (!endKey || startKey === endKey) return `${start.year}年${startLabel}`;
-  const end = parseDateKey(endKey);
-  const endLabel = formatMonthDay(dateKeyIso(endKey));
-  if (start.year === end.year && start.month === end.month) {
-    return `${start.year}年${startLabel} – ${end.day}日`;
-  }
-  if (start.year === end.year) return `${start.year}年${startLabel} – ${endLabel}`;
-  return `${start.year}年${startLabel} – ${end.year}年${endLabel}`;
+function formatDayHeader(key: string, locale: string) {
+  const { month, day } = parseDateKey(key);
+  if (locale === "en") return `${month + 1}/${day}`;
+  return `${month + 1}月${day}日`;
 }
