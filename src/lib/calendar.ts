@@ -1,5 +1,13 @@
 import { inferEventKind, isPublished, type EventItem, type EventKind } from "@/data/site";
-import { addDaysToDateKey, eachDateKey, isAllDayRange, parseDateKey, tokyoDateKey, tokyoHour } from "@/lib/dates";
+import {
+  addDaysToDateKey,
+  eachDateKey,
+  isAllDayRange,
+  parseDateKey,
+  tokyoDateKey,
+  tokyoHour,
+  tokyoMinutes,
+} from "@/lib/dates";
 
 export const weekdays = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
@@ -136,6 +144,100 @@ export function timedSlots(items: EventItem[]): TimedSlot[] {
 
 export function slotsOnDate(slots: TimedSlot[], dateKey: string) {
   return slots.filter((slot) => slot.dateKey === dateKey);
+}
+
+/** 開始〜終了の日付を、週の端まで伸ばさずそのまま列にする。 */
+export function consecutiveDateKeys(startKey: string, endKey: string) {
+  if (!startKey) return [];
+  const start = !endKey || startKey <= endKey ? startKey : endKey;
+  const end = !startKey || startKey <= endKey ? endKey || startKey : startKey;
+  const keys: string[] = [];
+  let current = start;
+  for (let i = 0; i < 62; i += 1) {
+    keys.push(current);
+    if (current >= end) break;
+    current = addDaysToDateKey(current, 1);
+  }
+  return keys;
+}
+
+export function weekdayOfDateKey(key: string) {
+  return dateKeyWeekday(key);
+}
+
+export type LaidOutSlot = TimedSlot & {
+  startMin: number;
+  endMin: number;
+  lane: number;
+  lanes: number;
+};
+
+export function timetableHourRange(slots: TimedSlot[]) {
+  let min = Number.POSITIVE_INFINITY;
+  let max = 0;
+  for (const slot of slots) {
+    const start = tokyoMinutes(slot.startsAt);
+    if (!Number.isFinite(start)) continue;
+    const rawEnd = tokyoMinutes(slot.endsAt);
+    const end = Number.isFinite(rawEnd) && rawEnd > start ? rawEnd : start + 30;
+    min = Math.min(min, start);
+    max = Math.max(max, end);
+  }
+  if (!Number.isFinite(min)) return { startHour: 10, endHour: 16 };
+  const startHour = Math.floor(min / 60);
+  const endHour = Math.max(Math.ceil(max / 60), startHour + 1);
+  return { startHour, endHour };
+}
+
+/** 重なる枠を横のレーンに分ける。つながった塊ごとにレーン数を決める。 */
+export function layoutSlotsForDay(slots: TimedSlot[]): LaidOutSlot[] {
+  const items: LaidOutSlot[] = slots
+    .map((slot) => {
+      const startMin = tokyoMinutes(slot.startsAt);
+      const rawEnd = tokyoMinutes(slot.endsAt);
+      const endMin = Number.isFinite(rawEnd) && rawEnd > startMin ? rawEnd : startMin;
+      return { ...slot, startMin, endMin, lane: 0, lanes: 1 };
+    })
+    .filter((slot) => Number.isFinite(slot.startMin))
+    .sort(
+      (a, b) =>
+        a.startMin - b.startMin ||
+        a.endMin - b.endMin ||
+        a.event.title.localeCompare(b.event.title, "ja"),
+    );
+
+  const laneEnds: number[] = [];
+  for (const item of items) {
+    const occupEnd = Math.max(item.endMin, item.startMin + 1);
+    let lane = laneEnds.findIndex((end) => end <= item.startMin);
+    if (lane < 0) {
+      lane = laneEnds.length;
+      laneEnds.push(occupEnd);
+    } else {
+      laneEnds[lane] = occupEnd;
+    }
+    item.lane = lane;
+  }
+
+  let cluster: LaidOutSlot[] = [];
+  let clusterEnd = 0;
+  let clusterLanes = 0;
+  const flush = () => {
+    const lanes = Math.max(1, clusterLanes);
+    for (const item of cluster) item.lanes = lanes;
+    cluster = [];
+    clusterEnd = 0;
+    clusterLanes = 0;
+  };
+  for (const item of items) {
+    if (cluster.length > 0 && item.startMin >= clusterEnd) flush();
+    cluster.push(item);
+    clusterEnd = Math.max(clusterEnd, item.endMin, item.startMin + 1);
+    clusterLanes = Math.max(clusterLanes, item.lane + 1);
+  }
+  if (cluster.length) flush();
+
+  return items;
 }
 
 export function isAfternoonSlot(slot: TimedSlot) {

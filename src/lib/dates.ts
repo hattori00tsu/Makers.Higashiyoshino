@@ -68,6 +68,16 @@ export function tokyoHour(iso: string) {
   return Number(hour);
 }
 
+export function tokyoMinutes(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return Number.NaN;
+  const parts = timeFmt.formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return Number.NaN;
+  return hour * 60 + minute;
+}
+
 export function formatMonthDay(iso: string) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";

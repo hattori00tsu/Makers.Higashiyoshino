@@ -130,6 +130,9 @@ export const messages = {
       fullWaitlist: "ただいま定員に達しています。キャンセルが出た場合のみ、ご連絡します。",
       pleaseReserve: "事前の予約をお願いします。申込みにはログイン（登録）が必要です。定員は日程ごとに異なります。",
       seriesPast: "これまでの開催",
+      schedule: "日程",
+      scheduleDesc:
+        "日ごとの時間割です。同じ時間帯に重なる催しは横に並びます。同じ色は同じ会場、または同じ催しの繰り返しです。名前から各ページへどうぞ。",
       weekdays: ["日", "月", "火", "水", "木", "金", "土"],
     },
     apply: {
@@ -397,6 +400,9 @@ export const messages = {
       fullWaitlist: "This event is full. We will contact you only if a place opens.",
       pleaseReserve: "Please reserve in advance. Sign-in is required. Capacity varies by session.",
       seriesPast: "Past editions",
+      schedule: "Schedule",
+      scheduleDesc:
+        "A timetable for each day. Overlapping programs sit side by side. The same color marks the same venue, or repeats of the same program. Open a name for its page.",
       weekdays: ["S", "M", "T", "W", "T", "F", "S"],
     },
     apply: {
