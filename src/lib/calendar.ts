@@ -1,4 +1,4 @@
-import { inferEventKind, isPublished, type EventItem, type EventKind } from "@/data/site";
+import { inferEventKind, isPublished, needsReservation, type EventItem, type EventKind } from "@/data/site";
 import {
   addDaysToDateKey,
   eachDateKey,
@@ -144,6 +144,45 @@ export function timedSlots(items: EventItem[]): TimedSlot[] {
 
 export function slotsOnDate(slots: TimedSlot[], dateKey: string) {
   return slots.filter((slot) => slot.dateKey === dateKey);
+}
+
+export type OpenDayProgram = {
+  event: EventItem;
+  startsAt: string;
+  endsAt: string;
+  allDay: boolean;
+};
+
+/** 申込み不要の催しを日付ごと。展示など、その日じゅう開いている案内用。 */
+export function openProgramsByDate(items: EventItem[]) {
+  const map = new Map<string, OpenDayProgram[]>();
+  for (const event of items) {
+    if (needsReservation(event)) continue;
+    const byDate = new Map<string, OpenDayProgram>();
+    for (const session of event.sessions) {
+      if (!session.startsAt) continue;
+      const endsAt = session.endsAt || session.startsAt;
+      const allDay = isAllDayRange(session.startsAt, endsAt);
+      for (const dateKey of eachDateKey(session.startsAt, endsAt)) {
+        const current = byDate.get(dateKey);
+        if (!current) {
+          byDate.set(dateKey, { event, startsAt: session.startsAt, endsAt, allDay });
+          continue;
+        }
+        if (allDay) current.allDay = true;
+        else if (!current.allDay) {
+          if (session.startsAt < current.startsAt) current.startsAt = session.startsAt;
+          if (endsAt > current.endsAt) current.endsAt = endsAt;
+        }
+      }
+    }
+    for (const [dateKey, row] of byDate) {
+      const list = map.get(dateKey);
+      if (list) list.push(row);
+      else map.set(dateKey, [row]);
+    }
+  }
+  return map;
 }
 
 /** 開始〜終了の日付を、週の端まで伸ばさずそのまま列にする。 */

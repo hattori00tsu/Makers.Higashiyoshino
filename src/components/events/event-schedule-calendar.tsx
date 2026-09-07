@@ -5,11 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { needsReservation, type EventItem } from "@/data/site";
 import {
   layoutSlotsForDay,
+  openProgramsByDate,
   slotsOnDate,
   timedSlots,
   timetableHourRange,
   weekdayOfDateKey,
   type LaidOutSlot,
+  type OpenDayProgram,
   type TimedSlot,
 } from "@/lib/calendar";
 import { formatTimeJa, parseDateKey, tokyoTodayKey } from "@/lib/dates";
@@ -43,8 +45,14 @@ const gutterRem = 3;
 export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: Props) {
   const locale = useLocale();
   const t = useMessages();
-  const slots = useMemo(() => timedSlots(programs), [programs]);
-  const dateKeys = useMemo(() => [...new Set(slots.map((slot) => slot.dateKey))].sort(), [slots]);
+  const reserved = useMemo(() => programs.filter(needsReservation), [programs]);
+  const slots = useMemo(() => timedSlots(reserved), [reserved]);
+  const openByDate = useMemo(() => openProgramsByDate(programs), [programs]);
+  const dateKeys = useMemo(() => {
+    const keys = new Set(slots.map((slot) => slot.dateKey));
+    for (const key of openByDate.keys()) keys.add(key);
+    return [...keys].sort();
+  }, [slots, openByDate]);
   const groups = useMemo(() => collectGroups(slots, catalog, currentSlug), [slots, catalog, currentSlug]);
   const legend = groups.filter((group) => group.key.startsWith("parent:"));
   const laidByDate = useMemo(() => {
@@ -58,7 +66,7 @@ export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: P
     setTodayKey(tokyoTodayKey());
   }, []);
 
-  if (slots.length === 0) return null;
+  if (dateKeys.length === 0) return null;
 
   return (
     <section className="mt-12">
@@ -79,18 +87,22 @@ export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: P
       <div className="mt-8 space-y-10">
         {dateKeys.map((key) => {
           const daySlots = laidByDate.get(key) ?? [];
-          if (daySlots.length === 0) return null;
+          const open = openByDate.get(key) ?? [];
+          if (daySlots.length === 0 && open.length === 0) return null;
           return (
             <DaySection
               key={key}
               dateKey={key}
               slots={daySlots}
+              open={open}
               catalog={catalog}
               currentSlug={currentSlug}
               today={Boolean(todayKey) && key === todayKey}
               locale={locale}
               weekdayLabel={t.events.weekdays[weekdayOfDateKey(key)] ?? ""}
               reserveLabel={t.events.reservationRequired}
+              openHeading={t.events.scheduleOpen}
+              openNote={t.events.scheduleOpenNote}
             />
           );
         })}
@@ -102,27 +114,33 @@ export function EventScheduleCalendar({ programs, catalog = [], currentSlug }: P
 function DaySection({
   dateKey,
   slots,
+  open,
   catalog,
   currentSlug,
   today,
   locale,
   weekdayLabel,
   reserveLabel,
+  openHeading,
+  openNote,
 }: {
   dateKey: string;
   slots: LaidOutSlot[];
+  open: OpenDayProgram[];
   catalog: EventItem[];
   currentSlug?: string;
   today: boolean;
   locale: string;
   weekdayLabel: string;
   reserveLabel: string;
+  openHeading: string;
+  openNote: string;
 }) {
   const hours = timetableHourRange(slots);
   const hourCount = hours.endHour - hours.startHour;
   const hourLabels = Array.from({ length: hourCount }, (_, index) => hours.startHour + index);
   const height = hourCount * hourPx;
-  const lanes = Math.max(1, ...slots.map((slot) => slot.lanes));
+  const lanes = slots.length ? Math.max(1, ...slots.map((slot) => slot.lanes)) : 1;
 
   return (
     <section>
@@ -132,38 +150,66 @@ function DaySection({
           {weekdayLabel}
         </span>
       </h3>
-      <div className="-mx-5 mt-4 overflow-x-auto px-5 md:mx-0 md:px-0">
-        <div
-          className="grid border-t border-line"
-          style={{
-            gridTemplateColumns: `${gutterRem}rem minmax(${Math.max(10, lanes * 6.5)}rem, 1fr)`,
-            minWidth: `${gutterRem + Math.max(10, lanes * 6.5)}rem`,
-          }}
-        >
-          <div className="sticky left-0 z-10 border-b border-line bg-washi">
-            <div className="relative" style={{ height }}>
-              {hourLabels.map((hour, index) => (
-                <p
-                  key={hour}
-                  className="absolute right-2 pt-0.5 text-[10px] tracking-[0.08em] text-sumi-soft"
-                  style={{ top: index * hourPx }}
-                >
-                  {formatHourLabel(hour)}
-                </p>
-              ))}
-            </div>
-          </div>
-          <DayColumn
-            slots={slots}
-            catalog={catalog}
-            currentSlug={currentSlug}
-            startHour={hours.startHour}
-            height={height}
-            today={today}
-            reserveLabel={reserveLabel}
-          />
+      {open.length > 0 ? (
+        <div className="mt-4 border border-line bg-kami px-4 py-4">
+          <p className="text-[11px] tracking-[0.16em] text-tsuchi">{openHeading}</p>
+          <p className="mt-1 text-[12px] leading-5 text-sumi-soft">{openNote}</p>
+          <ul className="mt-3 divide-y divide-line border-y border-line">
+            {open.map((item) => {
+              const group = groupOfEvent(item.event, catalog, currentSlug);
+              const host = group.key.startsWith("parent:") ? group.label : "";
+              return (
+                <li key={item.event.slug} className="py-3">
+                  <Link href={`/events/${item.event.slug}`} className="font-serif text-[15px] tracking-wide">
+                    {item.event.title}
+                  </Link>
+                  {!item.allDay || host ? (
+                    <p className="mt-1 text-[12px] leading-5 text-sumi-soft">
+                      {item.allDay ? null : formatTimeRange(item.startsAt, item.endsAt)}
+                      {!item.allDay && host ? " · " : null}
+                      {host}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         </div>
-      </div>
+      ) : null}
+      {slots.length > 0 ? (
+        <div className={`-mx-5 overflow-x-auto px-5 md:mx-0 md:px-0 ${open.length > 0 ? "mt-5" : "mt-4"}`}>
+          <div
+            className="grid border-t border-line"
+            style={{
+              gridTemplateColumns: `${gutterRem}rem minmax(${Math.max(10, lanes * 6.5)}rem, 1fr)`,
+              minWidth: `${gutterRem + Math.max(10, lanes * 6.5)}rem`,
+            }}
+          >
+            <div className="sticky left-0 z-10 border-b border-line bg-washi">
+              <div className="relative" style={{ height }}>
+                {hourLabels.map((hour, index) => (
+                  <p
+                    key={hour}
+                    className="absolute right-2 pt-0.5 text-[10px] tracking-[0.08em] text-sumi-soft"
+                    style={{ top: index * hourPx }}
+                  >
+                    {formatHourLabel(hour)}
+                  </p>
+                ))}
+              </div>
+            </div>
+            <DayColumn
+              slots={slots}
+              catalog={catalog}
+              currentSlug={currentSlug}
+              startHour={hours.startHour}
+              height={height}
+              today={today}
+              reserveLabel={reserveLabel}
+            />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -293,14 +339,18 @@ function toneOf(key: string) {
   return tones[Math.abs(hash) % tones.length];
 }
 
-function groupOf(slot: TimedSlot, catalog: EventItem[], currentSlug?: string) {
-  const parent = catalog.find((item) => item.slug === slot.event.parentSlug);
+function groupOfEvent(event: EventItem, catalog: EventItem[], currentSlug?: string) {
+  const parent = catalog.find((item) => item.slug === event.parentSlug);
   if (parent && parent.slug !== currentSlug) {
     const key = `parent:${parent.slug}`;
     return { key, label: parent.title, tone: toneOf(key) };
   }
-  const key = `event:${slot.event.slug}`;
-  return { key, label: slot.event.title, tone: toneOf(key) };
+  const key = `event:${event.slug}`;
+  return { key, label: event.title, tone: toneOf(key) };
+}
+
+function groupOf(slot: TimedSlot, catalog: EventItem[], currentSlug?: string) {
+  return groupOfEvent(slot.event, catalog, currentSlug);
 }
 
 function hostLabelOf(slot: TimedSlot, catalog: EventItem[], currentSlug?: string) {

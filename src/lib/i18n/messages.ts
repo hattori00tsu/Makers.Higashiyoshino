@@ -132,7 +132,9 @@ export const messages = {
       seriesPast: "これまでの開催",
       schedule: "日程",
       scheduleDesc:
-        "日ごとの時間割です。同じ時間帯に重なる催しは横に並びます。同じ色は同じ会場、または同じ催しの繰り返しです。名前から各ページへどうぞ。",
+        "展示など申込み不要のものは、その日じゅうの案内です。要申込みの催しは時間割にしています。名前から各ページへどうぞ。",
+      scheduleOpen: "この日じゅう",
+      scheduleOpenNote: "申込み不要です。開場中はいつでもご覧いただけます。",
       weekdays: ["日", "月", "火", "水", "木", "金", "土"],
     },
     apply: {
@@ -402,7 +404,9 @@ export const messages = {
       seriesPast: "Past editions",
       schedule: "Schedule",
       scheduleDesc:
-        "A timetable for each day. Overlapping programs sit side by side. The same color marks the same venue, or repeats of the same program. Open a name for its page.",
+        "Drop-in exhibitions are listed as all-day. Programs that need a reservation appear on the timetable. Open a name for its page.",
+      scheduleOpen: "Open all day",
+      scheduleOpenNote: "No reservation needed. Come anytime during opening hours.",
       weekdays: ["S", "M", "T", "W", "T", "F", "S"],
     },
     apply: {
