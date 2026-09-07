@@ -189,54 +189,81 @@ export function timetableHourRange(slots: TimedSlot[]) {
   return { startHour, endHour };
 }
 
-/** 重なる枠を横のレーンに分ける。つながった塊ごとにレーン数を決める。 */
+function occupEnd(startMin: number, endMin: number) {
+  return Math.max(endMin, startMin + 1);
+}
+
+function intervalOverlaps(
+  start: number,
+  end: number,
+  taken: { start: number; end: number }[],
+) {
+  for (let i = 0; i < taken.length; i += 1) {
+    const iv = taken[i];
+    if (start < iv.end && iv.start < end) return true;
+  }
+  return false;
+}
+
+/**
+ * 同じ催しは同じ列。列の空き（午前だけ／午後だけ）には、重ならない別の催しを詰める。
+ * 件数は1日数件なので、催し単位の first-fit で足りる。
+ */
 export function layoutSlotsForDay(slots: TimedSlot[]): LaidOutSlot[] {
-  const items: LaidOutSlot[] = slots
-    .map((slot) => {
-      const startMin = tokyoMinutes(slot.startsAt);
-      const rawEnd = tokyoMinutes(slot.endsAt);
-      const endMin = Number.isFinite(rawEnd) && rawEnd > startMin ? rawEnd : startMin;
-      return { ...slot, startMin, endMin, lane: 0, lanes: 1 };
-    })
-    .filter((slot) => Number.isFinite(slot.startMin))
-    .sort(
-      (a, b) =>
-        a.startMin - b.startMin ||
-        a.endMin - b.endMin ||
-        a.event.title.localeCompare(b.event.title, "ja"),
-    );
+  const items: LaidOutSlot[] = [];
+  for (const slot of slots) {
+    const startMin = tokyoMinutes(slot.startsAt);
+    if (!Number.isFinite(startMin)) continue;
+    const rawEnd = tokyoMinutes(slot.endsAt);
+    const endMin = Number.isFinite(rawEnd) && rawEnd > startMin ? rawEnd : startMin;
+    items.push({ ...slot, startMin, endMin, lane: 0, lanes: 1 });
+  }
+  if (items.length === 0) return items;
 
-  const laneEnds: number[] = [];
+  const packs: { slug: string; items: LaidOutSlot[]; startMin: number }[] = [];
+  const index = new Map<string, (typeof packs)[number]>();
   for (const item of items) {
-    const occupEnd = Math.max(item.endMin, item.startMin + 1);
-    let lane = laneEnds.findIndex((end) => end <= item.startMin);
-    if (lane < 0) {
-      lane = laneEnds.length;
-      laneEnds.push(occupEnd);
+    const slug = item.event.slug;
+    const pack = index.get(slug);
+    if (pack) {
+      pack.items.push(item);
+      if (item.startMin < pack.startMin) pack.startMin = item.startMin;
     } else {
-      laneEnds[lane] = occupEnd;
+      const next = { slug, items: [item], startMin: item.startMin };
+      index.set(slug, next);
+      packs.push(next);
     }
-    item.lane = lane;
+  }
+  packs.sort((a, b) => a.startMin - b.startMin || a.slug.localeCompare(b.slug));
+
+  const laneTaken: { start: number; end: number }[][] = [];
+  for (const pack of packs) {
+    let lane = 0;
+    for (; lane < laneTaken.length; lane += 1) {
+      const taken = laneTaken[lane];
+      let blocked = false;
+      for (const item of pack.items) {
+        if (intervalOverlaps(item.startMin, occupEnd(item.startMin, item.endMin), taken)) {
+          blocked = true;
+          break;
+        }
+      }
+      if (!blocked) break;
+    }
+    if (lane === laneTaken.length) laneTaken.push([]);
+    const taken = laneTaken[lane];
+    for (const item of pack.items) {
+      item.lane = lane;
+      taken.push({ start: item.startMin, end: occupEnd(item.startMin, item.endMin) });
+    }
   }
 
-  let cluster: LaidOutSlot[] = [];
-  let clusterEnd = 0;
-  let clusterLanes = 0;
-  const flush = () => {
-    const lanes = Math.max(1, clusterLanes);
-    for (const item of cluster) item.lanes = lanes;
-    cluster = [];
-    clusterEnd = 0;
-    clusterLanes = 0;
-  };
-  for (const item of items) {
-    if (cluster.length > 0 && item.startMin >= clusterEnd) flush();
-    cluster.push(item);
-    clusterEnd = Math.max(clusterEnd, item.endMin, item.startMin + 1);
-    clusterLanes = Math.max(clusterLanes, item.lane + 1);
-  }
-  if (cluster.length) flush();
-
+  const lanes = Math.max(1, laneTaken.length);
+  for (const item of items) item.lanes = lanes;
+  items.sort(
+    (a, b) =>
+      a.startMin - b.startMin || a.lane - b.lane || a.event.title.localeCompare(b.event.title, "ja"),
+  );
   return items;
 }
 
